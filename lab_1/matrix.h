@@ -17,17 +17,15 @@ typedef struct AlgebraOperations {
     void (*multiplyFn)(const void*, const void*, void*);
 } AlgebraOperations;
 
-
 Matrix* create_matrix(int size, const AlgebraOperations* ops, size_t elem_size);
 void destroy_matrix(Matrix* m);
 
-
 void matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result);
-void matrix_multiply_scalar(const Matrix* m, const void* scalar, Matrix* result);
+void matrix_multiply_scalar(const Matrix* m, const void* scalar,
+                            Matrix* result);
 void matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result);
-
 
 void print_integer_matrix(const Matrix* m, const char* name);
 void print_complex_matrix(const Matrix* m, const char* name);
 
-#endif // MATRIX_H
+#endif  // MATRIX_H

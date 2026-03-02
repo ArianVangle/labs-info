@@ -1,19 +1,23 @@
 #include "algebra.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-
 static void integer_add(const void* e1, const void* e2, void* result) {
-    ((Integer*)result)->value = ((const Integer*)e1)->value + ((const Integer*)e2)->value;
+    ((Integer*)result)->value =
+        ((const Integer*)e1)->value + ((const Integer*)e2)->value;
 }
 
 static void integer_multiply(const void* e1, const void* e2, void* result) {
-    ((Integer*)result)->value = ((const Integer*)e1)->value * ((const Integer*)e2)->value;
+    ((Integer*)result)->value =
+        ((const Integer*)e1)->value * ((const Integer*)e2)->value;
 }
 
 static void complex_add(const void* e1, const void* e2, void* result) {
-    ((Complex*)result)->re = ((const Complex*)e1)->re + ((const Complex*)e2)->re;
-    ((Complex*)result)->im = ((const Complex*)e1)->im + ((const Complex*)e2)->im;
+    ((Complex*)result)->re =
+        ((const Complex*)e1)->re + ((const Complex*)e2)->re;
+    ((Complex*)result)->im =
+        ((const Complex*)e1)->im + ((const Complex*)e2)->im;
 }
 
 static void complex_multiply(const void* e1, const void* e2, void* result) {
@@ -27,7 +31,6 @@ static void complex_multiply(const void* e1, const void* e2, void* result) {
     res->re = new_re;
     res->im = new_im;
 }
-
 
 static AlgebraOperations* IntegerOpsInstance = NULL;
 static AlgebraOperations* ComplexOpsInstance = NULL;
@@ -54,7 +57,6 @@ const AlgebraOperations* GetComplexOps(void) {
     return ComplexOpsInstance;
 }
 
-
 Matrix* create_integer_matrix(int size, const int* values) {
     Matrix* m = create_matrix(size, GetIntegerOps(), sizeof(Integer));
     if (!m || !values) return m;
@@ -66,7 +68,8 @@ Matrix* create_integer_matrix(int size, const int* values) {
     return m;
 }
 
-Matrix* create_complex_matrix(int size, const int* re_vals, const int* im_vals) {
+Matrix* create_complex_matrix(int size, const int* re_vals,
+                              const int* im_vals) {
     Matrix* m = create_matrix(size, GetComplexOps(), sizeof(Complex));
     if (!m) return m;
 

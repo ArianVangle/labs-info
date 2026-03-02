@@ -1,10 +1,11 @@
 #include "matrix.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
-Matrix* create_matrix(int size, const AlgebraOperations* ops, size_t elem_size) {
+Matrix* create_matrix(int size, const AlgebraOperations* ops,
+                      size_t elem_size) {
     if (size <= 0 || ops == NULL || elem_size == 0) {
         fprintf(stderr, "Error: invalid matrix parameters\n");
         return NULL;
@@ -37,7 +38,6 @@ void destroy_matrix(Matrix* m) {
     }
 }
 
-
 void matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
     if (!m1 || !m2 || !result) {
         fprintf(stderr, "Error: NULL matrix pointer\n");
@@ -50,21 +50,21 @@ void matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
         return;
     }
 
-    if (m1->operations != m2->operations || m1->operations != result->operations) {
+    if (m1->operations != m2->operations ||
+        m1->operations != result->operations) {
         fprintf(stderr, "Error: incompatible matrix types\n");
         return;
     }
 
     for (int i = 0; i < m1->size * m1->size; i++) {
-        m1->operations->addFn(
-            (char*)m1->data + i * m1->element_size,
-            (char*)m2->data + i * m2->element_size,
-            (char*)result->data + i * result->element_size
-        );
+        m1->operations->addFn((char*)m1->data + i * m1->element_size,
+                              (char*)m2->data + i * m2->element_size,
+                              (char*)result->data + i * result->element_size);
     }
 }
 
-void matrix_multiply_scalar(const Matrix* m, const void* scalar, Matrix* result) {
+void matrix_multiply_scalar(const Matrix* m, const void* scalar,
+                            Matrix* result) {
     if (!m || !result || !scalar) {
         fprintf(stderr, "Error: NULL pointer in multiply_scalar\n");
         return;
@@ -82,10 +82,8 @@ void matrix_multiply_scalar(const Matrix* m, const void* scalar, Matrix* result)
 
     for (int i = 0; i < m->size * m->size; i++) {
         m->operations->multiplyFn(
-            (char*)m->data + i * m->element_size,
-            scalar,
-            (char*)result->data + i * result->element_size
-        );
+            (char*)m->data + i * m->element_size, scalar,
+            (char*)result->data + i * result->element_size);
     }
 }
 
@@ -141,9 +139,12 @@ void matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
     free(temp_product);
 }
 
-
-typedef struct { int value; } Integer;
-typedef struct { int re, im; } Complex;
+typedef struct {
+    int value;
+} Integer;
+typedef struct {
+    int re, im;
+} Complex;
 
 void print_integer_matrix(const Matrix* m, const char* name) {
     if (!m) return;

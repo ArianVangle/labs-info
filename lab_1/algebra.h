@@ -21,4 +21,4 @@ Matrix* create_complex_matrix(int size, const int* re_vals, const int* im_vals);
 int integer_matrices_equal(const Matrix* m1, const Matrix* m2);
 int complex_matrices_equal(const Matrix* m1, const Matrix* m2);
 
-#endif // ALGEBRA_H
+#endif  // ALGEBRA_H

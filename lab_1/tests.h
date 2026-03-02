@@ -12,4 +12,4 @@ void test_complex_multiply_scalar(void);
 void test_complex_multiply_real_scalar(void);
 void test_complex_multiply_imaginary_unit(void);
 
-#endif // TESTS_H
+#endif  // TESTS_H
