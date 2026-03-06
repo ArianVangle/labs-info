@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 
-
 typedef struct Matrix {
     void* data;
     int size;
