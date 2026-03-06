@@ -12,4 +12,10 @@ void test_complex_multiply_scalar(void);
 void test_complex_multiply_real_scalar(void);
 void test_complex_multiply_imaginary_unit(void);
 
+void test_lu_double_simple(void);
+void test_lu_double_identity(void);
+void test_lu_double_singular(void);
+void test_lu_integer_to_double(void);
+void test_lu_operations(void);  
+
 #endif  // TESTS_H

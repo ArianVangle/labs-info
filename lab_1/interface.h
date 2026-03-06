@@ -24,6 +24,8 @@ Matrix* input_integer_matrix(int size);
 // Ввод матрицы Complex с клавиатуры
 Matrix* input_complex_matrix(int size);
 
+Matrix* input_double_matrix(int size);
+
 // Ввод скаляра Integer
 Integer input_integer_scalar(void);
 
@@ -44,6 +46,8 @@ void complex_multiply_manual(void);
 void complex_scalar_manual(void);
 void complex_demo(void);
 
+// LU
+void lu_decomposition_demo(void);
 // Демо типобезопасности
 void demo_type_safety(void);
 

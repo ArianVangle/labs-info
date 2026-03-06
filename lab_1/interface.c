@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <time.h>
+
 
 #include "tests.h"
 
@@ -57,6 +60,30 @@ Matrix* input_complex_matrix(int size) {
     return m;
 }
 
+
+Matrix* input_double_matrix(int size) {
+    Matrix* m = create_double_matrix(size, NULL);
+    if (!m) return NULL;
+
+    Double* data = (Double*)m->data;
+    printf("Введите %d элементов матрицы %dx%d (вещественные числа):\n", 
+           size * size, size, size);
+
+    for (int i = 0; i < size * size; i++) {
+        int row = i / size;
+        int col = i % size;
+        printf("  [%d][%d] = ", row, col);
+        if (scanf("%lf", &data[i].value) != 1) {
+            fprintf(stderr, "Ошибка ввода!\n");
+            clear_input_buffer();
+            destroy_matrix(m);
+            return NULL;
+        }
+    }
+
+    return m;
+}
+
 Integer input_integer_scalar(void) {
     Integer scalar;
     printf("Введите скаляр (целое число): ");
@@ -81,12 +108,13 @@ Complex input_complex_scalar(void) {
 // menu
 void show_main_menu(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
-    printf("║     POLYMORPHIC MATRIX SYSTEM v1.0    ║\n");
+    printf("║     POLYMORPHIC MATRIX SYSTEM         ║\n");  
     printf("╠═══════════════════════════════════════╣\n");
     printf("║  1. Операции с Integer матрицами      ║\n");
     printf("║  2. Операции с Complex матрицами      ║\n");
-    printf("║  3. Запустить все тесты               ║\n");
-    printf("║  4. Демо типобезопасности             ║\n");
+    printf("║  3. LU-разложение (Double)            ║\n"); 
+    printf("║  4. Запустить все тесты               ║\n");
+    printf("║  5. Демо типобезопасности             ║\n");
     printf("║  0. Выход                             ║\n");
     printf("╚═══════════════════════════════════════╝\n");
     printf("Выбор: ");
@@ -548,10 +576,138 @@ void demo_type_safety(void) {
     destroy_matrix(Result);
 }
 
+
+void lu_decomposition_demo(void) {
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║     LU DECOMPOSITION DEMO             ║\n");
+    printf("║     A = L × U                         ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+
+    printf("\n[1] Использовать готовую матрицу для демо\n");
+    printf("[2] Ввести матрицу вручную\n");
+    printf("Выбор: ");
+    
+    int choice;
+    if (scanf("%d", &choice) != 1) {
+        clear_input_buffer();
+        return;
+    }
+    
+    Matrix* A = NULL;
+    
+    if (choice == 1) {
+        // Готовая матрица
+        double a_vals[] = {
+            4.0,  3.0,  2.0,
+            6.0,  5.0,  4.0,
+            2.0,  1.0,  3.0
+        };
+        A = create_double_matrix(3, a_vals);
+        printf("Использована готовая матрица 3×3\n");
+    } else {
+        int size;
+        printf("Введите размер матрицы (n для n×n, макс. 5): ");
+        if (scanf("%d", &size) != 1 || size < 2 || size > 5) {
+            printf("Некорректный размер!\n");
+            clear_input_buffer();
+            return;
+        }
+        A = input_double_matrix(size);
+        if (!A) return;
+    }
+    
+    if (!A) {
+        printf("Ошибка создания матрицы!\n");
+        return;
+    }
+    
+    // Печать исходной матрицы
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  Исходная матрица A:                  ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    print_double_matrix(A, "A");
+    
+    // Создание матриц L и U
+    Matrix* L = create_double_matrix(A->size, NULL);
+    Matrix* U = create_double_matrix(A->size, NULL);
+    
+    if (!L || !U) {
+        printf("Ошибка выделения памяти для L/U!\n");
+        destroy_matrix(A);
+        destroy_matrix(L);
+        destroy_matrix(U);
+        return;
+    }
+    
+    // Выполнение LU-разложения
+    printf("\nВыполнение LU-разложения...\n");
+
+    clock_t start = clock();
+    int result = matrix_lu_decompose(A, L, U);
+    clock_t end = clock();
+    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    
+    if (result == 0) {
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  Нижняя треугольная матрица L:        ║\n");
+        printf("║  (единицы на диагонали)               ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+        print_double_matrix(L, "L");
+        
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  Верхняя треугольная матрица U:       ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+        print_double_matrix(U, "U");
+        
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  Проверка: L × U == A ?               ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+        
+        Matrix* LU = create_double_matrix(A->size, NULL);
+        if (LU) {
+            matrix_multiply(L, U, LU);
+            print_double_matrix(LU, "L × U");
+            
+            Double* a_data = (Double*)A->data;
+            Double* lu_data = (Double*)LU->data;
+            int n = A->size;
+            int match = 1;
+            for (int i = 0; i < n * n; i++) {
+                if (fabs(a_data[i].value - lu_data[i].value) > 1e-9) {
+                    match = 0;
+                    break;
+                }
+            }
+            
+            printf("\nРезультат проверки: %s\n", 
+                   match ? "✅ PASS (L×U совпадает с A)" : "⚠️  Небольшое расхождение (погрешность float)");
+            printf("\n⏱  Время выполнения LU: %.3f мс\n", time_ms);
+            
+            destroy_matrix(LU);
+        }
+        
+    } else if (result == -2) {
+        printf("\n❌ Ошибка: матрица вырожденная (нулевой элемент на диагонали U)\n");
+        printf("   LU-разложение без выбора ведущего элемента невозможно.\n");
+        printf("⏱  Время до обнаружения ошибки: %.3f мс\n", time_ms);
+    } else {
+        printf("\n❌ Ошибка LU-разложения (код: %d)\n", result);
+         printf("⏱  Время выполнения: %.3f мс\n", time_ms);
+    }
+    
+    destroy_matrix(A);
+    destroy_matrix(L);
+    destroy_matrix(U);
+    
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║         DEMO COMPLETED                ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+}
+
 // run main
 void run_interactive_mode(void) {
     printf("╔════════════════════════════════════════╗\n");
-    printf("║  POLYMORPHIC MATRIX SYSTEM v1.0        ║\n");
+    printf("║  POLYMORPHIC MATRIX SYSTEM             ║\n");
     printf("║  Variant 21: Integer & Complex         ║\n");
     printf("╚════════════════════════════════════════╝\n");
 
@@ -570,10 +726,13 @@ void run_interactive_mode(void) {
             case 2:
                 complex_menu();
                 break;
-            case 3:
+            case 3: 
+                lu_decomposition_demo();
+                break;
+            case 4:  
                 run_all_tests();
                 break;
-            case 4:
+            case 5: 
                 demo_type_safety();
                 break;
             case 0:

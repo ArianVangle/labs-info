@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <time.h>
 
 #include "algebra.h"
 #include "matrix.h"
@@ -138,7 +140,6 @@ void test_complex_operations(void) {
     test_complex_multiply_imaginary_unit();
 }
 
-// Complex Matrix × Scalar
 
 void test_complex_multiply_scalar(void) {
     printf("\n🔹 ТЕСТ: Complex Matrix × Scalar\n");
@@ -220,7 +221,6 @@ void test_complex_multiply_real_scalar(void) {
 }
 
 //  Умножение на мнимую единицу (0+1i)
-
 void test_complex_multiply_imaginary_unit(void) {
     printf("\n🔹 ТЕСТ: Complex Matrix × Imaginary Unit (0+1i)\n");
     printf("================================================\n");
@@ -305,9 +305,8 @@ void test_type_safety(void) {
         create_complex_matrix(2, (int[]){1, 2, 3, 4}, (int[]){0, 0, 0, 0});
     Matrix *Result = create_integer_matrix(2, NULL);
 
-    // Попытка сложить Integer + Complex должна быть отклонена
     printf("  Attempting Integer + Complex (should fail safely)...\n");
-    matrix_add(IntM, CompM, Result);  // Должно вывести ошибку в stderr
+    matrix_add(IntM, CompM, Result);  
     TEST_ASSERT(IntM->operations != CompM->operations,
                 "Type pointers are different");
 
@@ -316,20 +315,134 @@ void test_type_safety(void) {
     destroy_matrix(Result);
 }
 
+void test_lu_double_simple(void) {
+    printf("\n🔹 ТЕСТ: LU Decomposition (Double, 2x2)\n");
+    
+    double a_vals[] = {4, 3, 6, 3};
+    Matrix* A = create_double_matrix(2, a_vals);
+    Matrix* L = create_double_matrix(2, NULL);
+    Matrix* U = create_double_matrix(2, NULL);
+    
+    clock_t start = clock();
+    int result = matrix_lu_decompose(A, L, U);
+    clock_t end = clock();
+    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
+    TEST_ASSERT(result == 0, "LU decomposition succeeded");
+    
+    Double* l_data = (Double*)L->data;
+    Double* u_data = (Double*)U->data;
+    
+    TEST_ASSERT(fabs(l_data[0].value - 1.0) < 1e-10, "L[0][0] == 1.0");
+    TEST_ASSERT(fabs(u_data[0].value - 4.0) < 1e-10, "U[0][0] == 4.0");
+    
+    Matrix* LU = create_double_matrix(2, NULL);
+    matrix_multiply(L, U, LU);
+    TEST_ASSERT(double_matrices_equal(LU, A, 1e-10), "L * U == A");
+    
+    destroy_matrix(A);
+    destroy_matrix(L);
+    destroy_matrix(U);
+    destroy_matrix(LU);
+}
+
+void test_lu_double_identity(void) {
+    printf("\n🔹 ТЕСТ: LU Decomposition (Identity matrix)\n");
+    
+    double a_vals[] = {1, 0, 0, 1};
+    Matrix* A = create_double_matrix(2, a_vals);
+    Matrix* L = create_double_matrix(2, NULL);
+    Matrix* U = create_double_matrix(2, NULL);
+    
+    clock_t start = clock();
+    int result = matrix_lu_decompose(A, L, U);
+    clock_t end = clock();
+
+    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
+    TEST_ASSERT(result == 0, "LU of identity succeeded");
+    
+    Double* l_data = (Double*)L->data;
+    Double* u_data = (Double*)U->data;
+    
+    TEST_ASSERT(fabs(l_data[0].value - 1.0) < 1e-10 && 
+                fabs(l_data[3].value - 1.0) < 1e-10, "L is identity");
+    TEST_ASSERT(fabs(u_data[0].value - 1.0) < 1e-10 && 
+                fabs(u_data[3].value - 1.0) < 1e-10, "U is identity");
+    
+    destroy_matrix(A);
+    destroy_matrix(L);
+    destroy_matrix(U);
+}
+
+void test_lu_double_singular(void) {
+    printf("\n🔹 ТЕСТ: LU Decomposition (Singular matrix, should fail)\n");
+    
+    double a_vals[] = {1, 2, 2, 4};
+    Matrix* A = create_double_matrix(2, a_vals);
+    Matrix* L = create_double_matrix(2, NULL);
+    Matrix* U = create_double_matrix(2, NULL);
+    
+    clock_t start = clock();
+    int result = matrix_lu_decompose(A, L, U);
+    clock_t end = clock();
+
+    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
+    TEST_ASSERT(result == -2, "LU fails on singular matrix");
+    
+    destroy_matrix(A);
+    destroy_matrix(L);
+    destroy_matrix(U);
+}
+
+void test_lu_integer_to_double(void) {
+    printf("\n🔹 ТЕСТ: LU Integer → Double result\n");
+    
+    int a_vals[] = {2, 1, 1, 2};
+    Matrix* A = create_integer_matrix(2, a_vals);
+    
+    Matrix* L = create_double_matrix(2, NULL);
+    Matrix* U = create_double_matrix(2, NULL);
+
+    clock_t start = clock();
+    int result = matrix_lu_decompose(A, L, U);
+    clock_t end = clock();
+    
+    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
+    TEST_ASSERT(result == 0, "Integer→Double LU succeeded");
+    
+    Double* l_data = (Double*)L->data;
+    TEST_ASSERT(fabs(l_data[2].value - 0.5) < 1e-10, "L[1][0] == 0.5");
+    
+    destroy_matrix(A);
+    destroy_matrix(L);
+    destroy_matrix(U);
+}
+
+void test_lu_operations(void) {
+    test_lu_double_simple();
+    test_lu_double_identity();
+    test_lu_double_singular();
+    test_lu_integer_to_double();
+}
+
 // run all tests
 void run_all_tests(void) {
     printf("╔════════════════════════════════════════╗\n");
-    printf("║  POLYMORPHIC MATRIX TEST SUITE v1.0    ║\n");
-    printf("║  Variant 21: Integer & Complex         ║\n");
+    printf("║  POLYMORPHIC MATRIX TEST SUITE v1.1    ║\n");
+    printf("║  + LU Decomposition support            ║\n");
     printf("╚════════════════════════════════════════╝\n");
 
     test_integer_operations();
     test_complex_operations();
     test_edge_cases();
     test_type_safety();
+    test_lu_operations(); 
 
     printf("\n╔═══════════════════════════════════════╗\n");
-    printf("║  RESULTS: %d passed, %d failed          ║\n", tests_passed,
+    printf("║  RESULTS: %d passed, %d failed         ║\n", tests_passed,
            tests_failed);
     printf("╚═══════════════════════════════════════╝\n");
 
