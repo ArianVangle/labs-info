@@ -1,14 +1,12 @@
 #include "algebra.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-
 
 static AlgebraOperations* IntegerOpsInstance = NULL;
 static AlgebraOperations* DoubleOpsInstance = NULL;
 static AlgebraOperations* ComplexOpsInstance = NULL;
-
 
 static void integer_add(const void* e1, const void* e2, void* result) {
     ((Integer*)result)->value =
@@ -40,31 +38,23 @@ static void complex_multiply(const void* e1, const void* e2, void* result) {
 }
 
 static void double_add(const void* e1, const void* e2, void* result) {
-    ((Double*)result)->value = 
+    ((Double*)result)->value =
         ((const Double*)e1)->value + ((const Double*)e2)->value;
 }
 
 static void double_multiply(const void* e1, const void* e2, void* result) {
-    ((Double*)result)->value = 
+    ((Double*)result)->value =
         ((const Double*)e1)->value * ((const Double*)e2)->value;
 }
 
-
-
-
-
 static Complex complex_div_helper(const Complex* a, const Complex* b) {
     double denom = (double)b->re * b->re + (double)b->im * b->im;
-    if (denom < 1e-12) return (Complex){0, 0};  
-    
+    if (denom < 1e-12) return (Complex){0, 0};
+
     double re = ((double)a->re * b->re + (double)a->im * b->im) / denom;
     double im = ((double)a->im * b->re - (double)a->re * b->im) / denom;
-    return (Complex){(int)re, (int)im};  
+    return (Complex){(int)re, (int)im};
 }
-
-
-
-
 
 Matrix* create_integer_matrix(int size, const int* values) {
     Matrix* m = create_matrix(size, GetIntegerOps(), sizeof(Integer));
@@ -80,7 +70,7 @@ Matrix* create_integer_matrix(int size, const int* values) {
 Matrix* create_double_matrix(int size, const double* values) {
     Matrix* m = create_matrix(size, GetDoubleOps(), sizeof(Double));
     if (!m || !values) return m;
-    
+
     Double* data = (Double*)m->data;
     for (int i = 0; i < size * size; i++) {
         data[i].value = values[i];
@@ -118,7 +108,7 @@ int integer_matrices_equal(const Matrix* m1, const Matrix* m2) {
 int double_matrices_equal(const Matrix* m1, const Matrix* m2, double epsilon) {
     if (!m1 || !m2 || m1->size != m2->size) return 0;
     if (m1->operations != m2->operations) return 0;
-    
+
     Double* d1 = (Double*)m1->data;
     Double* d2 = (Double*)m2->data;
     for (int i = 0; i < m1->size * m1->size; i++) {
@@ -137,17 +127,16 @@ int complex_matrices_equal(const Matrix* m1, const Matrix* m2) {
     return 1;
 }
 
-
 static int integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (L->operations != GetDoubleOps() || U->operations != GetDoubleOps()) {
         return -3;  // Тип результата должен быть Double
     }
-    
+
     int n = A->size;
     Integer* a = (Integer*)A->data;
     Double* l = (Double*)L->data;
     Double* u = (Double*)U->data;
-    
+
     for (int i = 0; i < n * n; i++) {
         l[i].value = 0.0;
         u[i].value = 0.0;
@@ -155,7 +144,7 @@ static int integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     for (int i = 0; i < n; i++) {
         l[i * n + i].value = 1.0;
     }
-    
+
     for (int k = 0; k < n; k++) {
         for (int j = k; j < n; j++) {
             double sum = 0.0;
@@ -177,17 +166,15 @@ static int integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     return 0;
 }
 
-
-
 static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (!A || !L || !U) return -1;
     if (A->size != L->size || A->size != U->size) return -1;
-    
+
     int n = A->size;
     Double* a = (Double*)A->data;
     Double* l = (Double*)L->data;
     Double* u = (Double*)U->data;
-    
+
     for (int i = 0; i < n * n; i++) {
         l[i].value = 0.0;
         u[i].value = 0.0;
@@ -195,7 +182,7 @@ static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     for (int i = 0; i < n; i++) {
         l[i * n + i].value = 1.0;
     }
-    
+
     for (int k = 0; k < n; k++) {
         for (int j = k; j < n; j++) {
             double sum = 0.0;
@@ -204,11 +191,11 @@ static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
             }
             u[k * n + j].value = a[k * n + j].value - sum;
 
-            if (j == k && fabs(u[k * n + k].value) < 1e-12) {  
-                return -2;  // Вырожденная матрица                
-            }  
+            if (j == k && fabs(u[k * n + k].value) < 1e-12) {
+                return -2;  // Вырожденная матрица
+            }
         }
-        
+
         for (int i = k + 1; i < n; i++) {
             double sum = 0.0;
             for (int m = 0; m < k; m++) {
@@ -225,12 +212,12 @@ static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
 static int complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (!A || !L || !U) return -1;
     if (A->size != L->size || A->size != U->size) return -1;
-    
+
     int n = A->size;
     Complex* a = (Complex*)A->data;
     Complex* l = (Complex*)L->data;
     Complex* u = (Complex*)U->data;
-    
+
     for (int i = 0; i < n * n; i++) {
         l[i].re = l[i].im = 0;
         u[i].re = u[i].im = 0;
@@ -239,44 +226,38 @@ static int complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
         l[i * n + i].re = 1;
         l[i * n + i].im = 0;
     }
-    
+
     for (int k = 0; k < n; k++) {
         for (int j = k; j < n; j++) {
             Complex sum = {0, 0};
             for (int m = 0; m < k; m++) {
                 Complex l_val = l[k * n + m];
                 Complex u_val = u[m * n + j];
-                Complex prod = {
-                    l_val.re * u_val.re - l_val.im * u_val.im,
-                    l_val.re * u_val.im + l_val.im * u_val.re
-                };
+                Complex prod = {l_val.re * u_val.re - l_val.im * u_val.im,
+                                l_val.re * u_val.im + l_val.im * u_val.re};
                 sum.re += prod.re;
                 sum.im += prod.im;
             }
             u[k * n + j].re = a[k * n + j].re - sum.re;
             u[k * n + j].im = a[k * n + j].im - sum.im;
         }
-        
+
         for (int i = k + 1; i < n; i++) {
             Complex sum = {0, 0};
             for (int m = 0; m < k; m++) {
                 Complex l_val = l[i * n + m];
                 Complex u_val = u[m * n + k];
-                Complex prod = {
-                    l_val.re * u_val.re - l_val.im * u_val.im,
-                    l_val.re * u_val.im + l_val.im * u_val.re
-                };
+                Complex prod = {l_val.re * u_val.re - l_val.im * u_val.im,
+                                l_val.re * u_val.im + l_val.im * u_val.re};
                 sum.re += prod.re;
                 sum.im += prod.im;
             }
-            Complex numerator = {
-                a[i * n + k].re - sum.re,
-                a[i * n + k].im - sum.im
-            };
+            Complex numerator = {a[i * n + k].re - sum.re,
+                                 a[i * n + k].im - sum.im};
             Complex u_kk = u[k * n + k];
-            
+
             if (complex_magnitude(&u_kk) < 1e-12) return -2;
-            
+
             Complex result = complex_div_helper(&numerator, &u_kk);
             l[i * n + k] = result;
         }
@@ -290,7 +271,7 @@ const AlgebraOperations* GetIntegerOps(void) {
         if (IntegerOpsInstance) {
             IntegerOpsInstance->addFn = integer_add;
             IntegerOpsInstance->multiplyFn = integer_multiply;
-            IntegerOpsInstance->lu_decompose_fn = integer_lu_decompose;  
+            IntegerOpsInstance->lu_decompose_fn = integer_lu_decompose;
         }
     }
     return IntegerOpsInstance;
@@ -314,7 +295,7 @@ const AlgebraOperations* GetComplexOps(void) {
         if (ComplexOpsInstance) {
             ComplexOpsInstance->addFn = complex_add;
             ComplexOpsInstance->multiplyFn = complex_multiply;
-            ComplexOpsInstance->lu_decompose_fn = complex_lu_decompose; 
+            ComplexOpsInstance->lu_decompose_fn = complex_lu_decompose;
         }
     }
     return ComplexOpsInstance;

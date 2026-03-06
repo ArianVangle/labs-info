@@ -146,20 +146,20 @@ int matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
         fprintf(stderr, "Error: NULL matrix in LU decomposition\n");
         return -1;
     }
-    
+
     if (A->size != L->size || A->size != U->size) {
         fprintf(stderr, "Error: size mismatch in LU decomposition\n");
         return -1;
     }
-    
+
     if (!A->operations || !A->operations->lu_decompose_fn) {
-        fprintf(stderr, "Error: LU decomposition not supported for this type\n");
+        fprintf(stderr,
+                "Error: LU decomposition not supported for this type\n");
         return -3;
     }
-    
+
     return A->operations->lu_decompose_fn(A, L, U);
 }
-
 
 void print_integer_matrix(const Matrix* m, const char* name) {
     if (!m) return;
@@ -192,15 +192,16 @@ void print_complex_matrix(const Matrix* m, const char* name) {
 
 void print_double_matrix(const Matrix* m, const char* name) {
     if (!m || !m->data) return;
-    
+
     if (m->operations != GetDoubleOps()) {
-        fprintf(stderr, "Warning: print_double_matrix called on non-Double matrix\n");
+        fprintf(stderr,
+                "Warning: print_double_matrix called on non-Double matrix\n");
         return;
     }
-    
+
     printf("%s:\n", name);
     Double* data = (Double*)m->data;
-    
+
     for (int i = 0; i < m->size; i++) {
         printf("  [");
         for (int j = 0; j < m->size; j++) {
