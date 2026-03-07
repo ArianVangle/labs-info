@@ -429,6 +429,44 @@ void test_lu_operations(void) {
     test_lu_integer_to_double();
 }
 
+// test ring
+
+void test_ring_integer(void) {
+    printf("\n🔹 ТЕСТ: Integer Ring Axioms\n");
+    TEST_ASSERT(test_ring_axioms(GetIntegerOps()) == 0, "Integer satisfies ring axioms");
+}
+
+void test_ring_double(void) {
+    printf("\n🔹 ТЕСТ: Double Field Axioms\n");
+    TEST_ASSERT(test_ring_axioms(GetDoubleOps()) == 0, "Double satisfies field axioms");
+}
+
+void test_ring_complex(void) {
+    printf("\n🔹 ТЕСТ: Complex Ring Axioms\n");
+    TEST_ASSERT(test_ring_axioms(GetComplexOps()) == 0, "Complex satisfies ring axioms");
+}
+
+void test_matrix_subtract(void) {
+    printf("\n🔹 ТЕСТ: Matrix Subtraction\n");
+    
+    Matrix* A = create_integer_matrix(2, (int[]){5, 6, 7, 8});
+    Matrix* B = create_integer_matrix(2, (int[]){1, 2, 3, 4});
+    Matrix* C = create_integer_matrix(2, NULL);
+    Matrix* Expected = create_integer_matrix(2, (int[]){4, 4, 4, 4});
+    
+    matrix_subtract(A, B, C);
+    TEST_ASSERT(integer_matrices_equal(C, Expected), "A - B = Expected");
+    
+    destroy_matrix(A); destroy_matrix(B); destroy_matrix(C); destroy_matrix(Expected);
+}
+
+void test_ring_operations(void) {
+    test_ring_integer();
+    test_ring_double();
+    test_ring_complex();
+    test_matrix_subtract();
+}
+
 // run all tests
 void run_all_tests(void) {
     printf("╔════════════════════════════════════════╗\n");
@@ -440,6 +478,7 @@ void run_all_tests(void) {
     test_complex_operations();
     test_edge_cases();
     test_type_safety();
+    test_ring_operations();
     test_lu_operations();
 
     printf("\n╔═══════════════════════════════════════╗\n");

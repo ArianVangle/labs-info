@@ -28,4 +28,6 @@ int integer_matrices_equal(const Matrix* m1, const Matrix* m2);
 int complex_matrices_equal(const Matrix* m1, const Matrix* m2);
 int double_matrices_equal(const Matrix* m1, const Matrix* m2, double epsilon);
 
+int test_ring_axioms(const AlgebraOperations* ops);
+
 #endif  // ALGEBRA_H
