@@ -107,12 +107,14 @@ Complex input_complex_scalar(void) {
 void show_main_menu(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
     printf("║     POLYMORPHIC MATRIX SYSTEM         ║\n");
+    printf("║                                       ║\n");
     printf("╠═══════════════════════════════════════╣\n");
     printf("║  1. Операции с Integer матрицами      ║\n");
     printf("║  2. Операции с Complex матрицами      ║\n");
     printf("║  3. LU-разложение (Double)            ║\n");
-    printf("║  4. Запустить все тесты               ║\n");
-    printf("║  5. Демо типобезопасности             ║\n");
+    printf("║  4. Проверка аксиом кольца            ║\n");  
+    printf("║  5. Запустить все тесты               ║\n");
+    printf("║  6. Демо типобезопасности             ║\n");
     printf("║  0. Выход                             ║\n");
     printf("╚═══════════════════════════════════════╝\n");
     printf("Выбор: ");
@@ -574,6 +576,33 @@ void demo_type_safety(void) {
     destroy_matrix(Result);
 }
 
+void ring_axioms_demo(void) {
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  RING AXIOMS DEMO                     ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    
+    printf("\n[1] Integer Ring\n");
+    printf("[2] Double Field\n");
+    printf("[3] Complex Ring\n");
+    printf("Выбор: ");
+    
+    int choice;
+    if (scanf("%d", &choice) != 1) { clear_input_buffer(); return; }
+    
+    const AlgebraOperations* ops = NULL;
+    const char* name = "";
+    
+    switch (choice) {
+        case 1: ops = GetIntegerOps(); name = "Integer"; break;
+        case 2: ops = GetDoubleOps(); name = "Double"; break;
+        case 3: ops = GetComplexOps(); name = "Complex"; break;
+        default: printf("Неверный выбор!\n"); return;
+    }
+    
+    printf("\nПроверка аксиом кольца для типа: %s\n", name);
+    test_ring_axioms(ops);
+}
+
 void lu_decomposition_demo(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
     printf("║     LU DECOMPOSITION DEMO             ║\n");
@@ -726,11 +755,15 @@ void run_interactive_mode(void) {
                 lu_decomposition_demo();
                 break;
             case 4:
-                run_all_tests();
+                ring_axioms_demo(); 
                 break;
             case 5:
+                run_all_tests();
+                break;
+            case 6:
                 demo_type_safety();
                 break;
+            
             case 0:
                 printf("exit!\n");
                 break;

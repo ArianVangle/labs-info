@@ -141,6 +141,33 @@ void matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
     free(temp_product);
 }
 
+void matrix_zero(Matrix* m) {
+    if (!m || !m->operations->zeroFn) return;
+    for (int i = 0; i < m->size * m->size; i++) {
+        m->operations->zeroFn((char*)m->data + i * m->element_size);
+    }
+}
+
+void matrix_negate(const Matrix* m, Matrix* result) {
+    if (!m || !result || !m->operations->negateFn) return;
+    for (int i = 0; i < m->size * m->size; i++) {
+        m->operations->negateFn(
+            (char*)m->data + i * m->element_size,
+            (char*)result->data + i * result->element_size
+        );
+    }
+}
+
+void matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result) {
+    if (!m1 || !m2 || !result || !m1->operations->subtractFn) return;
+    for (int i = 0; i < m1->size * m1->size; i++) {
+        m1->operations->subtractFn(
+            (char*)m1->data + i * m1->element_size,
+            (char*)m2->data + i * m2->element_size,
+            (char*)result->data + i * result->element_size
+        );
+    }
+}
 int matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (!A || !L || !U) {
         fprintf(stderr, "Error: NULL matrix in LU decomposition\n");
