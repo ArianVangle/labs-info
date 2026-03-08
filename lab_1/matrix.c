@@ -3,19 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "algebra.h"
 
 Matrix* create_matrix(int size, const AlgebraOperations* ops,
                       size_t elem_size) {
     if (size <= 0 || ops == NULL || elem_size == 0) {
-        fprintf(stderr, "Error: invalid matrix parameters\n");
         return NULL;
     }
 
     Matrix* m = malloc(sizeof(Matrix));
     if (!m) {
-        fprintf(stderr, "Error: malloc failed for Matrix\n");
         return NULL;
     }
 
@@ -25,11 +24,44 @@ Matrix* create_matrix(int size, const AlgebraOperations* ops,
     m->data = malloc(elem_size * size * size);
 
     if (!m->data) {
-        fprintf(stderr, "Error: malloc failed for matrix data\n");
         free(m);
         return NULL;
     }
 
+    return m;
+}
+Matrix* create_integer_matrix(int size, const int* values) {
+    Matrix* m = create_matrix(size, GetIntegerOps(), sizeof(Integer));
+    if (!m || !values) return m;
+
+    Integer* data = (Integer*)m->data;
+    for (int i = 0; i < size * size; i++) {
+        data[i].value = values[i];
+    }
+    return m;
+}
+
+Matrix* create_double_matrix(int size, const double* values) {
+    Matrix* m = create_matrix(size, GetDoubleOps(), sizeof(Double));
+    if (!m || !values) return m;
+
+    Double* data = (Double*)m->data;
+    for (int i = 0; i < size * size; i++) {
+        data[i].value = values[i];
+    }
+    return m;
+}
+
+Matrix* create_complex_matrix(int size, const int* re_vals,
+                              const int* im_vals) {
+    Matrix* m = create_matrix(size, GetComplexOps(), sizeof(Complex));
+    if (!m) return m;
+
+    Complex* data = (Complex*)m->data;
+    for (int i = 0; i < size * size; i++) {
+        data[i].re = re_vals ? re_vals[i] : 0;
+        data[i].im = im_vals ? im_vals[i] : 0;
+    }
     return m;
 }
 
@@ -40,22 +72,18 @@ void destroy_matrix(Matrix* m) {
     }
 }
 
-void matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
+ErrorCode matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
     if (!m1 || !m2 || !result) {
-        fprintf(stderr, "Error: NULL matrix pointer\n");
-        return;
+        return ERR_NULL_POINTER;
     }
 
     if (m1->size != m2->size || m1->size != result->size) {
-        fprintf(stderr, "Error: matrix size mismatch (%d vs %d vs %d)\n",
-                m1->size, m2->size, result->size);
-        return;
+        return ERR_SIZE_MISMATCH;
     }
 
     if (m1->operations != m2->operations ||
         m1->operations != result->operations) {
-        fprintf(stderr, "Error: incompatible matrix types\n");
-        return;
+        return ERR_TYPE_MISMATCH;
     }
 
     for (int i = 0; i < m1->size * m1->size; i++) {
@@ -63,23 +91,21 @@ void matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
                               (char*)m2->data + i * m2->element_size,
                               (char*)result->data + i * result->element_size);
     }
+    return ERR_OK;
 }
 
-void matrix_multiply_scalar(const Matrix* m, const void* scalar,
+ErrorCode matrix_multiply_scalar(const Matrix* m, const void* scalar,
                             Matrix* result) {
     if (!m || !result || !scalar) {
-        fprintf(stderr, "Error: NULL pointer in multiply_scalar\n");
-        return;
+        return ERR_NULL_POINTER;
     }
 
     if (m->size != result->size) {
-        fprintf(stderr, "Error: matrix size mismatch\n");
-        return;
+        return ERR_SIZE_MISMATCH;
     }
 
     if (m->operations != result->operations) {
-        fprintf(stderr, "Error: incompatible matrix types\n");
-        return;
+        return ERR_TYPE_MISMATCH;
     }
 
     for (int i = 0; i < m->size * m->size; i++) {
@@ -87,22 +113,20 @@ void matrix_multiply_scalar(const Matrix* m, const void* scalar,
             (char*)m->data + i * m->element_size, scalar,
             (char*)result->data + i * result->element_size);
     }
+    return ERR_OK;
 }
 
-void matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
+ErrorCode matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
     if (!A || !B || !result) {
-        fprintf(stderr, "Error: NULL matrix pointer\n");
-        return;
+        return ERR_NULL_POINTER;
     }
 
     if (A->size != B->size || A->size != result->size) {
-        fprintf(stderr, "Error: matrix size mismatch\n");
-        return;
+        return ERR_SIZE_MISMATCH;
     }
 
     if (A->operations != B->operations || A->operations != result->operations) {
-        fprintf(stderr, "Error: incompatible matrix types\n");
-        return;
+        return ERR_TYPE_MISMATCH;
     }
 
     int n = A->size;
@@ -113,10 +137,9 @@ void matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
     void* temp_product = malloc(elem_size);
 
     if (!accumulator || !temp_product) {
-        fprintf(stderr, "Error: malloc failed for temporary buffers\n");
         free(accumulator);
         free(temp_product);
-        return;
+        return ERR_OUT_OF_MEMORY;
     }
 
     for (int i = 0; i < n; i++) {
@@ -139,27 +162,30 @@ void matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
 
     free(accumulator);
     free(temp_product);
+    return ERR_OK;
 }
 
-void matrix_zero(Matrix* m) {
-    if (!m || !m->operations->zeroFn) return;
+ErrorCode matrix_zero(Matrix* m) {
+    if (!m || !m->operations->zeroFn) return ERR_NULL_POINTER;
     for (int i = 0; i < m->size * m->size; i++) {
         m->operations->zeroFn((char*)m->data + i * m->element_size);
     }
+    return ERR_OK;
 }
 
-void matrix_negate(const Matrix* m, Matrix* result) {
-    if (!m || !result || !m->operations->negateFn) return;
+ErrorCode matrix_negate(const Matrix* m, Matrix* result) {
+    if (!m || !result || !m->operations->negateFn) return ERR_NULL_POINTER;
     for (int i = 0; i < m->size * m->size; i++) {
         m->operations->negateFn(
             (char*)m->data + i * m->element_size,
             (char*)result->data + i * result->element_size
         );
     }
+    return ERR_OK;
 }
 
-void matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result) {
-    if (!m1 || !m2 || !result || !m1->operations->subtractFn) return;
+ErrorCode matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result) {
+    if (!m1 || !m2 || !result || !m1->operations->subtractFn) return ERR_NULL_POINTER;
     for (int i = 0; i < m1->size * m1->size; i++) {
         m1->operations->subtractFn(
             (char*)m1->data + i * m1->element_size,
@@ -167,22 +193,53 @@ void matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result) {
             (char*)result->data + i * result->element_size
         );
     }
+    return ERR_OK;
 }
-int matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
+
+int integer_matrices_equal(const Matrix* m1, const Matrix* m2) {
+    if (!m1 || !m2 || m1->size != m2->size) return 0;
+    Integer* d1 = (Integer*)m1->data;
+    Integer* d2 = (Integer*)m2->data;
+    for (int i = 0; i < m1->size * m1->size; i++) {
+        if (d1[i].value != d2[i].value) return 0;
+    }
+    return 1;
+}
+
+int double_matrices_equal(const Matrix* m1, const Matrix* m2, double epsilon) {
+    if (!m1 || !m2 || m1->size != m2->size) return 0;
+    if (m1->operations != m2->operations) return 0;
+
+    Double* d1 = (Double*)m1->data;
+    Double* d2 = (Double*)m2->data;
+    for (int i = 0; i < m1->size * m1->size; i++) {
+        if (fabs(d1[i].value - d2[i].value) > epsilon) return 0;
+    }
+    return 1;
+}
+
+int complex_matrices_equal(const Matrix* m1, const Matrix* m2) {
+    if (!m1 || !m2 || m1->size != m2->size) return 0;
+    Complex* d1 = (Complex*)m1->data;
+    Complex* d2 = (Complex*)m2->data;
+    for (int i = 0; i < m1->size * m1->size; i++) {
+        if (d1[i].re != d2[i].re || d1[i].im != d2[i].im) return 0;
+    }
+    return 1;
+}
+
+
+ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (!A || !L || !U) {
-        fprintf(stderr, "Error: NULL matrix in LU decomposition\n");
-        return -1;
+        return ERR_NULL_POINTER;
     }
 
     if (A->size != L->size || A->size != U->size) {
-        fprintf(stderr, "Error: size mismatch in LU decomposition\n");
-        return -1;
+        return ERR_SIZE_MISMATCH;
     }
 
     if (!A->operations || !A->operations->lu_decompose_fn) {
-        fprintf(stderr,
-                "Error: LU decomposition not supported for this type\n");
-        return -3;
+        return ERR_TYPE_MISMATCH;
     }
 
     return A->operations->lu_decompose_fn(A, L, U);
@@ -221,8 +278,6 @@ void print_double_matrix(const Matrix* m, const char* name) {
     if (!m || !m->data) return;
 
     if (m->operations != GetDoubleOps()) {
-        fprintf(stderr,
-                "Warning: print_double_matrix called on non-Double matrix\n");
         return;
     }
 

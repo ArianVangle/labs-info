@@ -8,6 +8,15 @@
 
 #include "tests.h"
 
+/* ============================================================================
+ * HELPER: Отображение ошибок (использует error_message из algebra.c)
+ * ============================================================================ */
+static void print_error(const char* context, ErrorCode code) {
+    if (code != ERR_OK) {
+        printf("❌ %s: %s (код: %d)\n", context, error_message(code), code);
+    }
+}
+
 void clear_input_buffer(void) {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
@@ -26,7 +35,7 @@ Matrix* input_integer_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] = ", row, col);
         if (scanf("%d", &data[i].value) != 1) {
-            fprintf(stderr, "Ошибка ввода!\n");
+            printf("❌ Ошибка ввода!\n");  // ✅ interface.c МОЖЕТ делать printf
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -49,7 +58,7 @@ Matrix* input_complex_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] (re im) = ", row, col);
         if (scanf("%d %d", &data[i].re, &data[i].im) != 2) {
-            fprintf(stderr, "Ошибка ввода!\n");
+            printf("❌ Ошибка ввода!\n");  // ✅
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -72,7 +81,7 @@ Matrix* input_double_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] = ", row, col);
         if (scanf("%lf", &data[i].value) != 1) {
-            fprintf(stderr, "Ошибка ввода!\n");
+            printf("❌ Ошибка ввода!\n");  // ✅
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -153,7 +162,7 @@ void integer_manual_create(void) {
     int size;
     printf("Введите размер матрицы (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -169,7 +178,7 @@ void integer_add_manual(void) {
     int size;
     printf("Введите размер матриц (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -187,12 +196,20 @@ void integer_add_manual(void) {
 
     Matrix* C = create_integer_matrix(size, NULL);
     if (!C) {
+        print_error("Создание матрицы C", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         destroy_matrix(B);
         return;
     }
 
-    matrix_add(A, B, C);
+    ErrorCode err = matrix_add(A, B, C);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        print_error("Сложение матриц", err);
+        destroy_matrix(A);
+        destroy_matrix(B);
+        destroy_matrix(C);
+        return;
+    }
 
     printf("\n=== Результат ===\n");
     print_integer_matrix(A, "A");
@@ -208,7 +225,7 @@ void integer_multiply_manual(void) {
     int size;
     printf("Введите размер матриц (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -226,12 +243,20 @@ void integer_multiply_manual(void) {
 
     Matrix* C = create_integer_matrix(size, NULL);
     if (!C) {
+        print_error("Создание матрицы C", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         destroy_matrix(B);
         return;
     }
 
-    matrix_multiply(A, B, C);
+    ErrorCode err = matrix_multiply(A, B, C);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        print_error("Умножение матриц", err);
+        destroy_matrix(A);
+        destroy_matrix(B);
+        destroy_matrix(C);
+        return;
+    }
 
     printf("\n=== Результат ===\n");
     print_integer_matrix(A, "A");
@@ -247,7 +272,7 @@ void integer_scalar_manual(void) {
     int size;
     printf("Введите размер матрицы (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -260,11 +285,18 @@ void integer_scalar_manual(void) {
 
     Matrix* C = create_integer_matrix(size, NULL);
     if (!C) {
+        print_error("Создание матрицы C", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         return;
     }
 
-    matrix_multiply_scalar(A, &scalar, C);
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        print_error("Умножение на скаляр", err);
+        destroy_matrix(A);
+        destroy_matrix(C);
+        return;
+    }
 
     printf("\n=== Результат ===\n");
     print_integer_matrix(A, "A");
@@ -287,7 +319,7 @@ void integer_demo(void) {
     print_integer_matrix(A, "A");
     print_integer_matrix(B, "B");
 
-    matrix_add(A, B, C);
+    matrix_add(A, B, C);  // В демо можно не проверять, но лучше проверить
     print_integer_matrix(C, "A + B");
 
     matrix_multiply(A, B, C);
@@ -331,7 +363,7 @@ void integer_menu(void) {
                 printf("Возврат в главное меню...\n");
                 break;
             default:
-                printf("Неверный выбор!\n");
+                printf("❌ Неверный выбор!\n");
         }
     } while (choice != 0);
 }
@@ -341,7 +373,7 @@ void complex_manual_create(void) {
     int size;
     printf("Введите размер матрицы (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -357,7 +389,7 @@ void complex_add_manual(void) {
     int size;
     printf("Введите размер матриц (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -375,12 +407,20 @@ void complex_add_manual(void) {
 
     Matrix* C = create_complex_matrix(size, NULL, NULL);
     if (!C) {
+        print_error("Создание матрицы C", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         destroy_matrix(B);
         return;
     }
 
-    matrix_add(A, B, C);
+    ErrorCode err = matrix_add(A, B, C);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        print_error("Сложение матриц", err);
+        destroy_matrix(A);
+        destroy_matrix(B);
+        destroy_matrix(C);
+        return;
+    }
 
     printf("\n=== Результат ===\n");
     print_complex_matrix(A, "A");
@@ -396,7 +436,7 @@ void complex_multiply_manual(void) {
     int size;
     printf("Введите размер матриц (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -414,12 +454,20 @@ void complex_multiply_manual(void) {
 
     Matrix* C = create_complex_matrix(size, NULL, NULL);
     if (!C) {
+        print_error("Создание матрицы C", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         destroy_matrix(B);
         return;
     }
 
-    matrix_multiply(A, B, C);
+    ErrorCode err = matrix_multiply(A, B, C);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        print_error("Умножение матриц", err);
+        destroy_matrix(A);
+        destroy_matrix(B);
+        destroy_matrix(C);
+        return;
+    }
 
     printf("\n=== Результат ===\n");
     print_complex_matrix(A, "A");
@@ -435,7 +483,7 @@ void complex_scalar_manual(void) {
     int size;
     printf("Введите размер матрицы (n для n×n): ");
     if (scanf("%d", &size) != 1 || size <= 0) {
-        printf("Некорректный размер!\n");
+        printf("❌ Некорректный размер!\n");
         clear_input_buffer();
         return;
     }
@@ -448,11 +496,18 @@ void complex_scalar_manual(void) {
 
     Matrix* C = create_complex_matrix(size, NULL, NULL);
     if (!C) {
+        print_error("Создание матрицы C", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         return;
     }
 
-    matrix_multiply_scalar(A, &scalar, C);
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        print_error("Умножение на скаляр", err);
+        destroy_matrix(A);
+        destroy_matrix(C);
+        return;
+    }
 
     printf("\n=== Результат ===\n");
     print_complex_matrix(A, "A");
@@ -468,17 +523,8 @@ void complex_demo(void) {
     printf("║     COMPLEX MATRIX QUICK DEMO         ║\n");
     printf("╚═══════════════════════════════════════╝\n");
 
-    // Матрица A = [[1+0i, 0+1i], [1+1i, 2+0i]]
-    Matrix* A = create_complex_matrix(2, (int[]){1, 0, 1, 2},  // re
-                                      (int[]){0, 1, 1, 0}      // im
-    );
-
-    // Матрица B = [[1+0i, 1+0i], [0+1i, 1+1i]]
-    Matrix* B = create_complex_matrix(2, (int[]){1, 1, 0, 1},  // re
-                                      (int[]){0, 0, 1, 1}      // im
-    );
-
-    // Матрица C для результатов
+    Matrix* A = create_complex_matrix(2, (int[]){1, 0, 1, 2}, (int[]){0, 1, 1, 0});
+    Matrix* B = create_complex_matrix(2, (int[]){1, 1, 0, 1}, (int[]){0, 0, 1, 1});
     Matrix* C = create_complex_matrix(2, NULL, NULL);
 
     printf("\n╔═══════════════════════════════════════╗\n");
@@ -506,7 +552,7 @@ void complex_demo(void) {
     printf("╚═══════════════════════════════════════╝\n");
 
     print_complex_matrix(A, "A");
-    Complex scalar = {.re = 2, .im = 1};  // Скаляр: 2+1i
+    Complex scalar = {.re = 2, .im = 1};
     printf("Scalar: %d+%di\n", scalar.re, scalar.im);
 
     matrix_multiply_scalar(A, &scalar, C);
@@ -550,7 +596,7 @@ void complex_menu(void) {
                 printf("Возврат в главное меню...\n");
                 break;
             default:
-                printf("Неверный выбор!\n");
+                printf("❌ Неверный выбор!\n");
         }
     } while (choice != 0);
 }
@@ -559,8 +605,7 @@ void complex_menu(void) {
 void demo_type_safety(void) {
     printf("\n=== Type Safety Demo ===\n");
     Matrix* IntM = create_integer_matrix(2, (int[]){1, 2, 3, 4});
-    Matrix* CompM =
-        create_complex_matrix(2, (int[]){1, 2, 3, 4}, (int[]){0, 0, 0, 0});
+    Matrix* CompM = create_complex_matrix(2, (int[]){1, 2, 3, 4}, (int[]){0, 0, 0, 0});
 
     printf("Integer ops pointer: %p\n", (void*)IntM->operations);
     printf("Complex ops pointer: %p\n", (void*)CompM->operations);
@@ -569,7 +614,11 @@ void demo_type_safety(void) {
 
     printf("\nAttempting to add Integer + Complex (should fail)...\n");
     Matrix* Result = create_integer_matrix(2, NULL);
-    matrix_add(IntM, CompM, Result);
+    
+    ErrorCode err = matrix_add(IntM, CompM, Result);  // ✅ Проверяем результат
+    if (err != ERR_OK) {
+        printf("✅ Ожидаемая ошибка: %s\n", error_message(err));
+    }
 
     destroy_matrix(IntM);
     destroy_matrix(CompM);
@@ -596,7 +645,7 @@ void ring_axioms_demo(void) {
         case 1: ops = GetIntegerOps(); name = "Integer"; break;
         case 2: ops = GetDoubleOps(); name = "Double"; break;
         case 3: ops = GetComplexOps(); name = "Complex"; break;
-        default: printf("Неверный выбор!\n"); return;
+        default: printf("❌ Неверный выбор!\n"); return;
     }
     
     printf("\nПроверка аксиом кольца для типа: %s\n", name);
@@ -622,7 +671,6 @@ void lu_decomposition_demo(void) {
     Matrix* A = NULL;
 
     if (choice == 1) {
-        // Готовая матрица
         double a_vals[] = {4.0, 3.0, 2.0, 6.0, 5.0, 4.0, 2.0, 1.0, 3.0};
         A = create_double_matrix(3, a_vals);
         printf("Использована готовая матрица 3×3\n");
@@ -630,7 +678,7 @@ void lu_decomposition_demo(void) {
         int size;
         printf("Введите размер матрицы (n для n×n, макс. 5): ");
         if (scanf("%d", &size) != 1 || size < 2 || size > 5) {
-            printf("Некорректный размер!\n");
+            printf("❌ Некорректный размер!\n");
             clear_input_buffer();
             return;
         }
@@ -639,37 +687,34 @@ void lu_decomposition_demo(void) {
     }
 
     if (!A) {
-        printf("Ошибка создания матрицы!\n");
+        print_error("Создание матрицы A", ERR_OUT_OF_MEMORY);
         return;
     }
 
-    // Печать исходной матрицы
     printf("\n╔═══════════════════════════════════════╗\n");
     printf("║  Исходная матрица A:                  ║\n");
     printf("╚═══════════════════════════════════════╝\n");
     print_double_matrix(A, "A");
 
-    // Создание матриц L и U
     Matrix* L = create_double_matrix(A->size, NULL);
     Matrix* U = create_double_matrix(A->size, NULL);
 
     if (!L || !U) {
-        printf("Ошибка выделения памяти для L/U!\n");
+        print_error("Создание матриц L/U", ERR_OUT_OF_MEMORY);
         destroy_matrix(A);
         destroy_matrix(L);
         destroy_matrix(U);
         return;
     }
 
-    // Выполнение LU-разложения
     printf("\nВыполнение LU-разложения...\n");
 
     clock_t start = clock();
-    int result = matrix_lu_decompose(A, L, U);
+    ErrorCode result = matrix_lu_decompose(A, L, U);  // ✅ Теперь возвращает ErrorCode
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
 
-    if (result == 0) {
+    if (result == ERR_OK) {
         printf("\n╔═══════════════════════════════════════╗\n");
         printf("║  Нижняя треугольная матрица L:        ║\n");
         printf("║  (единицы на диагонали)               ║\n");
@@ -709,14 +754,13 @@ void lu_decomposition_demo(void) {
             destroy_matrix(LU);
         }
 
-    } else if (result == -2) {
-        printf(
-            "\n❌ Ошибка: матрица вырожденная (нулевой элемент на диагонали "
-            "U)\n");
+    } else if (result == ERR_SINGULAR_MATRIX) {
+        printf("\n❌ Ошибка: %s\n", error_message(result));
         printf("   LU-разложение без выбора ведущего элемента невозможно.\n");
         printf("⏱  Время до обнаружения ошибки: %.3f мс\n", time_ms);
     } else {
-        printf("\n❌ Ошибка LU-разложения (код: %d)\n", result);
+        printf("\n❌ Ошибка LU-разложения: %s (код: %d)\n", 
+               error_message(result), result);
         printf("⏱  Время выполнения: %.3f мс\n", time_ms);
     }
 
@@ -763,12 +807,11 @@ void run_interactive_mode(void) {
             case 6:
                 demo_type_safety();
                 break;
-            
             case 0:
                 printf("exit!\n");
                 break;
             default:
-                printf("Invalid choice!\n");
+                printf("❌ Invalid choice!\n");
         }
     } while (choice != 0);
 }
