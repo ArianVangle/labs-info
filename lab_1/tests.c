@@ -10,9 +10,7 @@
 #include "algebra.h"
 #include "matrix.h"
 
-/* ============================================================================
- * СЧЕТЧИКИ И МАКРОСЫ
- * ============================================================================ */
+
 static int tests_passed = 0;
 static int tests_failed = 0;
 
@@ -27,9 +25,7 @@ static int tests_failed = 0;
         }                                       \
     } while (0)
 
-/* ============================================================================
- * INTEGER ТЕСТЫ
- * ============================================================================ */
+
 void test_integer_add(void) {
     printf("\n🔹 ТЕСТ: Integer Matrix Addition\n");
     int a[] = {1, 2, 3, 4};
@@ -41,7 +37,7 @@ void test_integer_add(void) {
     Matrix *C = create_integer_matrix(2, NULL);
     Matrix *Expected = create_integer_matrix(2, expected);
 
-    ErrorCode err = matrix_add(A, B, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_add(A, B, C); 
     TEST_ASSERT(err == ERR_OK, "matrix_add succeeded");
     TEST_ASSERT(integer_matrices_equal(C, Expected), "A + B = Expected");
 
@@ -62,7 +58,7 @@ void test_integer_multiply(void) {
     Matrix *C = create_integer_matrix(2, NULL);
     Matrix *Expected = create_integer_matrix(2, expected);
 
-    ErrorCode err = matrix_multiply(A, B, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_multiply(A, B, C);  
     TEST_ASSERT(err == ERR_OK, "matrix_multiply succeeded");
     TEST_ASSERT(integer_matrices_equal(C, Expected), "A × B = Expected");
 
@@ -81,7 +77,7 @@ void test_integer_scalar(void) {
     Matrix *C = create_integer_matrix(2, NULL);
     Integer scalar = {.value = 3};
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
     TEST_ASSERT(err == ERR_OK, "matrix_multiply_scalar succeeded");
     
     Matrix *Expected = create_integer_matrix(2, expected);
@@ -98,9 +94,6 @@ void test_integer_operations(void) {
     test_integer_scalar();
 }
 
-/* ============================================================================
- * COMPLEX ТЕСТЫ
- * ============================================================================ */
 void test_complex_add(void) {
     printf("\n🔹 ТЕСТ: Complex Matrix Addition\n");
     Matrix *A = create_complex_matrix(2, (int[]){1, 3, 5, 7}, (int[]){2, 4, 6, 8});
@@ -108,7 +101,7 @@ void test_complex_add(void) {
     Matrix *C = create_complex_matrix(2, NULL, NULL);
     Matrix *Expected = create_complex_matrix(2, (int[]){3, 4, 8, 11}, (int[]){3, 6, 9, 12});
 
-    ErrorCode err = matrix_add(A, B, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_add(A, B, C);
     TEST_ASSERT(err == ERR_OK, "matrix_add succeeded");
     TEST_ASSERT(complex_matrices_equal(C, Expected), "Complex A + B = Expected");
 
@@ -125,7 +118,7 @@ void test_complex_multiply(void) {
     Matrix *C = create_complex_matrix(2, NULL, NULL);
     Matrix *Expected = create_complex_matrix(2, (int[]){0, 0, 1, 3}, (int[]){0, 1, 3, 3});
 
-    ErrorCode err = matrix_multiply(A, B, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_multiply(A, B, C);  
     TEST_ASSERT(err == ERR_OK, "matrix_multiply succeeded");
     TEST_ASSERT(complex_matrices_equal(C, Expected), "Complex A × B = Expected");
 
@@ -152,7 +145,7 @@ void test_complex_multiply_scalar(void) {
     print_complex_matrix(A, "A");
     printf("Scalar: %d+%di\n", scalar.re, scalar.im);
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
     TEST_ASSERT(err == ERR_OK, "matrix_multiply_scalar succeeded");
 
     printf("Result A × scalar:\n");
@@ -191,7 +184,7 @@ void test_complex_multiply_real_scalar(void) {
     print_complex_matrix(A, "A");
     printf("Scalar: %d+%di\n", scalar.re, scalar.im);
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);
     TEST_ASSERT(err == ERR_OK, "matrix_multiply_scalar succeeded");
 
     printf("Result A × scalar:\n");
@@ -228,7 +221,7 @@ void test_complex_multiply_imaginary_unit(void) {
     print_complex_matrix(A, "A");
     printf("Scalar: %d+%di (imaginary unit i)\n", scalar.re, scalar.im);
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
     TEST_ASSERT(err == ERR_OK, "matrix_multiply_scalar succeeded");
 
     printf("Result A × i:\n");
@@ -256,9 +249,7 @@ void test_complex_operations(void) {
     test_complex_multiply_imaginary_unit();
 }
 
-/* ============================================================================
- * EDGE CASES
- * ============================================================================ */
+
 void test_edge_cases(void) {
     printf("\n🔹 ТЕСТ: Edge Cases\n");
 
@@ -298,9 +289,6 @@ void test_edge_cases(void) {
     destroy_matrix(NegC);
 }
 
-/* ============================================================================
- * TYPE SAFETY
- * ============================================================================ */
 void test_type_safety(void) {
     printf("\n🔹 ТЕСТ: Type Safety (no mixing types)\n");
 
@@ -309,8 +297,8 @@ void test_type_safety(void) {
     Matrix *Result = create_integer_matrix(2, NULL);
 
     printf("  Attempting Integer + Complex (should fail safely)...\n");
-    ErrorCode err = matrix_add(IntM, CompM, Result);  // ✅ Проверяем код ошибки
-    TEST_ASSERT(err == ERR_TYPE_MISMATCH, "Type mismatch detected");  // ✅ ERR_TYPE_MISMATCH вместо проверки указателей
+    ErrorCode err = matrix_add(IntM, CompM, Result); 
+    TEST_ASSERT(err == ERR_TYPE_MISMATCH, "Type mismatch detected");  
     TEST_ASSERT(IntM->operations != CompM->operations, "Type pointers are different");
 
     destroy_matrix(IntM);
@@ -318,9 +306,7 @@ void test_type_safety(void) {
     destroy_matrix(Result);
 }
 
-/* ============================================================================
- * LU ТЕСТЫ
- * ============================================================================ */
+
 void test_lu_double_simple(void) {
     printf("\n🔹 ТЕСТ: LU Decomposition (Double, 2x2)\n");
 
@@ -330,12 +316,12 @@ void test_lu_double_simple(void) {
     Matrix *U = create_double_matrix(2, NULL);
 
     clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U);  // ✅ ErrorCode вместо int
+    ErrorCode result = matrix_lu_decompose(A, L, U);  
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
     printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
     
-    TEST_ASSERT(result == ERR_OK, "LU decomposition succeeded");  // ✅ ERR_OK вместо 0
+    TEST_ASSERT(result == ERR_OK, "LU decomposition succeeded");  
 
     Double *l_data = (Double *)L->data;
     Double *u_data = (Double *)U->data;
@@ -362,12 +348,12 @@ void test_lu_double_identity(void) {
     Matrix *U = create_double_matrix(2, NULL);
 
     clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U);  // ✅ ErrorCode
+    ErrorCode result = matrix_lu_decompose(A, L, U);
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
     printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
     
-    TEST_ASSERT(result == ERR_OK, "LU of identity succeeded");  // ✅ ERR_OK
+    TEST_ASSERT(result == ERR_OK, "LU of identity succeeded"); 
 
     Double *l_data = (Double *)L->data;
     Double *u_data = (Double *)U->data;
@@ -387,18 +373,18 @@ void test_lu_double_identity(void) {
 void test_lu_double_singular(void) {
     printf("\n🔹 ТЕСТ: LU Decomposition (Singular matrix, should fail)\n");
 
-    double a_vals[] = {1, 2, 2, 4};  // Сингулярная: 2-я строка = 2×1-й
+    double a_vals[] = {1, 2, 2, 4}; 
     Matrix *A = create_double_matrix(2, a_vals);
     Matrix *L = create_double_matrix(2, NULL);
     Matrix *U = create_double_matrix(2, NULL);
 
     clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U);  // ✅ ErrorCode
+    ErrorCode result = matrix_lu_decompose(A, L, U);  
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
     printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
     
-    // ✅ ИСПРАВЛЕНИЕ: -2 → ERR_SINGULAR_MATRIX
+
     TEST_ASSERT(result == ERR_SINGULAR_MATRIX, "LU fails on singular matrix");
 
     destroy_matrix(A);
@@ -415,12 +401,12 @@ void test_lu_integer_to_double(void) {
     Matrix *U = create_double_matrix(2, NULL);
 
     clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U);  // ✅ ErrorCode
+    ErrorCode result = matrix_lu_decompose(A, L, U);  
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
     printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
     
-    TEST_ASSERT(result == ERR_OK, "Integer→Double LU succeeded");  // ✅ ERR_OK
+    TEST_ASSERT(result == ERR_OK, "Integer→Double LU succeeded");  
 
     Double *l_data = (Double *)L->data;
     TEST_ASSERT(fabs(l_data[2].value - 0.5) < 1e-10, "L[1][0] == 0.5");
@@ -437,9 +423,7 @@ void test_lu_operations(void) {
     test_lu_integer_to_double();
 }
 
-/* ============================================================================
- * RING AXIOMS ТЕСТЫ
- * ============================================================================ */
+
 void test_ring_integer(void) {
     printf("\n🔹 ТЕСТ: Integer Ring Axioms\n");
     // ✅ ИСПРАВЛЕНИЕ: == 0 → == ERR_OK
@@ -467,7 +451,7 @@ void test_matrix_subtract(void) {
     Matrix* C = create_integer_matrix(2, NULL);
     Matrix* Expected = create_integer_matrix(2, (int[]){4, 4, 4, 4});
     
-    ErrorCode err = matrix_subtract(A, B, C);  // ✅ Проверяем код ошибки
+    ErrorCode err = matrix_subtract(A, B, C); 
     TEST_ASSERT(err == ERR_OK, "matrix_subtract succeeded");
     TEST_ASSERT(integer_matrices_equal(C, Expected), "A - B = Expected");
     
@@ -481,9 +465,6 @@ void test_ring_operations(void) {
     test_matrix_subtract();
 }
 
-/* ============================================================================
- * ЗАПУСК ВСЕХ ТЕСТОВ
- * ============================================================================ */
 void run_all_tests(void) {
     printf("╔════════════════════════════════════════╗\n");
     printf("║  POLYMORPHIC MATRIX TEST SUITE v1.2    ║\n");
