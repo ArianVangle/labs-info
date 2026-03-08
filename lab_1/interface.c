@@ -8,9 +8,7 @@
 
 #include "tests.h"
 
-/* ============================================================================
- * HELPER: Отображение ошибок (использует error_message из algebra.c)
- * ============================================================================ */
+
 static void print_error(const char* context, ErrorCode code) {
     if (code != ERR_OK) {
         printf("❌ %s: %s (код: %d)\n", context, error_message(code), code);
@@ -35,7 +33,7 @@ Matrix* input_integer_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] = ", row, col);
         if (scanf("%d", &data[i].value) != 1) {
-            printf("❌ Ошибка ввода!\n");  // ✅ interface.c МОЖЕТ делать printf
+            printf("❌ Ошибка ввода!\n");  
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -58,7 +56,7 @@ Matrix* input_complex_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] (re im) = ", row, col);
         if (scanf("%d %d", &data[i].re, &data[i].im) != 2) {
-            printf("❌ Ошибка ввода!\n");  // ✅
+            printf("❌ Ошибка ввода!\n");  
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -81,7 +79,7 @@ Matrix* input_double_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] = ", row, col);
         if (scanf("%lf", &data[i].value) != 1) {
-            printf("❌ Ошибка ввода!\n");  // ✅
+            printf("❌ Ошибка ввода!\n"); 
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -202,7 +200,7 @@ void integer_add_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_add(A, B, C);  // ✅ Проверяем результат
+    ErrorCode err = matrix_add(A, B, C); 
     if (err != ERR_OK) {
         print_error("Сложение матриц", err);
         destroy_matrix(A);
@@ -249,7 +247,7 @@ void integer_multiply_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply(A, B, C);  // ✅ Проверяем результат
+    ErrorCode err = matrix_multiply(A, B, C);
     if (err != ERR_OK) {
         print_error("Умножение матриц", err);
         destroy_matrix(A);
@@ -290,7 +288,7 @@ void integer_scalar_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем результат
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
     if (err != ERR_OK) {
         print_error("Умножение на скаляр", err);
         destroy_matrix(A);
@@ -319,7 +317,7 @@ void integer_demo(void) {
     print_integer_matrix(A, "A");
     print_integer_matrix(B, "B");
 
-    matrix_add(A, B, C);  // В демо можно не проверять, но лучше проверить
+    matrix_add(A, B, C); 
     print_integer_matrix(C, "A + B");
 
     matrix_multiply(A, B, C);
@@ -413,7 +411,7 @@ void complex_add_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_add(A, B, C);  // ✅ Проверяем результат
+    ErrorCode err = matrix_add(A, B, C); 
     if (err != ERR_OK) {
         print_error("Сложение матриц", err);
         destroy_matrix(A);
@@ -460,7 +458,7 @@ void complex_multiply_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply(A, B, C);  // ✅ Проверяем результат
+    ErrorCode err = matrix_multiply(A, B, C); 
     if (err != ERR_OK) {
         print_error("Умножение матриц", err);
         destroy_matrix(A);
@@ -501,7 +499,7 @@ void complex_scalar_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  // ✅ Проверяем результат
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
     if (err != ERR_OK) {
         print_error("Умножение на скаляр", err);
         destroy_matrix(A);
@@ -615,7 +613,7 @@ void demo_type_safety(void) {
     printf("\nAttempting to add Integer + Complex (should fail)...\n");
     Matrix* Result = create_integer_matrix(2, NULL);
     
-    ErrorCode err = matrix_add(IntM, CompM, Result);  // ✅ Проверяем результат
+    ErrorCode err = matrix_add(IntM, CompM, Result); 
     if (err != ERR_OK) {
         printf("✅ Ожидаемая ошибка: %s\n", error_message(err));
     }
@@ -710,7 +708,7 @@ void lu_decomposition_demo(void) {
     printf("\nВыполнение LU-разложения...\n");
 
     clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U);  // ✅ Теперь возвращает ErrorCode
+    ErrorCode result = matrix_lu_decompose(A, L, U); 
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
 
