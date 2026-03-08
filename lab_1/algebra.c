@@ -1,30 +1,27 @@
 #include "algebra.h"
-#include "matrix.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
+#include "matrix.h"
 
 static AlgebraOperations* IntegerOpsInstance = NULL;
 static AlgebraOperations* DoubleOpsInstance = NULL;
 static AlgebraOperations* ComplexOpsInstance = NULL;
 
+static void integer_zero(void* result) { ((Integer*)result)->value = 0; }
 
-static void integer_zero(void* result) {
-    ((Integer*)result)->value = 0;
-}
-
-static void integer_one(void* result) {
-    ((Integer*)result)->value = 1;
-}
+static void integer_one(void* result) { ((Integer*)result)->value = 1; }
 
 static void integer_negate(const void* a, void* result) {
     ((Integer*)result)->value = -((const Integer*)a)->value;
 }
 
 static void integer_subtract(const void* a, const void* b, void* result) {
-    ((Integer*)result)->value = ((const Integer*)a)->value - ((const Integer*)b)->value;
+    ((Integer*)result)->value =
+        ((const Integer*)a)->value - ((const Integer*)b)->value;
 }
 
 static int integer_is_zero(const void* a) {
@@ -67,12 +64,12 @@ static void complex_subtract(const void* a, const void* b, void* result) {
 
 static int complex_is_zero(const void* a) {
     const Complex* c = (const Complex*)a;
-    return (fabs((double)c->re) < 1e-12) && (fabs((double)c->im) < 1e-12); 
+    return (fabs((double)c->re) < 1e-12) && (fabs((double)c->im) < 1e-12);
 }
 
 static int complex_is_one(const void* a) {
     const Complex* c = (const Complex*)a;
-    return (fabs((double)c->re - 1.0) < 1e-12) && (fabs((double)c->im) < 1e-12);  
+    return (fabs((double)c->re - 1.0) < 1e-12) && (fabs((double)c->im) < 1e-12);
 }
 
 static void complex_add(const void* e1, const void* e2, void* result) {
@@ -98,20 +95,17 @@ static int complex_equal(const Complex* a, const Complex* b, double epsilon) {
            (fabs((double)a->im - (double)b->im) < epsilon);
 }
 
-static void double_zero(void* result) {
-    ((Double*)result)->value = 0.0;
-}
+static void double_zero(void* result) { ((Double*)result)->value = 0.0; }
 
-static void double_one(void* result) {
-    ((Double*)result)->value = 1.0;
-}
+static void double_one(void* result) { ((Double*)result)->value = 1.0; }
 
 static void double_negate(const void* a, void* result) {
     ((Double*)result)->value = -((const Double*)a)->value;
 }
 
 static void double_subtract(const void* a, const void* b, void* result) {
-    ((Double*)result)->value = ((const Double*)a)->value - ((const Double*)b)->value;
+    ((Double*)result)->value =
+        ((const Double*)a)->value - ((const Double*)b)->value;
 }
 
 static int double_is_zero(const void* a) {
@@ -121,7 +115,6 @@ static int double_is_zero(const void* a) {
 static int double_is_one(const void* a) {
     return fabs(((const Double*)a)->value - 1.0) < 1e-12;
 }
-
 
 static void double_add(const void* e1, const void* e2, void* result) {
     ((Double*)result)->value =
@@ -141,8 +134,6 @@ static Complex complex_div_helper(const Complex* a, const Complex* b) {
     double im = ((double)a->im * b->re - (double)a->re * b->im) / denom;
     return (Complex){(int)re, (int)im};
 }
-
-
 
 static double complex_magnitude(const Complex* c) {
     return sqrt((double)c->re * c->re + (double)c->im * c->im);
@@ -287,7 +278,7 @@ static ErrorCode complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
 }
 
 const AlgebraOperations* GetIntegerOps(void) {
-    if (IntegerOpsInstance== NULL) {
+    if (IntegerOpsInstance == NULL) {
         IntegerOpsInstance = malloc(sizeof(AlgebraOperations));
         IntegerOpsInstance->addFn = integer_add;
         IntegerOpsInstance->subtractFn = integer_subtract;
@@ -334,26 +325,26 @@ const AlgebraOperations* GetComplexOps(void) {
     return ComplexOpsInstance;
 }
 
-
 ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     if (!ops) return ERR_NULL_POINTER;
-    
+
     printf("\n╔═══════════════════════════════════════╗\n");
     printf("║  RING AXIOMS VERIFICATION             ║\n");
     printf("╚═══════════════════════════════════════╝\n");
-    
-    size_t elem_size = (ops == GetDoubleOps()) ? sizeof(Double) :
-                       (ops == GetComplexOps()) ? sizeof(Complex) : sizeof(Integer);
-    
+
+    size_t elem_size = (ops == GetDoubleOps())    ? sizeof(Double)
+                       : (ops == GetComplexOps()) ? sizeof(Complex)
+                                                  : sizeof(Integer);
+
     void* a = malloc(elem_size);
     void* b = malloc(elem_size);
     void* c = malloc(elem_size);
     void* temp1 = malloc(elem_size);
     void* temp2 = malloc(elem_size);
-    
+
     int passed = 0;
     int total = 7;
-    
+
     // Инициализация тестовых значений
     if (ops == GetDoubleOps()) {
         ((Double*)a)->value = 2.0;
@@ -364,11 +355,14 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
         ((Integer*)b)->value = 3;
         ((Integer*)c)->value = 4;
     } else if (ops == GetComplexOps()) {
-        ((Complex*)a)->re = 2; ((Complex*)a)->im = 1;
-        ((Complex*)b)->re = 3; ((Complex*)b)->im = 2;
-        ((Complex*)c)->re = 4; ((Complex*)c)->im = 1;
+        ((Complex*)a)->re = 2;
+        ((Complex*)a)->im = 1;
+        ((Complex*)b)->re = 3;
+        ((Complex*)b)->im = 2;
+        ((Complex*)c)->re = 4;
+        ((Complex*)c)->im = 1;
     }
-    
+
     // Замкнутость сложения
     ops->zeroFn(a);
     ops->zeroFn(b);
@@ -379,43 +373,53 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     } else {
         printf("  ❌ 1. Замкнутость сложения\n");
     }
-    
+
     // Ассоциативность
     ops->addFn(a, b, temp1);
     ops->addFn(temp1, c, temp1);
     ops->addFn(b, c, temp2);
     ops->addFn(a, temp2, temp2);
-    
+
     int assoc_ok = 0;
     if (ops == GetDoubleOps()) {
-        assoc_ok = (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
+        assoc_ok =
+            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
     } else if (ops == GetIntegerOps()) {
         assoc_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
     } else if (ops == GetComplexOps()) {
         assoc_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
     }
-    if (assoc_ok) { printf("  ✅ 2. Ассоциативность сложения\n"); passed++; }
-    else { printf("  ❌ 2. Ассоциативность сложения\n"); }
-    
+    if (assoc_ok) {
+        printf("  ✅ 2. Ассоциативность сложения\n");
+        passed++;
+    } else {
+        printf("  ❌ 2. Ассоциативность сложения\n");
+    }
+
     // Коммутативность
     ops->addFn(a, b, temp1);
     ops->addFn(b, a, temp2);
-    
+
     int comm_ok = 0;
     if (ops == GetDoubleOps()) {
-        comm_ok = (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
+        comm_ok =
+            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
     } else if (ops == GetIntegerOps()) {
         comm_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
     } else if (ops == GetComplexOps()) {
         comm_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
     }
-    if (comm_ok) { printf("  ✅ 3. Коммутативность сложения\n"); passed++; }
-    else { printf("  ❌ 3. Коммутативность сложения\n"); }
-    
-    // Нейтральный элемент сложения 
+    if (comm_ok) {
+        printf("  ✅ 3. Коммутативность сложения\n");
+        passed++;
+    } else {
+        printf("  ❌ 3. Коммутативность сложения\n");
+    }
+
+    // Нейтральный элемент сложения
     ops->zeroFn(temp1);
     ops->addFn(a, temp1, temp2);
-    
+
     int zero_ok = 0;
     if (ops == GetDoubleOps()) {
         zero_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
@@ -424,9 +428,13 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     } else if (ops == GetComplexOps()) {
         zero_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
     }
-    if (zero_ok) { printf("  ✅ 4. Нейтральный элемент сложения (0)\n"); passed++; }
-    else { printf("  ❌ 4. Нейтральный элемент сложения (0)\n"); }
-    
+    if (zero_ok) {
+        printf("  ✅ 4. Нейтральный элемент сложения (0)\n");
+        passed++;
+    } else {
+        printf("  ❌ 4. Нейтральный элемент сложения (0)\n");
+    }
+
     // Аддитивный обратный
     ops->negateFn(a, temp1);
     ops->addFn(a, temp1, temp2);
@@ -436,11 +444,11 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     } else {
         printf("  ❌ 5. Аддитивный обратный (-a)\n");
     }
-    
+
     // Нейтральный элемент умножения
     ops->oneFn(temp1);
     ops->multiplyFn(a, temp1, temp2);
-    
+
     int one_ok = 0;
     if (ops == GetDoubleOps()) {
         one_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
@@ -449,46 +457,68 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     } else if (ops == GetComplexOps()) {
         one_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
     }
-    if (one_ok) { printf("  ✅ 6. Нейтральный элемент умножения (1)\n"); passed++; }
-    else { printf("  ❌ 6. Нейтральный элемент умножения (1)\n"); }
-    
+    if (one_ok) {
+        printf("  ✅ 6. Нейтральный элемент умножения (1)\n");
+        passed++;
+    } else {
+        printf("  ❌ 6. Нейтральный элемент умножения (1)\n");
+    }
+
     // Дистрибутивность
-    ops->addFn(b, c, temp1);        
-    ops->multiplyFn(a, temp1, temp1); 
-    ops->multiplyFn(a, b, temp2);   
-    ops->multiplyFn(a, c, c);       
-    ops->addFn(temp2, c, temp2);    
-    
+    ops->addFn(b, c, temp1);
+    ops->multiplyFn(a, temp1, temp1);
+    ops->multiplyFn(a, b, temp2);
+    ops->multiplyFn(a, c, c);
+    ops->addFn(temp2, c, temp2);
+
     int dist_ok = 0;
     if (ops == GetDoubleOps()) {
-        dist_ok = (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
+        dist_ok =
+            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
     } else if (ops == GetIntegerOps()) {
         dist_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
     } else if (ops == GetComplexOps()) {
         dist_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
     }
-    if (dist_ok) { printf("  ✅ 7. Дистрибутивность\n"); passed++; }
-    else { printf("  ❌ 7. Дистрибутивность\n"); }
-    
+    if (dist_ok) {
+        printf("  ✅ 7. Дистрибутивность\n");
+        passed++;
+    } else {
+        printf("  ❌ 7. Дистрибутивность\n");
+    }
+
     printf("\n┌───────────────────────────────────────┐\n");
     printf("│  Результат: %d/%d аксиом выполнено      │\n", passed, total);
     printf("└───────────────────────────────────────┘\n");
-    
-    free(a); free(b); free(c); free(temp1); free(temp2);
-    
+
+    free(a);
+    free(b);
+    free(c);
+    free(temp1);
+    free(temp2);
+
     return ERR_OK;
 }
 
 const char* error_message(ErrorCode code) {
     switch (code) {
-        case ERR_OK: return "Success";
-        case ERR_NULL_POINTER: return "NULL pointer";
-        case ERR_SIZE_MISMATCH: return "Size mismatch";
-        case ERR_SINGULAR_MATRIX: return "Singular matrix";
-        case ERR_UNSUPPORTED_OPERATION: return "Unsupported operation";
-        case ERR_TYPE_MISMATCH: return "Type mismatch";
-        case ERR_OUT_OF_MEMORY: return "Out of memory";
-        case ERR_INVALID_INPUT: return "Invalid input";
-        default: return "Unknown error";
+        case ERR_OK:
+            return "Success";
+        case ERR_NULL_POINTER:
+            return "NULL pointer";
+        case ERR_SIZE_MISMATCH:
+            return "Size mismatch";
+        case ERR_SINGULAR_MATRIX:
+            return "Singular matrix";
+        case ERR_UNSUPPORTED_OPERATION:
+            return "Unsupported operation";
+        case ERR_TYPE_MISMATCH:
+            return "Type mismatch";
+        case ERR_OUT_OF_MEMORY:
+            return "Out of memory";
+        case ERR_INVALID_INPUT:
+            return "Invalid input";
+        default:
+            return "Unknown error";
     }
 }

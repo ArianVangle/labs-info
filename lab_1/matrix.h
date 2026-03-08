@@ -2,6 +2,7 @@
 #define MATRIX_H
 
 #include <stddef.h>
+
 #include "algebra.h"
 
 typedef struct Matrix {
@@ -10,8 +11,6 @@ typedef struct Matrix {
     struct AlgebraOperations* operations;
     size_t element_size;
 } Matrix;
-
-
 
 Matrix* create_matrix(int size, const AlgebraOperations* ops, size_t elem_size);
 Matrix* create_integer_matrix(int size, const int* values);
@@ -28,7 +27,7 @@ ErrorCode matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result);
 ErrorCode matrix_negate(const Matrix* m, Matrix* result);
 ErrorCode matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result);
 ErrorCode matrix_multiply_scalar(const Matrix* m, const void* scalar,
-                            Matrix* result);
+                                 Matrix* result);
 ErrorCode matrix_zero(Matrix* m);
 
 ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U);
