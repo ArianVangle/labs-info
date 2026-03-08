@@ -1,4 +1,5 @@
 #include "algebra.h"
+#include "matrix.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -141,80 +142,15 @@ static Complex complex_div_helper(const Complex* a, const Complex* b) {
     return (Complex){(int)re, (int)im};
 }
 
-Matrix* create_integer_matrix(int size, const int* values) {
-    Matrix* m = create_matrix(size, GetIntegerOps(), sizeof(Integer));
-    if (!m || !values) return m;
 
-    Integer* data = (Integer*)m->data;
-    for (int i = 0; i < size * size; i++) {
-        data[i].value = values[i];
-    }
-    return m;
-}
-
-Matrix* create_double_matrix(int size, const double* values) {
-    Matrix* m = create_matrix(size, GetDoubleOps(), sizeof(Double));
-    if (!m || !values) return m;
-
-    Double* data = (Double*)m->data;
-    for (int i = 0; i < size * size; i++) {
-        data[i].value = values[i];
-    }
-    return m;
-}
-
-Matrix* create_complex_matrix(int size, const int* re_vals,
-                              const int* im_vals) {
-    Matrix* m = create_matrix(size, GetComplexOps(), sizeof(Complex));
-    if (!m) return m;
-
-    Complex* data = (Complex*)m->data;
-    for (int i = 0; i < size * size; i++) {
-        data[i].re = re_vals ? re_vals[i] : 0;
-        data[i].im = im_vals ? im_vals[i] : 0;
-    }
-    return m;
-}
 
 static double complex_magnitude(const Complex* c) {
     return sqrt((double)c->re * c->re + (double)c->im * c->im);
 }
 
-int integer_matrices_equal(const Matrix* m1, const Matrix* m2) {
-    if (!m1 || !m2 || m1->size != m2->size) return 0;
-    Integer* d1 = (Integer*)m1->data;
-    Integer* d2 = (Integer*)m2->data;
-    for (int i = 0; i < m1->size * m1->size; i++) {
-        if (d1[i].value != d2[i].value) return 0;
-    }
-    return 1;
-}
-
-int double_matrices_equal(const Matrix* m1, const Matrix* m2, double epsilon) {
-    if (!m1 || !m2 || m1->size != m2->size) return 0;
-    if (m1->operations != m2->operations) return 0;
-
-    Double* d1 = (Double*)m1->data;
-    Double* d2 = (Double*)m2->data;
-    for (int i = 0; i < m1->size * m1->size; i++) {
-        if (fabs(d1[i].value - d2[i].value) > epsilon) return 0;
-    }
-    return 1;
-}
-
-int complex_matrices_equal(const Matrix* m1, const Matrix* m2) {
-    if (!m1 || !m2 || m1->size != m2->size) return 0;
-    Complex* d1 = (Complex*)m1->data;
-    Complex* d2 = (Complex*)m2->data;
-    for (int i = 0; i < m1->size * m1->size; i++) {
-        if (d1[i].re != d2[i].re || d1[i].im != d2[i].im) return 0;
-    }
-    return 1;
-}
-
-static int integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
+static ErrorCode integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (L->operations != GetDoubleOps() || U->operations != GetDoubleOps()) {
-        return -3;  // Тип результата должен быть Double
+        return ERR_TYPE_MISMATCH;
     }
 
     int n = A->size;
@@ -248,12 +184,12 @@ static int integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
             l[i * n + k].value = ((double)a[i * n + k].value - sum) / u_kk;
         }
     }
-    return 0;
+    return ERR_OK;
 }
 
-static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
-    if (!A || !L || !U) return -1;
-    if (A->size != L->size || A->size != U->size) return -1;
+static ErrorCode double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
+    if (!A || !L || !U) return ERR_TYPE_MISMATCH;
+    if (A->size != L->size || A->size != U->size) return ERR_SIZE_MISMATCH;
 
     int n = A->size;
     Double* a = (Double*)A->data;
@@ -277,7 +213,7 @@ static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
             u[k * n + j].value = a[k * n + j].value - sum;
 
             if (j == k && fabs(u[k * n + k].value) < 1e-12) {
-                return -2;  // Вырожденная матрица
+                return ERR_SINGULAR_MATRIX;
             }
         }
 
@@ -287,16 +223,16 @@ static int double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
                 sum += l[i * n + m].value * u[m * n + k].value;
             }
             double u_kk = u[k * n + k].value;
-            if (fabs(u_kk) < 1e-12) return -2;  // Вырожденная матрица
+            if (fabs(u_kk) < 1e-12) return ERR_SINGULAR_MATRIX;
             l[i * n + k].value = (a[i * n + k].value - sum) / u_kk;
         }
     }
-    return 0;
+    return ERR_OK;
 }
 
-static int complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
-    if (!A || !L || !U) return -1;
-    if (A->size != L->size || A->size != U->size) return -1;
+static ErrorCode complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
+    if (!A || !L || !U) return ERR_NULL_POINTER;
+    if (A->size != L->size || A->size != U->size) return ERR_SIZE_MISMATCH;
 
     int n = A->size;
     Complex* a = (Complex*)A->data;
@@ -341,13 +277,13 @@ static int complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
                                  a[i * n + k].im - sum.im};
             Complex u_kk = u[k * n + k];
 
-            if (complex_magnitude(&u_kk) < 1e-12) return -2;
+            if (complex_magnitude(&u_kk) < 1e-12) return ERR_SINGULAR_MATRIX;
 
             Complex result = complex_div_helper(&numerator, &u_kk);
             l[i * n + k] = result;
         }
     }
-    return 0;
+    return ERR_OK;
 }
 
 const AlgebraOperations* GetIntegerOps(void) {
@@ -399,8 +335,8 @@ const AlgebraOperations* GetComplexOps(void) {
 }
 
 
-int test_ring_axioms(const AlgebraOperations* ops) {
-    if (!ops) return -1;
+ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
+    if (!ops) return ERR_NULL_POINTER;
     
     printf("\n╔═══════════════════════════════════════╗\n");
     printf("║  RING AXIOMS VERIFICATION             ║\n");
@@ -540,5 +476,19 @@ int test_ring_axioms(const AlgebraOperations* ops) {
     
     free(a); free(b); free(c); free(temp1); free(temp2);
     
-    return (passed == total) ? 0 : -1;
+    return ERR_OK;
+}
+
+const char* error_message(ErrorCode code) {
+    switch (code) {
+        case ERR_OK: return "Success";
+        case ERR_NULL_POINTER: return "NULL pointer";
+        case ERR_SIZE_MISMATCH: return "Size mismatch";
+        case ERR_SINGULAR_MATRIX: return "Singular matrix";
+        case ERR_UNSUPPORTED_OPERATION: return "Unsupported operation";
+        case ERR_TYPE_MISMATCH: return "Type mismatch";
+        case ERR_OUT_OF_MEMORY: return "Out of memory";
+        case ERR_INVALID_INPUT: return "Invalid input";
+        default: return "Unknown error";
+    }
 }
