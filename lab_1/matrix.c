@@ -1,9 +1,9 @@
 #include "matrix.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "algebra.h"
 
@@ -95,7 +95,7 @@ ErrorCode matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
 }
 
 ErrorCode matrix_multiply_scalar(const Matrix* m, const void* scalar,
-                            Matrix* result) {
+                                 Matrix* result) {
     if (!m || !result || !scalar) {
         return ERR_NULL_POINTER;
     }
@@ -176,22 +176,20 @@ ErrorCode matrix_zero(Matrix* m) {
 ErrorCode matrix_negate(const Matrix* m, Matrix* result) {
     if (!m || !result || !m->operations->negateFn) return ERR_NULL_POINTER;
     for (int i = 0; i < m->size * m->size; i++) {
-        m->operations->negateFn(
-            (char*)m->data + i * m->element_size,
-            (char*)result->data + i * result->element_size
-        );
+        m->operations->negateFn((char*)m->data + i * m->element_size,
+                                (char*)result->data + i * result->element_size);
     }
     return ERR_OK;
 }
 
 ErrorCode matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result) {
-    if (!m1 || !m2 || !result || !m1->operations->subtractFn) return ERR_NULL_POINTER;
+    if (!m1 || !m2 || !result || !m1->operations->subtractFn)
+        return ERR_NULL_POINTER;
     for (int i = 0; i < m1->size * m1->size; i++) {
         m1->operations->subtractFn(
             (char*)m1->data + i * m1->element_size,
             (char*)m2->data + i * m2->element_size,
-            (char*)result->data + i * result->element_size
-        );
+            (char*)result->data + i * result->element_size);
     }
     return ERR_OK;
 }
@@ -227,7 +225,6 @@ int complex_matrices_equal(const Matrix* m1, const Matrix* m2) {
     }
     return 1;
 }
-
 
 ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     if (!A || !L || !U) {

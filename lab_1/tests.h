@@ -24,5 +24,4 @@ void test_lu_double_singular(void);
 void test_lu_integer_to_double(void);
 void test_lu_operations(void);
 
-
 #endif  // TESTS_H

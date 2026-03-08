@@ -31,8 +31,8 @@ typedef struct Matrix Matrix;
 
 typedef struct AlgebraOperations {
     void (*addFn)(const void*, const void*, void*);
-    void (*subtractFn) (const void*, const void*, void*);
-    void (*negateFn) (const void*, void*);
+    void (*subtractFn)(const void*, const void*, void*);
+    void (*negateFn)(const void*, void*);
     void (*zeroFn)(void*);
 
     void (*multiplyFn)(const void*, const void*, void*);
@@ -48,8 +48,6 @@ typedef struct AlgebraOperations {
 const AlgebraOperations* GetIntegerOps(void);
 const AlgebraOperations* GetComplexOps(void);
 const AlgebraOperations* GetDoubleOps(void);
-
-
 
 const char* error_message(ErrorCode code);
 

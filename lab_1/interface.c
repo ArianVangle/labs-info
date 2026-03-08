@@ -8,7 +8,6 @@
 
 #include "tests.h"
 
-
 static void print_error(const char* context, ErrorCode code) {
     if (code != ERR_OK) {
         printf("❌ %s: %s (код: %d)\n", context, error_message(code), code);
@@ -33,7 +32,7 @@ Matrix* input_integer_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] = ", row, col);
         if (scanf("%d", &data[i].value) != 1) {
-            printf("❌ Ошибка ввода!\n");  
+            printf("❌ Ошибка ввода!\n");
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -56,7 +55,7 @@ Matrix* input_complex_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] (re im) = ", row, col);
         if (scanf("%d %d", &data[i].re, &data[i].im) != 2) {
-            printf("❌ Ошибка ввода!\n");  
+            printf("❌ Ошибка ввода!\n");
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -79,7 +78,7 @@ Matrix* input_double_matrix(int size) {
         int col = i % size;
         printf("  [%d][%d] = ", row, col);
         if (scanf("%lf", &data[i].value) != 1) {
-            printf("❌ Ошибка ввода!\n"); 
+            printf("❌ Ошибка ввода!\n");
             clear_input_buffer();
             destroy_matrix(m);
             return NULL;
@@ -119,7 +118,7 @@ void show_main_menu(void) {
     printf("║  1. Операции с Integer матрицами      ║\n");
     printf("║  2. Операции с Complex матрицами      ║\n");
     printf("║  3. LU-разложение (Double)            ║\n");
-    printf("║  4. Проверка аксиом кольца            ║\n");  
+    printf("║  4. Проверка аксиом кольца            ║\n");
     printf("║  5. Запустить все тесты               ║\n");
     printf("║  6. Демо типобезопасности             ║\n");
     printf("║  0. Выход                             ║\n");
@@ -200,7 +199,7 @@ void integer_add_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_add(A, B, C); 
+    ErrorCode err = matrix_add(A, B, C);
     if (err != ERR_OK) {
         print_error("Сложение матриц", err);
         destroy_matrix(A);
@@ -288,7 +287,7 @@ void integer_scalar_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);
     if (err != ERR_OK) {
         print_error("Умножение на скаляр", err);
         destroy_matrix(A);
@@ -317,7 +316,7 @@ void integer_demo(void) {
     print_integer_matrix(A, "A");
     print_integer_matrix(B, "B");
 
-    matrix_add(A, B, C); 
+    matrix_add(A, B, C);
     print_integer_matrix(C, "A + B");
 
     matrix_multiply(A, B, C);
@@ -411,7 +410,7 @@ void complex_add_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_add(A, B, C); 
+    ErrorCode err = matrix_add(A, B, C);
     if (err != ERR_OK) {
         print_error("Сложение матриц", err);
         destroy_matrix(A);
@@ -458,7 +457,7 @@ void complex_multiply_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply(A, B, C); 
+    ErrorCode err = matrix_multiply(A, B, C);
     if (err != ERR_OK) {
         print_error("Умножение матриц", err);
         destroy_matrix(A);
@@ -499,7 +498,7 @@ void complex_scalar_manual(void) {
         return;
     }
 
-    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);  
+    ErrorCode err = matrix_multiply_scalar(A, &scalar, C);
     if (err != ERR_OK) {
         print_error("Умножение на скаляр", err);
         destroy_matrix(A);
@@ -521,8 +520,10 @@ void complex_demo(void) {
     printf("║     COMPLEX MATRIX QUICK DEMO         ║\n");
     printf("╚═══════════════════════════════════════╝\n");
 
-    Matrix* A = create_complex_matrix(2, (int[]){1, 0, 1, 2}, (int[]){0, 1, 1, 0});
-    Matrix* B = create_complex_matrix(2, (int[]){1, 1, 0, 1}, (int[]){0, 0, 1, 1});
+    Matrix* A =
+        create_complex_matrix(2, (int[]){1, 0, 1, 2}, (int[]){0, 1, 1, 0});
+    Matrix* B =
+        create_complex_matrix(2, (int[]){1, 1, 0, 1}, (int[]){0, 0, 1, 1});
     Matrix* C = create_complex_matrix(2, NULL, NULL);
 
     printf("\n╔═══════════════════════════════════════╗\n");
@@ -603,7 +604,8 @@ void complex_menu(void) {
 void demo_type_safety(void) {
     printf("\n=== Type Safety Demo ===\n");
     Matrix* IntM = create_integer_matrix(2, (int[]){1, 2, 3, 4});
-    Matrix* CompM = create_complex_matrix(2, (int[]){1, 2, 3, 4}, (int[]){0, 0, 0, 0});
+    Matrix* CompM =
+        create_complex_matrix(2, (int[]){1, 2, 3, 4}, (int[]){0, 0, 0, 0});
 
     printf("Integer ops pointer: %p\n", (void*)IntM->operations);
     printf("Complex ops pointer: %p\n", (void*)CompM->operations);
@@ -612,8 +614,8 @@ void demo_type_safety(void) {
 
     printf("\nAttempting to add Integer + Complex (should fail)...\n");
     Matrix* Result = create_integer_matrix(2, NULL);
-    
-    ErrorCode err = matrix_add(IntM, CompM, Result); 
+
+    ErrorCode err = matrix_add(IntM, CompM, Result);
     if (err != ERR_OK) {
         printf("✅ Ожидаемая ошибка: %s\n", error_message(err));
     }
@@ -627,25 +629,39 @@ void ring_axioms_demo(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
     printf("║  RING AXIOMS DEMO                     ║\n");
     printf("╚═══════════════════════════════════════╝\n");
-    
+
     printf("\n[1] Integer Ring\n");
     printf("[2] Double Field\n");
     printf("[3] Complex Ring\n");
     printf("Выбор: ");
-    
+
     int choice;
-    if (scanf("%d", &choice) != 1) { clear_input_buffer(); return; }
-    
+    if (scanf("%d", &choice) != 1) {
+        clear_input_buffer();
+        return;
+    }
+
     const AlgebraOperations* ops = NULL;
     const char* name = "";
-    
+
     switch (choice) {
-        case 1: ops = GetIntegerOps(); name = "Integer"; break;
-        case 2: ops = GetDoubleOps(); name = "Double"; break;
-        case 3: ops = GetComplexOps(); name = "Complex"; break;
-        default: printf("❌ Неверный выбор!\n"); return;
+        case 1:
+            ops = GetIntegerOps();
+            name = "Integer";
+            break;
+        case 2:
+            ops = GetDoubleOps();
+            name = "Double";
+            break;
+        case 3:
+            ops = GetComplexOps();
+            name = "Complex";
+            break;
+        default:
+            printf("❌ Неверный выбор!\n");
+            return;
     }
-    
+
     printf("\nПроверка аксиом кольца для типа: %s\n", name);
     test_ring_axioms(ops);
 }
@@ -708,7 +724,7 @@ void lu_decomposition_demo(void) {
     printf("\nВыполнение LU-разложения...\n");
 
     clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U); 
+    ErrorCode result = matrix_lu_decompose(A, L, U);
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
 
@@ -757,7 +773,7 @@ void lu_decomposition_demo(void) {
         printf("   LU-разложение без выбора ведущего элемента невозможно.\n");
         printf("⏱  Время до обнаружения ошибки: %.3f мс\n", time_ms);
     } else {
-        printf("\n❌ Ошибка LU-разложения: %s (код: %d)\n", 
+        printf("\n❌ Ошибка LU-разложения: %s (код: %d)\n",
                error_message(result), result);
         printf("⏱  Время выполнения: %.3f мс\n", time_ms);
     }
@@ -797,7 +813,7 @@ void run_interactive_mode(void) {
                 lu_decomposition_demo();
                 break;
             case 4:
-                ring_axioms_demo(); 
+                ring_axioms_demo();
                 break;
             case 5:
                 run_all_tests();
