@@ -87,6 +87,24 @@ Matrix* input_double_matrix(int size) {
 
     return m;
 }
+Matrix* input_double_vector(int size) {
+    Matrix* v = create_double_matrix(size, NULL);  
+    if (!v) return NULL;
+
+    Double* data = (Double*)v->data;
+    printf("Введите %d элементов вектора (вещественные числа):\n", size);
+
+    for (int i = 0; i < size; i++) {
+        printf("  b[%d] = ", i);
+        if (scanf("%lf", &data[i].value) != 1) {
+            printf("❌ Ошибка ввода!\n");
+            clear_input_buffer();
+            destroy_matrix(v);
+            return NULL;
+        }
+    }
+    return v;
+}
 
 Integer input_integer_scalar(void) {
     Integer scalar;
@@ -112,15 +130,18 @@ Complex input_complex_scalar(void) {
 // menu
 void show_main_menu(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
-    printf("║     POLYMORPHIC MATRIX SYSTEM         ║\n");
-    printf("║                                       ║\n");
+    printf("║     POLYMORPHIC MATRIX SYSTEM v2.0    ║\n");
+    printf("║     Full Ring + LU + QR + SLAU        ║\n");
     printf("╠═══════════════════════════════════════╣\n");
     printf("║  1. Операции с Integer матрицами      ║\n");
     printf("║  2. Операции с Complex матрицами      ║\n");
     printf("║  3. LU-разложение (Double)            ║\n");
-    printf("║  4. Проверка аксиом кольца            ║\n");
-    printf("║  5. Запустить все тесты               ║\n");
-    printf("║  6. Демо типобезопасности             ║\n");
+    printf("║  4. QR-разложение (Double)            ║\n");
+    printf("║  5. Решение СЛАУ (A×x=b)              ║\n");
+    printf("║  6. Бенчмарк: LU vs QR                ║\n");
+    printf("║  7. Проверка аксиом кольца            ║\n");
+    printf("║  8. Запустить все тесты               ║\n");
+    printf("║  9. Демо типобезопасности             ║\n");
     printf("║  0. Выход                             ║\n");
     printf("╚═══════════════════════════════════════╝\n");
     printf("Выбор: ");
@@ -787,6 +808,263 @@ void lu_decomposition_demo(void) {
     printf("╚═══════════════════════════════════════╝\n");
 }
 
+void qr_decomposition_demo(void) {
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║     QR DECOMPOSITION DEMO             ║\n");
+    printf("║     A = Q × R                         ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+
+    printf("\n[1] Использовать готовую матрицу для демо\n");
+    printf("[2] Ввести матрицу вручную (только Double)\n");
+    printf("Выбор: ");
+
+    int choice;
+    if (scanf("%d", &choice) != 1) {
+        clear_input_buffer();
+        return;
+    }
+
+    Matrix* A = NULL;
+
+    if (choice == 1) {
+        double a_vals[] = {4.0, 3.0, 2.0, 6.0, 5.0, 4.0, 2.0, 1.0, 3.0};
+        A = create_double_matrix(3, a_vals);
+        printf("✅ Использована готовая матрица 3×3 (Double)\n");
+    } else {
+        int size;
+        printf("Введите размер матрицы (n для n×n, макс. 5): ");
+        if (scanf("%d", &size) != 1 || size < 2 || size > 5) {
+            printf("❌ Некорректный размер!\n");
+            clear_input_buffer();
+            return;
+        }
+        A = input_double_matrix(size);
+        if (!A) return;
+    }
+
+    if (!A) {
+        printf("❌ Ошибка создания матрицы!\n");
+        return;
+    }
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  Исходная матрица A:                  ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    print_double_matrix(A, "A");
+
+    Matrix* Q = create_double_matrix(A->size, NULL);
+    Matrix* R = create_double_matrix(A->size, NULL);
+
+    if (!Q || !R) {
+        printf("❌ Ошибка выделения памяти для Q/R!\n");
+        destroy_matrix(A);
+        destroy_matrix(Q);
+        destroy_matrix(R);
+        return;
+    }
+
+    printf("\nВыполнение QR-разложения...\n");
+    clock_t start = clock();
+    ErrorCode result = matrix_qr_decompose(A, Q, R);
+    clock_t end = clock();
+    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+
+    if (result == ERR_OK) {
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  Ортогональная матрица Q:             ║\n");
+        printf("║  (Q^T × Q = I)                        ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+        print_double_matrix(Q, "Q");
+
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  Верхняя треугольная матрица R:       ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+        print_double_matrix(R, "R");
+
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  Проверка: Q × R == A ?               ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+
+        Matrix* QR = create_double_matrix(A->size, NULL);
+        if (QR) {
+            matrix_multiply(Q, R, QR);
+            print_double_matrix(QR, "Q × R");
+
+            Double* a_data = (Double*)A->data;
+            Double* qr_data = (Double*)QR->data;
+            int n = A->size;
+            int match = 1;
+            for (int i = 0; i < n * n; i++) {
+                if (fabs(a_data[i].value - qr_data[i].value) > 1e-9) {
+                    match = 0;
+                    break;
+                }
+            }
+
+            printf("\nРезультат проверки: %s\n",
+                   match ? "✅ PASS (Q×R совпадает с A)"
+                         : "⚠️  Небольшое расхождение (погрешность float)");
+            printf("⏱  Время выполнения QR: %.3f мс\n", time_ms);
+
+            destroy_matrix(QR);
+        }
+    } else if (result == ERR_SINGULAR_MATRIX) {
+        printf("\n❌ Ошибка: %s\n", error_message(result));
+        printf("   QR-разложение невозможно (линейно зависимые столбцы)\n");
+        printf("⏱  Время до обнаружения ошибки: %.3f мс\n", time_ms);
+    } else {
+        printf("\n❌ Ошибка QR-разложения: %s (код: %d)\n", 
+               error_message(result), result);
+        printf("⏱  Время выполнения: %.3f мс\n", time_ms);
+    }
+
+    destroy_matrix(A);
+    destroy_matrix(Q);
+    destroy_matrix(R);
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║         DEMO COMPLETED                ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+}
+
+
+void solve_slau_demo(void) {
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║     SOLVE SLAU: A × x = b             ║\n");
+    printf("║     Методы: LU и QR                   ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+
+    printf("\n[1] Готовая система 2×2 (Double)\n");
+    printf("[2] Готовая система 3×3 (Double)\n");
+    printf("[3] Ввести свою систему (только Double)\n");
+    printf("Выбор: ");
+
+    int choice;
+    if (scanf("%d", &choice) != 1) {
+        clear_input_buffer();
+        return;
+    }
+
+    Matrix *A = NULL, *b = NULL;
+
+    if (choice == 1) {
+        // 2x + y = 5; x + 3y = 6 → x=1.8, y=1.4
+        printf("Система: 2x + y = 5,  x + 3y = 6\n");
+        A = create_double_matrix(2, (double[]){2, 1, 1, 3});
+        b = create_double_matrix(2, (double[]){5, 6});
+    } else if (choice == 2) {
+        // 4x+3y+2z=9, 6x+5y+4z=15, 2x+y+3z=6
+        printf("Система: 4x+3y+2z=9,  6x+5y+4z=15,  2x+y+3z=6\n");
+        A = create_double_matrix(3, (double[]){4,3,2, 6,5,4, 2,1,3});
+        b = create_double_matrix(3, (double[]){9, 15, 6});
+    } else {
+        int size;
+        printf("Размер системы (n): ");
+        if (scanf("%d", &size) != 1 || size < 2 || size > 5) {
+            printf("❌ Некорректный размер!\n");
+            clear_input_buffer();
+            return;
+        }
+        printf("\n=== Ввод матрицы A ===\n");
+        A = input_double_matrix(size);
+        printf("\n=== Ввод вектора b ===\n");
+        b = input_double_vector(size);  
+        if (!A || !b) {
+            destroy_matrix(A); destroy_matrix(b);
+            return;
+        }
+    }
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  Матрица A:                           ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    print_double_matrix(A, "A");
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  Вектор b:                            ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    print_double_vector(b, "b");
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  РЕШЕНИЕ ЧЕРЕЗ LU                     ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    Matrix* x_lu = create_double_matrix(A->size, NULL);
+    
+    clock_t lu_start = clock();
+    ErrorCode lu_err = solve_lu(A, b, x_lu);
+    clock_t lu_end = clock();
+    double lu_time = (double)(lu_end - lu_start) * 1000.0 / CLOCKS_PER_SEC;
+
+    if (lu_err == ERR_OK) {
+        print_double_vector(x_lu, "x (LU)");
+        printf("⏱  Время: %.3f мс\n", lu_time);
+    } else {
+        printf("❌ Ошибка LU: %s\n", error_message(lu_err));
+    }
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  РЕШЕНИЕ ЧЕРЕЗ QR                     ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    Matrix* x_qr = create_double_matrix(A->size, NULL);
+    
+    clock_t qr_start = clock();
+    ErrorCode qr_err = solve_qr(A, b, x_qr);
+    clock_t qr_end = clock();
+    double qr_time = (double)(qr_end - qr_start) * 1000.0 / CLOCKS_PER_SEC;
+
+    if (qr_err == ERR_OK) {
+        print_double_vector(x_qr, "x (QR)");
+        printf("⏱  Время: %.3f мс\n", qr_time);
+    } else {
+        printf("❌ Ошибка QR: %s\n", error_message(qr_err));
+    }
+
+    if (lu_err == ERR_OK && qr_err == ERR_OK) {
+        Double* xlu = (Double*)x_lu->data;
+        Double* xqr = (Double*)x_qr->data;
+        double max_diff = 0.0;
+        for (int i = 0; i < A->size; i++) {
+            double diff = fabs(xlu[i].value - xqr[i].value);
+            if (diff > max_diff) max_diff = diff;
+        }
+        printf("\n╔═══════════════════════════════════════╗\n");
+        printf("║  СРАВНЕНИЕ РЕШЕНИЙ                    ║\n");
+        printf("╚═══════════════════════════════════════╝\n");
+        printf("Максимальное расхождение: %.2e\n", max_diff);
+        printf("Статус: %s\n",
+               (max_diff < 1e-8) ? "✅ Решения совпадают" : "⚠️  Небольшое расхождение");
+    }
+
+    destroy_matrix(A);
+    destroy_matrix(b);
+    destroy_matrix(x_lu);
+    destroy_matrix(x_qr);
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║         DEMO COMPLETED                ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+}
+
+
+void benchmark_demo(void) {
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  BENCHMARK: LU vs QR                  ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+
+    printf("\nВыберите размер матрицы:\n");
+    printf("[1] 3×3\n");
+    printf("[2] 5×5\n");
+    printf("[3] 10×10\n");
+    printf("Выбор: ");
+
+    int choice;
+    if (scanf("%d", &choice) != 1) {
+        clear_input_buffer();
+        return;
+    }
+
+    int size = (choice == 1) ? 3 : (choice == 2) ? 5 : 10;
+    benchmark_lu_vs_qr(size);
+}
 // run main
 void run_interactive_mode(void) {
     printf("╔════════════════════════════════════════╗\n");
@@ -813,12 +1091,21 @@ void run_interactive_mode(void) {
                 lu_decomposition_demo();
                 break;
             case 4:
-                ring_axioms_demo();
+                qr_decomposition_demo();  
                 break;
             case 5:
-                run_all_tests();
+                solve_slau_demo();  
                 break;
             case 6:
+                benchmark_demo();  
+                break;
+            case 7:
+                ring_axioms_demo();
+                break;
+            case 8:
+                run_all_tests();
+                break;
+            case 9:
                 demo_type_safety();
                 break;
             case 0:
@@ -826,6 +1113,6 @@ void run_interactive_mode(void) {
                 break;
             default:
                 printf("❌ Invalid choice!\n");
-        }
+}
     } while (choice != 0);
 }
