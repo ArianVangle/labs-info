@@ -31,18 +31,19 @@ ErrorCode matrix_multiply_scalar(const Matrix* m, const void* scalar,
 ErrorCode matrix_zero(Matrix* m);
 
 ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U);
-// ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y);
-// ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x);
-// ErrorCode solve_lu(const Matrix* A, const Matrix* b, Matrix* x);
+ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y);
+ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x);
+ErrorCode solve_lu(const Matrix* A, const Matrix* b, Matrix* x);
 
-// ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R);
-// ErrorCode solve_qr(const Matrix* A, const Matrix* b, Matrix* x);
+ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R);
+ErrorCode solve_qr(const Matrix* A, const Matrix* b, Matrix* x);
 
-// void benchmark_lu_vs_qr(int size);
+void benchmark_lu_vs_qr(int size);
 ErrorCode test_ring_axioms(const AlgebraOperations* ops);
 
 void print_integer_matrix(const Matrix* m, const char* name);
 void print_complex_matrix(const Matrix* m, const char* name);
 void print_double_matrix(const Matrix* m, const char* name);
+void print_double_vector(const Matrix* v, const char* name);
 
 #endif  // MATRIX_H

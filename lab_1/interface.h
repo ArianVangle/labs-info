@@ -31,6 +31,8 @@ Integer input_integer_scalar(void);
 
 // Ввод скаляра Complex
 Complex input_complex_scalar(void);
+// Ввод вектора Double с клавиатуры
+Matrix* input_double_vector(int size);  
 
 // integer matrix
 void integer_manual_create(void);
@@ -53,5 +55,10 @@ void demo_type_safety(void);
 
 // Очистка буфера ввода
 void clear_input_buffer(void);
+
+// QR
+void qr_decomposition_demo(void);
+void solve_slau_demo(void);
+void benchmark_demo(void);
 
 #endif  // INTERFACE_H
