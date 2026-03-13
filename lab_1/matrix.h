@@ -39,7 +39,7 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R);
 ErrorCode solve_qr(const Matrix* A, const Matrix* b, Matrix* x);
 
 void benchmark_lu_vs_qr(int size);
-ErrorCode test_ring_axioms(const AlgebraOperations* ops);
+
 
 void print_integer_matrix(const Matrix* m, const char* name);
 void print_complex_matrix(const Matrix* m, const char* name);

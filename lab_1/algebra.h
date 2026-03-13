@@ -49,6 +49,7 @@ const AlgebraOperations* GetIntegerOps(void);
 const AlgebraOperations* GetComplexOps(void);
 const AlgebraOperations* GetDoubleOps(void);
 
+ErrorCode test_ring_axioms(const AlgebraOperations* ops);
 const char* error_message(ErrorCode code);
 
 #endif  // ALGEBRA_H
