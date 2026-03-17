@@ -88,7 +88,7 @@ Matrix* input_double_matrix(int size) {
     return m;
 }
 Matrix* input_double_vector(int size) {
-    Matrix* v = create_double_matrix(size, NULL);  
+    Matrix* v = create_double_matrix(size, NULL);
     if (!v) return NULL;
 
     Double* data = (Double*)v->data;
@@ -913,7 +913,7 @@ void qr_decomposition_demo(void) {
         printf("   QR-разложение невозможно (линейно зависимые столбцы)\n");
         printf("⏱  Время до обнаружения ошибки: %.3f мс\n", time_ms);
     } else {
-        printf("\n❌ Ошибка QR-разложения: %s (код: %d)\n", 
+        printf("\n❌ Ошибка QR-разложения: %s (код: %d)\n",
                error_message(result), result);
         printf("⏱  Время выполнения: %.3f мс\n", time_ms);
     }
@@ -926,7 +926,6 @@ void qr_decomposition_demo(void) {
     printf("║         DEMO COMPLETED                ║\n");
     printf("╚═══════════════════════════════════════╝\n");
 }
-
 
 void solve_slau_demo(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
@@ -955,7 +954,7 @@ void solve_slau_demo(void) {
     } else if (choice == 2) {
         // 4x+3y+2z=9, 6x+5y+4z=15, 2x+y+3z=6
         printf("Система: 4x+3y+2z=9,  6x+5y+4z=15,  2x+y+3z=6\n");
-        A = create_double_matrix(3, (double[]){4,3,2, 6,5,4, 2,1,3});
+        A = create_double_matrix(3, (double[]){4, 3, 2, 6, 5, 4, 2, 1, 3});
         b = create_double_matrix(3, (double[]){9, 15, 6});
     } else {
         int size;
@@ -968,9 +967,10 @@ void solve_slau_demo(void) {
         printf("\n=== Ввод матрицы A ===\n");
         A = input_double_matrix(size);
         printf("\n=== Ввод вектора b ===\n");
-        b = input_double_vector(size);  
+        b = input_double_vector(size);
         if (!A || !b) {
-            destroy_matrix(A); destroy_matrix(b);
+            destroy_matrix(A);
+            destroy_matrix(b);
             return;
         }
     }
@@ -988,7 +988,7 @@ void solve_slau_demo(void) {
     printf("║  РЕШЕНИЕ ЧЕРЕЗ LU                     ║\n");
     printf("╚═══════════════════════════════════════╝\n");
     Matrix* x_lu = create_double_matrix(A->size, NULL);
-    
+
     clock_t lu_start = clock();
     ErrorCode lu_err = solve_lu(A, b, x_lu);
     clock_t lu_end = clock();
@@ -1005,7 +1005,7 @@ void solve_slau_demo(void) {
     printf("║  РЕШЕНИЕ ЧЕРЕЗ QR                     ║\n");
     printf("╚═══════════════════════════════════════╝\n");
     Matrix* x_qr = create_double_matrix(A->size, NULL);
-    
+
     clock_t qr_start = clock();
     ErrorCode qr_err = solve_qr(A, b, x_qr);
     clock_t qr_end = clock();
@@ -1030,8 +1030,8 @@ void solve_slau_demo(void) {
         printf("║  СРАВНЕНИЕ РЕШЕНИЙ                    ║\n");
         printf("╚═══════════════════════════════════════╝\n");
         printf("Максимальное расхождение: %.2e\n", max_diff);
-        printf("Статус: %s\n",
-               (max_diff < 1e-8) ? "✅ Решения совпадают" : "⚠️  Небольшое расхождение");
+        printf("Статус: %s\n", (max_diff < 1e-8) ? "✅ Решения совпадают"
+                                                 : "⚠️  Небольшое расхождение");
     }
 
     destroy_matrix(A);
@@ -1043,7 +1043,6 @@ void solve_slau_demo(void) {
     printf("║         DEMO COMPLETED                ║\n");
     printf("╚═══════════════════════════════════════╝\n");
 }
-
 
 void benchmark_demo(void) {
     printf("\n╔═══════════════════════════════════════╗\n");
@@ -1091,13 +1090,13 @@ void run_interactive_mode(void) {
                 lu_decomposition_demo();
                 break;
             case 4:
-                qr_decomposition_demo();  
+                qr_decomposition_demo();
                 break;
             case 5:
-                solve_slau_demo();  
+                solve_slau_demo();
                 break;
             case 6:
-                benchmark_demo();  
+                benchmark_demo();
                 break;
             case 7:
                 ring_axioms_demo();
@@ -1113,6 +1112,6 @@ void run_interactive_mode(void) {
                 break;
             default:
                 printf("❌ Invalid choice!\n");
-}
+        }
     } while (choice != 0);
 }

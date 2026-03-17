@@ -32,7 +32,7 @@ Integer input_integer_scalar(void);
 // Ввод скаляра Complex
 Complex input_complex_scalar(void);
 // Ввод вектора Double с клавиатуры
-Matrix* input_double_vector(int size);  
+Matrix* input_double_vector(int size);
 
 // integer matrix
 void integer_manual_create(void);
