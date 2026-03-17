@@ -471,28 +471,23 @@ void test_ring_operations(void) {
     test_matrix_subtract();
 }
 
-
 void test_qr_decompose(void) {
     printf("\n🔹 ТЕСТ: QR Decomposition (Double, 3x3)\n");
-    
-    double a_vals[] = {
-        4.0, 3.0, 2.0,
-        6.0, 5.0, 4.0,
-        2.0, 1.0, 3.0
-    };
-    Matrix* A = create_double_matrix(3, a_vals);
-    Matrix* Q = create_double_matrix(3, NULL);
-    Matrix* R = create_double_matrix(3, NULL);
-    
+
+    double a_vals[] = {4.0, 3.0, 2.0, 6.0, 5.0, 4.0, 2.0, 1.0, 3.0};
+    Matrix *A = create_double_matrix(3, a_vals);
+    Matrix *Q = create_double_matrix(3, NULL);
+    Matrix *R = create_double_matrix(3, NULL);
+
     clock_t start = clock();
     ErrorCode result = matrix_qr_decompose(A, Q, R);
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-    
+
     printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
     TEST_ASSERT(result == ERR_OK, "QR decomposition succeeded");
-    
-    Double* q_data = (Double*)Q->data;
+
+    Double *q_data = (Double *)Q->data;
     double ortho_error = 0.0;
     int n = A->size;
     for (int i = 0; i < n; i++) {
@@ -507,11 +502,11 @@ void test_qr_decompose(void) {
     }
     printf("  Ошибка ортогональности Q: %.6f\n", ortho_error);
     TEST_ASSERT(ortho_error < 1e-8, "Q is orthogonal");
-    
-    Matrix* QR = create_double_matrix(3, NULL);
+
+    Matrix *QR = create_double_matrix(3, NULL);
     matrix_multiply(Q, R, QR);
     TEST_ASSERT(double_matrices_equal(A, QR, 1e-8), "Q * R == A");
-    
+
     destroy_matrix(A);
     destroy_matrix(Q);
     destroy_matrix(R);
@@ -520,27 +515,27 @@ void test_qr_decompose(void) {
 
 void test_solve_lu(void) {
     printf("\n🔹 ТЕСТ: Solve SLAU via LU (2x2)\n");
-    
+
     // 2x + y = 5; x + 3y = 6 → x=1.8, y=1.4
-    Matrix* A = create_double_matrix(2, (double[]){2, 1, 1, 3});
-    Matrix* b = create_double_matrix(2, (double[]){5, 6});
-    Matrix* x = create_double_matrix(2, NULL);
-    
+    Matrix *A = create_double_matrix(2, (double[]){2, 1, 1, 3});
+    Matrix *b = create_double_matrix(2, (double[]){5, 6});
+    Matrix *x = create_double_matrix(2, NULL);
+
     clock_t start = clock();
     ErrorCode err = solve_lu(A, b, x);
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-    
+
     printf("  ⏱  Время решения: %.3f мс\n", time_ms);
     TEST_ASSERT(err == ERR_OK, "solve_lu succeeded");
-    
-    Double* x_data = (Double*)x->data;
+
+    Double *x_data = (Double *)x->data;
     printf("  x[0] = %.4f (ожидается 1.8)\n", x_data[0].value);
     printf("  x[1] = %.4f (ожидается 1.4)\n", x_data[1].value);
-    
+
     TEST_ASSERT(fabs(x_data[0].value - 1.8) < 1e-8, "x[0] == 1.8");
     TEST_ASSERT(fabs(x_data[1].value - 1.4) < 1e-8, "x[1] == 1.4");
-    
+
     destroy_matrix(A);
     destroy_matrix(b);
     destroy_matrix(x);
@@ -548,27 +543,27 @@ void test_solve_lu(void) {
 
 void test_solve_qr(void) {
     printf("\n🔹 ТЕСТ: Solve SLAU via QR (2x2)\n");
-    
+
     // 2x + y = 5; x + 3y = 6
-    Matrix* A = create_double_matrix(2, (double[]){2, 1, 1, 3});
-    Matrix* b = create_double_matrix(2, (double[]){5, 6});
-    Matrix* x = create_double_matrix(2, NULL);
-    
+    Matrix *A = create_double_matrix(2, (double[]){2, 1, 1, 3});
+    Matrix *b = create_double_matrix(2, (double[]){5, 6});
+    Matrix *x = create_double_matrix(2, NULL);
+
     clock_t start = clock();
     ErrorCode err = solve_qr(A, b, x);
     clock_t end = clock();
     double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-    
+
     printf("  ⏱  Время решения: %.3f мс\n", time_ms);
     TEST_ASSERT(err == ERR_OK, "solve_qr succeeded");
-    
-    Double* x_data = (Double*)x->data;
+
+    Double *x_data = (Double *)x->data;
     printf("  x[0] = %.4f (ожидается 1.8)\n", x_data[0].value);
     printf("  x[1] = %.4f (ожидается 1.4)\n", x_data[1].value);
-    
+
     TEST_ASSERT(fabs(x_data[0].value - 1.8) < 1e-8, "x[0] == 1.8");
     TEST_ASSERT(fabs(x_data[1].value - 1.4) < 1e-8, "x[1] == 1.4");
-    
+
     destroy_matrix(A);
     destroy_matrix(b);
     destroy_matrix(x);

@@ -40,7 +40,6 @@ ErrorCode solve_qr(const Matrix* A, const Matrix* b, Matrix* x);
 
 void benchmark_lu_vs_qr(int size);
 
-
 void print_integer_matrix(const Matrix* m, const char* name);
 void print_complex_matrix(const Matrix* m, const char* name);
 void print_double_matrix(const Matrix* m, const char* name);
