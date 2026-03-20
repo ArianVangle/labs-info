@@ -211,27 +211,30 @@ class ConsoleUI {
     }
 
     void ShowMenu() {
-    while (true) {
-        ClearScreen();
-        PrintHeader("ГЛАВНОЕ МЕНЮ");
-        
-        OpenBox();
-        PrintEmpty();
-        
-        PrintRow("1. Запустить все тесты", Color::BRIGHT_GREEN);
-        PrintRow("2. Тестировать DynamicArray", Color::BRIGHT_BLUE);
-        PrintRow("3. Тестировать LinkedList", Color::BRIGHT_BLUE);
-        PrintRow("4. Тестировать Sequence (Mutable)", Color::BRIGHT_MAGENTA);
-        PrintRow("5. Тестировать Sequence (Immutable)", Color::BRIGHT_MAGENTA);
-        PrintRow("6. Тестировать Map/Reduce/Where", Color::BRIGHT_YELLOW);
-        PrintRow("7. Тестировать From/Concat/Zip/Split", Color::BRIGHT_CYAN);  
-        PrintRow("8. Тестировать Итераторы", Color::BRIGHT_CYAN);
-        PrintRow("9. Тестировать Option<T>", Color::BRIGHT_CYAN);
-        PrintEmpty();
-        PrintRow("0. Выход", Color::BRIGHT_RED);
-        PrintEmpty();
-        
-        CloseBox();
+        while (true) {
+            ClearScreen();
+            PrintHeader("ГЛАВНОЕ МЕНЮ");
+
+            OpenBox();
+            PrintEmpty();
+
+            PrintRow("1. Запустить все тесты", Color::BRIGHT_GREEN);
+            PrintRow("2. Тестировать DynamicArray", Color::BRIGHT_BLUE);
+            PrintRow("3. Тестировать LinkedList", Color::BRIGHT_BLUE);
+            PrintRow("4. Тестировать Sequence (Mutable)",
+                     Color::BRIGHT_MAGENTA);
+            PrintRow("5. Тестировать Sequence (Immutable)",
+                     Color::BRIGHT_MAGENTA);
+            PrintRow("6. Тестировать Map/Reduce/Where", Color::BRIGHT_YELLOW);
+            PrintRow("7. Тестировать From/Concat/Zip/Split",
+                     Color::BRIGHT_CYAN);
+            PrintRow("8. Тестировать Итераторы", Color::BRIGHT_CYAN);
+            PrintRow("9. Тестировать Option<T>", Color::BRIGHT_CYAN);
+            PrintEmpty();
+            PrintRow("0. Выход", Color::BRIGHT_RED);
+            PrintEmpty();
+
+            CloseBox();
 
             std::cout << std::endl;
             SetColor(Color::BRIGHT_YELLOW);
@@ -319,20 +322,20 @@ class ConsoleUI {
                     std::cin.get();
                     break;
                 }
-                            case 7: {
-                ClearScreen();
-                PrintHeader("FROM/CONCAT/ZIP/SPLIT");
-                TestFromConcat();   
-                TestZipUnzip();
-                TestSplit();
-                TestSlice();
-                std::cout << std::endl;
-                SetColor(Color::BRIGHT_YELLOW);
-                std::cout << "  Нажмите Enter...";
-                ResetColor();
-                std::cin.get();
-                break;
-            }
+                case 7: {
+                    ClearScreen();
+                    PrintHeader("FROM/CONCAT/ZIP/SPLIT");
+                    TestFromConcat();
+                    TestZipUnzip();
+                    TestSplit();
+                    TestSlice();
+                    std::cout << std::endl;
+                    SetColor(Color::BRIGHT_YELLOW);
+                    std::cout << "  Нажмите Enter...";
+                    ResetColor();
+                    std::cin.get();
+                    break;
+                }
 
                 case 8: {
                     ClearScreen();
@@ -633,30 +636,30 @@ class ConsoleUI {
         delete seq;
     }
     void TestFromConcat() {
-    OpenBox();
-    PrintSection("FROM / CONCAT");
-    PrintEmpty();
-    
-    int data1[] = {1, 2, 3};
-    Sequence<int>* fromSeq = From(data1, 3);
-    PrintRowIndented("From([1,2,3]): [1, 2, 3]", Color::BRIGHT_GREEN);
-    delete fromSeq;
-    
-    PrintEmpty();
-    
-    int data2[] = {4, 5, 6};
-    Sequence<int>* seq1 = From(data1, 3);
-    Sequence<int>* seq2 = From(data2, 3);
-    Sequence<int>* concatenated = Concat(seq1, seq2);
-    
-    PrintRowIndented("Seq1: [1, 2, 3]", Color::BRIGHT_BLUE);
-    PrintRowIndented("Seq2: [4, 5, 6]", Color::BRIGHT_BLUE);
-    PrintRowIndented("Concat: [1, 2, 3, 4, 5, 6]", Color::BRIGHT_GREEN);
-    
-    delete seq1;
-    delete seq2;
-    delete concatenated;
-    
-    CloseBox();
-}
+        OpenBox();
+        PrintSection("FROM / CONCAT");
+        PrintEmpty();
+
+        int data1[] = {1, 2, 3};
+        Sequence<int>* fromSeq = From(data1, 3);
+        PrintRowIndented("From([1,2,3]): [1, 2, 3]", Color::BRIGHT_GREEN);
+        delete fromSeq;
+
+        PrintEmpty();
+
+        int data2[] = {4, 5, 6};
+        Sequence<int>* seq1 = From(data1, 3);
+        Sequence<int>* seq2 = From(data2, 3);
+        Sequence<int>* concatenated = Concat(seq1, seq2);
+
+        PrintRowIndented("Seq1: [1, 2, 3]", Color::BRIGHT_BLUE);
+        PrintRowIndented("Seq2: [4, 5, 6]", Color::BRIGHT_BLUE);
+        PrintRowIndented("Concat: [1, 2, 3, 4, 5, 6]", Color::BRIGHT_GREEN);
+
+        delete seq1;
+        delete seq2;
+        delete concatenated;
+
+        CloseBox();
+    }
 };
