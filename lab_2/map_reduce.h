@@ -1,4 +1,5 @@
 #pragma once
+
 #include "array_sequence.h"
 #include "option.h"
 #include "sequence.h"

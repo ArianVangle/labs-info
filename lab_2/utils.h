@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 
 inline int VisibleLength(const std::string& str) {
