@@ -1,4 +1,5 @@
 #pragma once
+
 #include "exceptions.h"
 
 template <class T>

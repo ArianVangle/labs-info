@@ -1,10 +1,10 @@
 #pragma once
+
 #include <chrono>
 #include <iostream>
 #include <string>
 #include <thread>
 
-#include "utils.h"
 
 #ifndef _WIN32
 
@@ -13,6 +13,7 @@
 
 #endif // _WIN32
 
+#include "utils.h"
 #include "array_sequence.h"
 #include "list_sequence.h"
 #include "tests.h"

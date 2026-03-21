@@ -1,4 +1,5 @@
 #pragma once
+
 #include "iterators.h"
 #include "linked_list.h"
 #include "sequence.h"
