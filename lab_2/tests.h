@@ -1,9 +1,6 @@
 #pragma once
-#include <algorithm>
 #include <iostream>
 #include <string>
-#include <tuple>
-#include <vector>
 
 #include "array_sequence.h"
 #include "dynamic_array.h"

@@ -1,5 +1,4 @@
 #pragma once
-#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -8,9 +7,11 @@
 #include "utils.h"
 
 #ifndef _WIN32
+
 #include <termios.h>
 #include <unistd.h>
-#endif
+
+#endif // _WIN32
 
 #include "array_sequence.h"
 #include "list_sequence.h"
