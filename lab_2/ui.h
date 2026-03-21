@@ -42,11 +42,11 @@ class ConsoleUI {
     static const int WIDTH = 70;
 
     void ClearScreen() {
-#ifdef _WIN32
-        system("cls");
-#else
-        system("clear");
-#endif
+        #ifdef _WIN32
+            system("cls");
+        #else
+            system("clear");
+        #endif
     }
 
     void SetColor(const std::string& c) { std::cout << c; }
