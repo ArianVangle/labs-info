@@ -42,9 +42,7 @@ class ListSequence : public Sequence<T> {
     }
 
     int GetLength() const override { return items->GetLength(); }
-    void Set(size_t index, T value) override {
-        items->Set(index, value); 
-    }
+    void Set(size_t index, T value) override { items->Set(index, value); }
     Sequence<T>* Append(T item) override {
         items->Append(item);
         return this;
@@ -57,7 +55,7 @@ class ListSequence : public Sequence<T> {
         items->InsertAt(item, index);
         return this;
     }
-    
+
     Sequence<T>* Concat(Sequence<T>* list) override {
         IEnumerator<T>* en = list->GetEnumerator();
         while (en->MoveNext()) {
@@ -129,13 +127,13 @@ class ImmutableListSequence : public ListSequence<T> {
 
     Sequence<T>* Append(T item) override {
         ImmutableListSequence<T>* newSeq = new ImmutableListSequence<T>();
-        
-        IEnumerator<T>* en = this->GetEnumerator();  
+
+        IEnumerator<T>* en = this->GetEnumerator();
         while (en->MoveNext()) {
             newSeq->items->Append(en->Current());
         }
         delete en;
-        
+
         newSeq->items->Append(item);
         return newSeq;
     }

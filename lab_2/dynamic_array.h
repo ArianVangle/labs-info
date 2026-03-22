@@ -20,8 +20,7 @@ class DynamicArray {
     }
 
     DynamicArray(int size) {
-        if (size < 0) 
-            throw IndexOutOfRangeException("Size cannot be negative");
+        if (size < 0) throw IndexOutOfRangeException("Size cannot be negative");
         this->size = size;
         items = new T[size];
     }

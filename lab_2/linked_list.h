@@ -56,12 +56,10 @@ class LinkedList {
 
     ~LinkedList() { Clear(); }
 
-
     void Set(int index, T value) {
         if (index < 0 || index >= length) {
             throw IndexOutOfRangeException("Index out of range");
         }
-
 
         Node* current = head;
 

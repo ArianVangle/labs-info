@@ -9,9 +9,7 @@ class IndexOutOfRangeException : public std::exception {
 
    public:
     IndexOutOfRangeException(const std::string& msg) : message(msg) {}
-    const char* what() const noexcept override {
-        return message.c_str();
-    }
+    const char* what() const noexcept override { return message.c_str(); }
 };
 
 class InvalidOperationException : public std::exception {
