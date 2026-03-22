@@ -56,6 +56,20 @@ class LinkedList {
 
     ~LinkedList() { Clear(); }
 
+
+    void Set(int index, T value) {
+        if (index < 0 || index >= length) {
+            throw IndexOutOfRangeException("Index out of range");
+        }
+
+
+        Node* current = head;
+
+        for (int i = 0; i < index; i++) {
+            current = current->next;
+        }
+        current->value = value;
+    }
     T GetFirst() const {
         if (length == 0) throw IndexOutOfRangeException("List is empty");
         return head->value;

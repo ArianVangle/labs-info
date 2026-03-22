@@ -39,6 +39,9 @@ class ArraySequence : public Sequence<T> {
 
     Sequence<T>* Clone() const override { return new ArraySequence<T>(*this); }
 
+    void Set(size_t index, T value) override {
+        items->Set(index, value);  
+    }
     T GetFirst() const override {
         if (items->GetSize() == 0)
             throw IndexOutOfRangeException("Sequence is empty");
@@ -99,9 +102,11 @@ class ArraySequence : public Sequence<T> {
     }
 
     Sequence<T>* Concat(Sequence<T>* list) override {
-        for (int i = 0; i < list->GetLength(); i++) {
-            Append(list->Get(i));
+        IEnumerator<T>* en = list->GetEnumerator();
+        while (en->MoveNext()) {
+            Append(en->Current());
         }
+        delete en;
         return this;
     }
 
@@ -182,9 +187,14 @@ class ImmutableArraySequence : public ArraySequence<T> {
     Sequence<T>* Append(T item) override {
         ImmutableArraySequence<T>* newSeq = new ImmutableArraySequence<T>();
         newSeq->items->Resize(this->GetLength() + 1);
-        for (int i = 0; i < this->GetLength(); i++) {
-            newSeq->items->Set(i, this->Get(i));
+        
+        IEnumerator<T>* en = this->GetEnumerator();
+        int i = 0;
+        while (en->MoveNext()) {
+            newSeq->items->Set(i++, en->Current());
         }
+        delete en;
+        
         newSeq->items->Set(this->GetLength(), item);
         return newSeq;
     }

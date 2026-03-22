@@ -42,7 +42,9 @@ class ListSequence : public Sequence<T> {
     }
 
     int GetLength() const override { return items->GetLength(); }
-
+    void Set(size_t index, T value) override {
+        items->Set(index, value); 
+    }
     Sequence<T>* Append(T item) override {
         items->Append(item);
         return this;
@@ -55,18 +57,22 @@ class ListSequence : public Sequence<T> {
         items->InsertAt(item, index);
         return this;
     }
+    
     Sequence<T>* Concat(Sequence<T>* list) override {
-        for (int i = 0; i < list->GetLength(); i++) {
-            Append(list->Get(i));
+        IEnumerator<T>* en = list->GetEnumerator();
+        while (en->MoveNext()) {
+            Append(en->Current());
         }
+        delete en;
         return this;
     }
 
     template <class R>
     Sequence<R>* Map(std::function<R(T)> func) const {
         R* arr = new R[items->GetLength()];
-        for (int i = 0; i < items->GetLength(); i++)
+        for (int i = 0; i < items->GetLength(); i++) {
             arr[i] = func(items->Get(i));
+        }
         Sequence<R>* res = new ListSequence<R>(arr, items->GetLength());
         delete[] arr;
         return res;
@@ -123,9 +129,13 @@ class ImmutableListSequence : public ListSequence<T> {
 
     Sequence<T>* Append(T item) override {
         ImmutableListSequence<T>* newSeq = new ImmutableListSequence<T>();
-        for (int i = 0; i < this->GetLength(); i++) {
-            newSeq->items->Append(this->Get(i));
+        
+        IEnumerator<T>* en = this->GetEnumerator();  
+        while (en->MoveNext()) {
+            newSeq->items->Append(en->Current());
         }
+        delete en;
+        
         newSeq->items->Append(item);
         return newSeq;
     }

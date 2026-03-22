@@ -17,6 +17,7 @@
 #include "array_sequence.h"
 #include "list_sequence.h"
 #include "tests.h"
+#include "map_reduce.h"
 
 namespace Color {
 inline const std::string RESET = "\033[0m";
@@ -157,6 +158,20 @@ class ConsoleUI {
 
    public:
     ConsoleUI() {}
+
+    std::string PrintSequence(Sequence<int>* seq) {
+        IEnumerator<int>* en = seq->GetEnumerator();
+        std::string result = "[";
+        bool first = true;
+        while (en->MoveNext()) {
+            if (!first) result += ", ";
+            result += std::to_string(en->Current());
+            first = false;
+        }
+        result += "]";
+        delete en;
+        return result;
+    }
 
     void ShowWelcome() {
         ClearScreen();
@@ -481,6 +496,7 @@ class ConsoleUI {
         CloseBox();
     }
 
+
     void TestLinkedList() {
         LinkedList<int> ll;
 
@@ -505,7 +521,6 @@ class ConsoleUI {
 
         CloseBox();
     }
-
     void TestMutableSequence() {
         int data[] = {1, 2, 3};
         Sequence<int>* seq = new MutableArraySequence<int>(data, 3);
@@ -513,15 +528,16 @@ class ConsoleUI {
         OpenBox();
         PrintSection("MUTABLE SEQUENCE");
         PrintEmpty();
-        PrintRowIndented("[ДО] [1, 2, 3]", Color::BRIGHT_BLUE);
+        PrintRowIndented("[ДО] " + PrintSequence(seq), Color::BRIGHT_BLUE);
 
         seq->Append(4);
-        PrintRowIndented("[ПОСЛЕ] Append(4): [1, 2, 3, 4]",
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Append(4): " + PrintSequence(seq), Color::BRIGHT_GREEN);
 
         seq->Prepend(0);
-        PrintRowIndented("[ПОСЛЕ] Prepend(0): [0, 1, 2, 3, 4]",
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Prepend(0): " + PrintSequence(seq), Color::BRIGHT_GREEN);
+
+        seq->Set(1, 999);
+        PrintRowIndented("[ПОСЛЕ] Set(1, 999): " + PrintSequence(seq), Color::BRIGHT_MAGENTA);
 
         CloseBox();
         delete seq;
@@ -644,7 +660,7 @@ class ConsoleUI {
 
         int data1[] = {1, 2, 3};
         Sequence<int>* fromSeq = From(data1, 3);
-        PrintRowIndented("From([1,2,3]): [1, 2, 3]", Color::BRIGHT_GREEN);
+        PrintRowIndented("From([1,2,3]): " + PrintSequence(fromSeq), Color::BRIGHT_GREEN);
         delete fromSeq;
 
         PrintEmpty();
@@ -654,9 +670,9 @@ class ConsoleUI {
         Sequence<int>* seq2 = From(data2, 3);
         Sequence<int>* concatenated = Concat(seq1, seq2);
 
-        PrintRowIndented("Seq1: [1, 2, 3]", Color::BRIGHT_BLUE);
-        PrintRowIndented("Seq2: [4, 5, 6]", Color::BRIGHT_BLUE);
-        PrintRowIndented("Concat: [1, 2, 3, 4, 5, 6]", Color::BRIGHT_GREEN);
+        PrintRowIndented("Seq1: " + PrintSequence(seq1), Color::BRIGHT_BLUE);
+        PrintRowIndented("Seq2: " + PrintSequence(seq2), Color::BRIGHT_BLUE);
+        PrintRowIndented("Concat: " + PrintSequence(concatenated), Color::BRIGHT_GREEN);
 
         delete seq1;
         delete seq2;
