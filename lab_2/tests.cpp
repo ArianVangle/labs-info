@@ -1,23 +1,21 @@
 #include "tests.h"
-#include "ui.h"
+
 #include <iostream>
-#include "dynamic_array.h"
-#include "linked_list.h"
+
 #include "array_sequence.h"
+#include "dynamic_array.h"
+#include "icollection.h"
+#include "iterators.h"
+#include "linked_list.h"
 #include "list_sequence.h"
 #include "map_reduce.h"
 #include "option.h"
-#include "iterators.h"
-#include "icollection.h"
+#include "ui.h"
 #include "utils.h"
 
-void TestRunner::SetColor(const std::string& color) {
-    std::cout << color;
-}
+void TestRunner::SetColor(const std::string& color) { std::cout << color; }
 
-void TestRunner::ResetColor() {
-    std::cout << COLOR_RESET;
-}
+void TestRunner::ResetColor() { std::cout << COLOR_RESET; }
 
 void TestRunner::PrintChars(char c, int count) {
     for (int i = 0; i < count; i++) std::cout << c;
@@ -192,7 +190,7 @@ void TestRunner::RunAll() {
     int seqData[] = {5, 6};
     Sequence<int>* seq = new MutableArraySequence<int>(seqData, 2);
     Assert(seq->GetLength() == 2, "Sequence Length");
-    
+
     IEnumerator<int>* seqEn = seq->GetEnumerator();
     int expected = 5;
     while (seqEn->MoveNext()) {
@@ -226,7 +224,7 @@ void TestRunner::RunAll() {
     MutableArraySequence<int>* mapSeq =
         new MutableArraySequence<int>(seqData, 2);
     Sequence<int>* mapped = mapSeq->Map<int>([](int x) { return x * 2; });
-    
+
     IEnumerator<int>* mapEn = mapped->GetEnumerator();
     int mapExpected = 10;
     while (mapEn->MoveNext()) {
@@ -234,7 +232,7 @@ void TestRunner::RunAll() {
         mapExpected += 2;
     }
     delete mapEn;
-    
+
     delete mapSeq;
     delete mapped;
 
@@ -242,22 +240,21 @@ void TestRunner::RunAll() {
     Sequence<int>* whereSeq = new MutableArraySequence<int>(whereData, 5);
     Sequence<int>* filtered = whereSeq->Where([](int x) { return x > 2; });
     Assert(filtered->GetLength() == 3, "Where Filter (x>2)");
-    
+
     IEnumerator<int>* whereEn = filtered->GetEnumerator();
     int whereExpected = 3;
     while (whereEn->MoveNext()) {
         Assert(whereEn->Current() == whereExpected++, "Where Iterator");
     }
     delete whereEn;
-    
+
     delete whereSeq;
     delete filtered;
 
     Sequence<int>* reduceSeq = new MutableArraySequence<int>(whereData, 5);
     int sum = reduceSeq->Reduce([](int acc, int x) { return acc + x; }, 0);
     Assert(sum == 15, "Reduce Sum (1+2+3+4+5=15)");
-    int product =
-        reduceSeq->Reduce([](int acc, int x) { return acc * x; }, 1);
+    int product = reduceSeq->Reduce([](int acc, int x) { return acc * x; }, 1);
     Assert(product == 120, "Reduce Product (1*2*3*4*5=120)");
     delete reduceSeq;
 
@@ -284,14 +281,14 @@ void TestRunner::RunAll() {
     Sequence<int>* subSeq = new MutableArraySequence<int>(whereData, 5);
     Sequence<int>* sub = subSeq->GetSubsequence(1, 3);
     Assert(sub->GetLength() == 3, "Subsequence Length");
-    
+
     IEnumerator<int>* subEn = sub->GetEnumerator();
     int subExpected = 2;
     while (subEn->MoveNext()) {
         Assert(subEn->Current() == subExpected++, "Subsequence Iterator");
     }
     delete subEn;
-    
+
     delete subSeq;
     delete sub;
 
@@ -311,14 +308,14 @@ void TestRunner::RunAll() {
     PrintTestHeader("ListSequence");
     Sequence<int>* listSeq = new MutableListSequence<int>(seqData, 2);
     Assert(listSeq->GetLength() == 2, "ListSequence Length");
-    
+
     IEnumerator<int>* listEn = listSeq->GetEnumerator();
     int listExpected = 5;
     while (listEn->MoveNext()) {
         Assert(listEn->Current() == listExpected++, "ListSequence Iterator");
     }
     delete listEn;
-    
+
     Sequence<int>* listAppended = listSeq->Append(7);
     Assert(listAppended->GetLength() == 3, "ListSequence Append");
     delete listSeq;
@@ -332,16 +329,17 @@ void TestRunner::RunAll() {
 
     auto* zipped = Zip(zipSeq1, zipSeq2);
     Assert(zipped->GetLength() == 3, "Zip Length");
-    
+
     IEnumerator<Tuple2<int, int>>* zipEn = zipped->GetEnumerator();
     int zipExpected = 1;
     while (zipEn->MoveNext()) {
         Assert(zipEn->Current().item1 == zipExpected, "Zip Iterator item1");
-        Assert(zipEn->Current().item2 == zipExpected * 10, "Zip Iterator item2");
+        Assert(zipEn->Current().item2 == zipExpected * 10,
+               "Zip Iterator item2");
         zipExpected++;
     }
     delete zipEn;
-    
+
     delete zipped;
 
     auto unzipped = Unzip(zipped);
@@ -357,17 +355,17 @@ void TestRunner::RunAll() {
 
     auto* splitted = Split(splitSeq, [](int x) { return x == 0; });
     Assert(splitted->GetLength() == 3, "Split Count (3 fragments)");
-    
+
     IEnumerator<Sequence<int>*>* splitEn = splitted->GetEnumerator();
     int splitIdx = 0;
     int expectedLengths[] = {2, 2, 1};
     while (splitEn->MoveNext()) {
-        Assert(splitEn->Current()->GetLength() == expectedLengths[splitIdx], 
+        Assert(splitEn->Current()->GetLength() == expectedLengths[splitIdx],
                "Split Fragment Iterator");
         splitIdx++;
     }
     delete splitEn;
-    
+
     delete splitted;
     delete splitSeq;
 
@@ -388,14 +386,14 @@ void TestRunner::RunAll() {
     int fromData[] = {1, 2, 3, 4, 5};
     Sequence<int>* fromSeq = From(fromData, 5);
     Assert(fromSeq->GetLength() == 5, "From Length");
-    
+
     IEnumerator<int>* fromEn = fromSeq->GetEnumerator();
     int fromExpected = 1;
     while (fromEn->MoveNext()) {
         Assert(fromEn->Current() == fromExpected++, "From Iterator");
     }
     delete fromEn;
-    
+
     delete fromSeq;
 
     // ========== Concat Tests (с итератором) ==========
@@ -407,15 +405,14 @@ void TestRunner::RunAll() {
 
     Sequence<int>* concatenated = Concat(concatSeq1, concatSeq2);
     Assert(concatenated->GetLength() == 6, "Concat Length");
-    
-    // 🔧 ИТЕРАТОР вместо for
+
     IEnumerator<int>* concatEn = concatenated->GetEnumerator();
     int concatExpected = 1;
     while (concatEn->MoveNext()) {
         Assert(concatEn->Current() == concatExpected++, "Concat Iterator");
     }
     delete concatEn;
-    
+
     delete concatSeq1;
     delete concatSeq2;
     delete concatenated;
@@ -430,15 +427,16 @@ void TestRunner::RunAll() {
 
     Sequence<int>* sliced = Slice(sliceSeq, 1, 2, sliceInsertSeq);
     Assert(sliced->GetLength() == 5, "Slice Length");
-    
+
     IEnumerator<int>* sliceEn = sliced->GetEnumerator();
     int sliceExpected[] = {1, 9, 10, 4, 5};
     int sliceIdx = 0;
     while (sliceEn->MoveNext()) {
-        Assert(sliceEn->Current() == sliceExpected[sliceIdx++], "Slice Iterator");
+        Assert(sliceEn->Current() == sliceExpected[sliceIdx++],
+               "Slice Iterator");
     }
     delete sliceEn;
-    
+
     delete sliced;
     delete sliceSeq;
     delete sliceInsertSeq;

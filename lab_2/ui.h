@@ -5,19 +5,18 @@
 #include <string>
 #include <thread>
 
-
 #ifndef _WIN32
 
 #include <termios.h>
 #include <unistd.h>
 
-#endif // _WIN32
+#endif  // _WIN32
 
-#include "utils.h"
 #include "array_sequence.h"
 #include "list_sequence.h"
-#include "tests.h"
 #include "map_reduce.h"
+#include "tests.h"
+#include "utils.h"
 
 namespace Color {
 inline const std::string RESET = "\033[0m";
@@ -43,11 +42,11 @@ class ConsoleUI {
     static const int WIDTH = 70;
 
     void ClearScreen() {
-        #ifdef _WIN32
-            system("cls");
-        #else
-            system("clear");
-        #endif
+#ifdef _WIN32
+        system("cls");
+#else
+        system("clear");
+#endif
     }
 
     void SetColor(const std::string& c) { std::cout << c; }
@@ -496,7 +495,6 @@ class ConsoleUI {
         CloseBox();
     }
 
-
     void TestLinkedList() {
         LinkedList<int> ll;
 
@@ -531,13 +529,16 @@ class ConsoleUI {
         PrintRowIndented("[ДО] " + PrintSequence(seq), Color::BRIGHT_BLUE);
 
         seq->Append(4);
-        PrintRowIndented("[ПОСЛЕ] Append(4): " + PrintSequence(seq), Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Append(4): " + PrintSequence(seq),
+                         Color::BRIGHT_GREEN);
 
         seq->Prepend(0);
-        PrintRowIndented("[ПОСЛЕ] Prepend(0): " + PrintSequence(seq), Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Prepend(0): " + PrintSequence(seq),
+                         Color::BRIGHT_GREEN);
 
         seq->Set(1, 999);
-        PrintRowIndented("[ПОСЛЕ] Set(1, 999): " + PrintSequence(seq), Color::BRIGHT_MAGENTA);
+        PrintRowIndented("[ПОСЛЕ] Set(1, 999): " + PrintSequence(seq),
+                         Color::BRIGHT_MAGENTA);
 
         CloseBox();
         delete seq;
@@ -660,7 +661,8 @@ class ConsoleUI {
 
         int data1[] = {1, 2, 3};
         Sequence<int>* fromSeq = From(data1, 3);
-        PrintRowIndented("From([1,2,3]): " + PrintSequence(fromSeq), Color::BRIGHT_GREEN);
+        PrintRowIndented("From([1,2,3]): " + PrintSequence(fromSeq),
+                         Color::BRIGHT_GREEN);
         delete fromSeq;
 
         PrintEmpty();
@@ -672,7 +674,8 @@ class ConsoleUI {
 
         PrintRowIndented("Seq1: " + PrintSequence(seq1), Color::BRIGHT_BLUE);
         PrintRowIndented("Seq2: " + PrintSequence(seq2), Color::BRIGHT_BLUE);
-        PrintRowIndented("Concat: " + PrintSequence(concatenated), Color::BRIGHT_GREEN);
+        PrintRowIndented("Concat: " + PrintSequence(concatenated),
+                         Color::BRIGHT_GREEN);
 
         delete seq1;
         delete seq2;

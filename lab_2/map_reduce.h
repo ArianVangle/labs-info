@@ -1,9 +1,9 @@
 #pragma once
 
 #include "array_sequence.h"
+#include "iterators.h"
 #include "option.h"
 #include "sequence.h"
-#include "iterators.h" 
 
 template <class T1, class T2>
 struct Pair {
@@ -56,7 +56,6 @@ Pair<Sequence<T1>*, Sequence<T2>*> Unzip(Sequence<Tuple2<T1, T2>>* seq) {
 
     return Pair<Sequence<T1>*, Sequence<T2>*>(result1, result2);
 }
-
 
 template <class T, class Func>
 Sequence<Sequence<T>*>* Split(Sequence<T>* seq, Func predicate) {
@@ -118,7 +117,6 @@ Sequence<T>* Slice(Sequence<T>* seq, int index, int count,
     return result;
 }
 
-
 template <class T>
 Sequence<T>* From(T* arr, int count) {
     return new MutableArraySequence<T>(arr, count);
@@ -135,7 +133,6 @@ Sequence<T>* From(std::initializer_list<T> list) {
     delete[] arr;
     return seq;
 }
-
 
 template <class T>
 Sequence<T>* Concat(Sequence<T>* seq1, Sequence<T>* seq2) {
@@ -156,7 +153,6 @@ Sequence<T>* Concat(Sequence<T>* seq1, Sequence<T>* seq2) {
     return result;
 }
 
-
 template <class T, class Func>
 Option<T> Find(Sequence<T>* seq, Func predicate) {
     IEnumerator<T>* en = seq->GetEnumerator();
@@ -173,7 +169,6 @@ Option<T> Find(Sequence<T>* seq, Func predicate) {
     return Option<T>::None();
 }
 
-
 template <class T>
 Option<T> First(Sequence<T>* seq) {
     if (seq->GetLength() == 0) {
@@ -181,7 +176,6 @@ Option<T> First(Sequence<T>* seq) {
     }
     return Option<T>::Some(seq->GetFirst());
 }
-
 
 template <class T, class Func>
 bool Any(Sequence<T>* seq, Func predicate) {
@@ -197,7 +191,6 @@ bool Any(Sequence<T>* seq, Func predicate) {
     delete en;
     return false;
 }
-
 
 template <class T, class Func>
 bool All(Sequence<T>* seq, Func predicate) {
