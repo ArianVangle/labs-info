@@ -185,7 +185,7 @@ void TestRunner::RunAll() {
     ll.InsertAt(5, 2);
     Assert(ll.Get(2) == 5, "LinkedList InsertAt");
 
-    // ========== Sequence Mutable Tests (с итератором) ==========
+    // ========== Sequence Mutable Tests ==========
     PrintTestHeader("Sequence (Mutable)");
     int seqData[] = {5, 6};
     Sequence<int>* seq = new MutableArraySequence<int>(seqData, 2);
@@ -203,7 +203,7 @@ void TestRunner::RunAll() {
     Assert(seq->GetLength() == 3, "Sequence Mutable State Change");
     delete seq;
 
-    // ========== Sequence Immutable Tests (с итератором) ==========
+    // ========== Sequence Immutable Tests ==========
     PrintTestHeader("Sequence (Immutable)");
     Sequence<int>* iSeq = new ImmutableArraySequence<int>(seqData, 2);
     Sequence<int>* iNewSeq = iSeq->Append(8);
@@ -219,7 +219,7 @@ void TestRunner::RunAll() {
     delete iSeq;
     delete iNewSeq;
 
-    // ========== Map-Reduce Tests (с итераторами) ==========
+    // ========== Map-Reduce Tests ==========
     PrintTestHeader("Map-Reduce Operations");
     MutableArraySequence<int>* mapSeq =
         new MutableArraySequence<int>(seqData, 2);
@@ -276,7 +276,7 @@ void TestRunner::RunAll() {
     Assert((*opSeq)[1] == 6, "Operator[] [1]");
     delete opSeq;
 
-    // ========== Subsequence Tests (с итератором) ==========
+    // ========== Subsequence Tests ==========
     PrintTestHeader("Subsequence");
     Sequence<int>* subSeq = new MutableArraySequence<int>(whereData, 5);
     Sequence<int>* sub = subSeq->GetSubsequence(1, 3);
@@ -304,7 +304,7 @@ void TestRunner::RunAll() {
     Assert(setSeq->Get(0) == 100, "Sequence Set(0, 100)");
 
     delete setSeq;
-    // ========== ListSequence Tests (с итератором) ==========
+    // ========== ListSequence Tests ==========
     PrintTestHeader("ListSequence");
     Sequence<int>* listSeq = new MutableListSequence<int>(seqData, 2);
     Assert(listSeq->GetLength() == 2, "ListSequence Length");
@@ -320,7 +320,7 @@ void TestRunner::RunAll() {
     Assert(listAppended->GetLength() == 3, "ListSequence Append");
     delete listSeq;
 
-    // ========== Zip/Unzip Tests (с итератором) ==========
+    // ========== Zip/Unzip Tests ==========
     PrintTestHeader("Zip/Unzip");
     int zip1[] = {1, 2, 3};
     int zip2[] = {10, 20, 30};
@@ -348,7 +348,7 @@ void TestRunner::RunAll() {
     delete zipSeq1;
     delete zipSeq2;
 
-    // ========== Split Tests (с итератором) ==========
+    // ========== Split Tests ==========
     PrintTestHeader("Split");
     int splitData[] = {1, 2, 0, 3, 4, 0, 5};
     Sequence<int>* splitSeq = new MutableArraySequence<int>(splitData, 7);
@@ -381,7 +381,7 @@ void TestRunner::RunAll() {
     Assert(notFound.IsNone(), "Find None");
     delete findSeq;
 
-    // ========== From Tests (с итератором) ==========
+    // ========== From Tests ==========
     PrintTestHeader("From");
     int fromData[] = {1, 2, 3, 4, 5};
     Sequence<int>* fromSeq = From(fromData, 5);
@@ -396,7 +396,7 @@ void TestRunner::RunAll() {
 
     delete fromSeq;
 
-    // ========== Concat Tests (с итератором) ==========
+    // ========== Concat Tests ==========
     PrintTestHeader("Concat");
     int concat1[] = {1, 2, 3};
     int concat2[] = {4, 5, 6};
@@ -417,7 +417,7 @@ void TestRunner::RunAll() {
     delete concatSeq2;
     delete concatenated;
 
-    // ========== Slice Tests (с итератором) ==========
+    // ========== Slice Tests ==========
     PrintTestHeader("Slice");
     int sliceData[] = {1, 2, 3, 4, 5};
     Sequence<int>* sliceSeq = new MutableArraySequence<int>(sliceData, 5);
@@ -441,7 +441,7 @@ void TestRunner::RunAll() {
     delete sliceSeq;
     delete sliceInsertSeq;
 
-    // ========== ICollection Tests (с итератором) ==========
+    // ========== ICollection Tests ==========
     PrintTestHeader("ICollection");
     Sequence<int>* collSeq = new MutableArraySequence<int>(seqData, 2);
 
