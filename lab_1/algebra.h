@@ -47,9 +47,9 @@ typedef struct AlgebraOperations {
 
 } AlgebraOperations;
 
-const AlgebraOperations* GetIntegerOps(void);
-const AlgebraOperations* GetComplexOps(void);
-const AlgebraOperations* GetDoubleOps(void);
+const AlgebraOperations* get_integer_ops(void);
+const AlgebraOperations* get_complex_ops(void);
+const AlgebraOperations* get_double_ops(void);
 
 
 #endif  // ALGEBRA_H

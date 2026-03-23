@@ -193,7 +193,7 @@ static void double_magnitude(const void* a, double* result) {
 }
 
 
-const AlgebraOperations* GetIntegerOps(void) {
+const AlgebraOperations* get_integer_ops(void) {
     if (IntegerOpsInstance == NULL) {
         IntegerOpsInstance = malloc(sizeof(AlgebraOperations));
         IntegerOpsInstance->addFn = integer_add;
@@ -211,7 +211,7 @@ const AlgebraOperations* GetIntegerOps(void) {
     return IntegerOpsInstance;
 }
 
-const AlgebraOperations* GetDoubleOps(void) {
+const AlgebraOperations* get_double_ops(void) {
     if (DoubleOpsInstance == NULL) {
         DoubleOpsInstance = malloc(sizeof(AlgebraOperations));
         DoubleOpsInstance->addFn = double_add;
@@ -229,7 +229,7 @@ const AlgebraOperations* GetDoubleOps(void) {
     return DoubleOpsInstance;
 }
 
-const AlgebraOperations* GetComplexOps(void) {
+const AlgebraOperations* get_complex_ops(void) {
     if (ComplexOpsInstance == NULL) {
         ComplexOpsInstance = malloc(sizeof(AlgebraOperations));
         ComplexOpsInstance->addFn = complex_add;
