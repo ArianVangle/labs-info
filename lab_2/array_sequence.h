@@ -9,24 +9,61 @@ template <class T>
 class ArrayEnumerator;
 
 template <class T>
+class MutableArraySequence;
+
+template <class T>
+class ImmutableArraySequence;
+
+template <class T>
 class ArraySequence : public Sequence<T> {
    protected:
     DynamicArray<T>* items;
 
+    virtual ArraySequence<T>* CreateEmpty() const = 0;
+
+    Sequence<T>* AppendInternal(T item) {
+        items->Resize(items->GetSize() + 1);
+        items->Set(items->GetSize() - 1, item);
+        return this;
+    }
+
+    Sequence<T>* PrependInternal(T item) {
+        DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
+        newItems->Set(0, item);
+        for (int i = 0; i < items->GetSize(); i++) {
+            newItems->Set(i + 1, items->Get(i));
+        }
+        delete items;
+        items = newItems;
+        return this;
+    }
+
+    Sequence<T>* InsertAtInternal(T item, int index) {
+        if (index < 0 || index > items->GetSize())
+            throw IndexOutOfRangeException("Index out of range");
+        DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
+        for (int i = 0; i < index; i++) newItems->Set(i, items->Get(i));
+        newItems->Set(index, item);
+        for (int i = index; i < items->GetSize(); i++)
+            newItems->Set(i + 1, items->Get(i));
+        delete items;
+        items = newItems;
+        return this;
+    }
+
+    void SetInternal(size_t index, T value) { items->Set(index, value); }
+
    public:
     ArraySequence() { items = new DynamicArray<T>(0); }
-
     ArraySequence(T* itemsArr, int count) {
         items = new DynamicArray<T>(itemsArr, count);
     }
-
     ArraySequence(const LinkedList<T>& list) {
         items = new DynamicArray<T>(list.GetLength());
         for (int i = 0; i < list.GetLength(); i++) {
             items->Set(i, list.Get(i));
         }
     }
-
     ArraySequence(const ArraySequence<T>& other) {
         items = new DynamicArray<T>(*other.items);
     }
@@ -34,12 +71,16 @@ class ArraySequence : public Sequence<T> {
     virtual ~ArraySequence() { delete items; }
 
     T Get(size_t index) const override { return items->Get(index); }
-
     size_t GetCount() const override { return items->GetSize(); }
 
-    Sequence<T>* Clone() const override { return new ArraySequence<T>(*this); }
+    Sequence<T>* Clone() const override {
+        ArraySequence<T>* clone = CreateEmpty();
+        for (int i = 0; i < items->GetSize(); i++) {
+            clone->items->Set(i, items->Get(i));
+        }
+        return clone;
+    }
 
-    void Set(size_t index, T value) override { items->Set(index, value); }
     T GetFirst() const override {
         if (items->GetSize() == 0)
             throw IndexOutOfRangeException("Sequence is empty");
@@ -58,51 +99,39 @@ class ArraySequence : public Sequence<T> {
             throw IndexOutOfRangeException("Invalid indices");
         }
         int len = endIndex - startIndex + 1;
-        T* subItems = new T[len];
+        ArraySequence<T>* res = CreateEmpty();
+        res->items->Resize(len);
         for (int i = 0; i < len; i++) {
-            subItems[i] = items->Get(startIndex + i);
+            res->items->Set(i, items->Get(startIndex + i));
         }
-        Sequence<T>* res = new ArraySequence<T>(subItems, len);
-        delete[] subItems;
         return res;
     }
 
     int GetLength() const override { return items->GetSize(); }
 
     Sequence<T>* Append(T item) override {
-        items->Resize(items->GetSize() + 1);
-        items->Set(items->GetSize() - 1, item);
-        return this;
+        return ((ArraySequence<T>*)Instance())->AppendInternal(item);
     }
 
     Sequence<T>* Prepend(T item) override {
-        DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
-        newItems->Set(0, item);
-        for (int i = 0; i < items->GetSize(); i++) {
-            newItems->Set(i + 1, items->Get(i));
-        }
-        delete items;
-        items = newItems;
-        return this;
+        return ((ArraySequence<T>*)Instance())->PrependInternal(item);
     }
 
     Sequence<T>* InsertAt(T item, int index) override {
-        if (index < 0 || index > items->GetSize())
-            throw IndexOutOfRangeException("Index out of range");
-        DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
-        for (int i = 0; i < index; i++) newItems->Set(i, items->Get(i));
-        newItems->Set(index, item);
-        for (int i = index; i < items->GetSize(); i++)
-            newItems->Set(i + 1, items->Get(i));
-        delete items;
-        items = newItems;
-        return this;
+        return ((ArraySequence<T>*)Instance())->InsertAtInternal(item, index);
     }
+
+    void Set(size_t index, T value) override {
+        ((ArraySequence<T>*)Instance())->SetInternal(index, value);
+    }
+
+    virtual Sequence<T>* Instance() = 0;
 
     Sequence<T>* Concat(Sequence<T>* list) override {
         int currentLen = items->GetSize();
         int addLen = list->GetLength();
         items->Resize(currentLen + addLen);
+
         IEnumerator<T>* en = list->GetEnumerator();
         int i = currentLen;
         while (en->MoveNext()) {
@@ -118,7 +147,8 @@ class ArraySequence : public Sequence<T> {
         for (int i = 0; i < items->GetSize(); i++) {
             newArr[i] = func(items->Get(i));
         }
-        Sequence<R>* res = new ArraySequence<R>(newArr, items->GetSize());
+        Sequence<R>* res =
+            new MutableArraySequence<R>(newArr, items->GetSize());
         delete[] newArr;
         return res;
     }
@@ -133,7 +163,11 @@ class ArraySequence : public Sequence<T> {
         for (int i = 0; i < items->GetSize(); i++) {
             if (func(items->Get(i))) newArr[idx++] = items->Get(i);
         }
-        Sequence<T>* res = new ArraySequence<T>(newArr, count);
+        ArraySequence<T>* res = CreateEmpty();
+        res->items->Resize(count);
+        for (int i = 0; i < count; i++) {
+            res->items->Set(i, newArr[i]);
+        }
         delete[] newArr;
         return res;
     }
@@ -161,7 +195,6 @@ class ArraySequence : public Sequence<T> {
     T operator[](int index) const override { return Get(index); }
 };
 
-// Mutable Implementation
 template <class T>
 class MutableArraySequence : public ArraySequence<T> {
    public:
@@ -174,9 +207,14 @@ class MutableArraySequence : public ArraySequence<T> {
     Sequence<T>* Clone() const override {
         return new MutableArraySequence<T>(*this);
     }
+
+    Sequence<T>* Instance() override { return this; }
+
+    ArraySequence<T>* CreateEmpty() const override {
+        return new MutableArraySequence<T>();
+    }
 };
 
-// Immutable Implementation
 template <class T>
 class ImmutableArraySequence : public ArraySequence<T> {
    public:
@@ -186,22 +224,13 @@ class ImmutableArraySequence : public ArraySequence<T> {
     ImmutableArraySequence(const ImmutableArraySequence<T>& other)
         : ArraySequence<T>(other) {}
 
-    Sequence<T>* Append(T item) override {
-        ImmutableArraySequence<T>* newSeq = new ImmutableArraySequence<T>();
-        newSeq->items->Resize(this->GetLength() + 1);
-
-        IEnumerator<T>* en = this->GetEnumerator();
-        int i = 0;
-        while (en->MoveNext()) {
-            newSeq->items->Set(i++, en->Current());
-        }
-        delete en;
-
-        newSeq->items->Set(this->GetLength(), item);
-        return newSeq;
-    }
-
     Sequence<T>* Clone() const override {
         return new ImmutableArraySequence<T>(*this);
+    }
+
+    Sequence<T>* Instance() override { return this->Clone(); }
+
+    ArraySequence<T>* CreateEmpty() const override {
+        return new ImmutableArraySequence<T>();
     }
 };
