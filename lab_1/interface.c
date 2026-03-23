@@ -667,15 +667,15 @@ void ring_axioms_demo(void) {
 
     switch (choice) {
         case 1:
-            ops = GetIntegerOps();
+            ops = get_integer_ops();
             name = "Integer";
             break;
         case 2:
-            ops = GetDoubleOps();
+            ops = get_double_ops();
             name = "Double";
             break;
         case 3:
-            ops = GetComplexOps();
+            ops = get_complex_ops();
             name = "Complex";
             break;
         default:

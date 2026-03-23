@@ -32,7 +32,7 @@ Matrix* create_matrix(int size, const AlgebraOperations* ops,
     return m;
 }
 Matrix* create_integer_matrix(int size, const int* values) {
-    Matrix* m = create_matrix(size, GetIntegerOps(), sizeof(Integer));
+    Matrix* m = create_matrix(size, get_integer_ops(), sizeof(Integer));
     if (!m || !values) return m;
 
     Integer* data = (Integer*)m->data;
@@ -43,7 +43,7 @@ Matrix* create_integer_matrix(int size, const int* values) {
 }
 
 Matrix* create_double_matrix(int size, const double* values) {
-    Matrix* m = create_matrix(size, GetDoubleOps(), sizeof(Double));
+    Matrix* m = create_matrix(size, get_double_ops(), sizeof(Double));
     if (!m || !values) return m;
 
     Double* data = (Double*)m->data;
@@ -55,7 +55,7 @@ Matrix* create_double_matrix(int size, const double* values) {
 
 Matrix* create_complex_matrix(int size, const int* re_vals,
                               const int* im_vals) {
-    Matrix* m = create_matrix(size, GetComplexOps(), sizeof(Complex));
+    Matrix* m = create_matrix(size, get_complex_ops(), sizeof(Complex));
     if (!m) return m;
 
     Complex* data = (Complex*)m->data;
@@ -322,7 +322,7 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
 ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
     if (!L || !b || !y) return ERR_NULL_POINTER;
     if (L->size != b->size || L->size != y->size) return ERR_SIZE_MISMATCH;
-    if (L->operations != GetDoubleOps()) return ERR_TYPE_MISMATCH;
+    if (L->operations != get_double_ops()) return ERR_TYPE_MISMATCH;
 
     int n = L->size;
     Double* l_data = (Double*)L->data;
@@ -347,7 +347,7 @@ ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
 ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x) {
     if (!U || !y || !x) return ERR_NULL_POINTER;
     if (U->size != y->size || U->size != x->size) return ERR_SIZE_MISMATCH;
-    if (U->operations != GetDoubleOps()) return ERR_TYPE_MISMATCH;
+    if (U->operations != get_double_ops()) return ERR_TYPE_MISMATCH;
 
     int n = U->size;
     Double* u_data = (Double*)U->data;
@@ -391,9 +391,9 @@ ErrorCode solve_lu(const Matrix* A, const Matrix* b, Matrix* x) {
         return ERR_OUT_OF_MEMORY;
     }
 
-    if (b->operations == GetDoubleOps()) {
+    if (b->operations == get_double_ops()) {
         memcpy(b_double->data, b->data, n * sizeof(Double));
-    } else if (b->operations == GetIntegerOps()) {
+    } else if (b->operations == get_integer_ops()) {
         Double* bd = (Double*)b_double->data;
         Integer* bi = (Integer*)b->data;
         for (int i = 0; i < n; i++) {
@@ -484,13 +484,13 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
         }
         
         // Запись R[j][j] = norm (как double или через ops)
-        if (ops == GetDoubleOps()) {
+        if (ops == get_double_ops()) {
             ((Double*)((char*)R->data + (j*n+j)*elem_size))->value = norm;
         }
         
         // Нормализация: Q[:,j] /= norm
         void* norm_val = malloc(elem_size);
-        if (ops == GetDoubleOps()) {
+        if (ops == get_double_ops()) {
             ((Double*)norm_val)->value = norm;
         } else {
             // Для Integer/Complex: конвертация
@@ -706,7 +706,7 @@ void print_complex_matrix(const Matrix* m, const char* name) {
 void print_double_matrix(const Matrix* m, const char* name) {
     if (!m || !m->data) return;
 
-    if (m->operations != GetDoubleOps()) {
+    if (m->operations != get_double_ops()) {
         return;
     }
 
@@ -727,7 +727,7 @@ void print_double_matrix(const Matrix* m, const char* name) {
 
 void print_double_vector(const Matrix* v, const char* name) {
     if (!v || !v->data) return;
-    if (v->operations != GetDoubleOps()) {
+    if (v->operations != get_double_ops()) {
         printf("Warning: print_double_vector called on non-Double matrix\n");
         return;
     }

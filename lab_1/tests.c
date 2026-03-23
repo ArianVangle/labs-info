@@ -406,19 +406,19 @@ void test_lu_operations(void) {
 
 void test_ring_integer(void) {
     printf("\n🔹 ТЕСТ: Integer Ring Axioms\n");
-    ErrorCode result = test_ring_axioms(GetIntegerOps());
+    ErrorCode result = test_ring_axioms(get_integer_ops());
     TEST_ASSERT(result == ERR_OK, "Integer satisfies ring axioms");
 }
 
 void test_ring_double(void) {
     printf("\n🔹 ТЕСТ: Double Field Axioms\n");
-    ErrorCode result = test_ring_axioms(GetDoubleOps());
+    ErrorCode result = test_ring_axioms(get_double_ops());
     TEST_ASSERT(result == ERR_OK, "Double satisfies field axioms");
 }
 
 void test_ring_complex(void) {
     printf("\n🔹 ТЕСТ: Complex Ring Axioms\n");
-    ErrorCode result = test_ring_axioms(GetComplexOps());
+    ErrorCode result = test_ring_axioms(get_complex_ops());
     TEST_ASSERT(result == ERR_OK, "Complex satisfies ring axioms");
 }
 
@@ -562,8 +562,8 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     printf("║  RING AXIOMS VERIFICATION             ║\n");
     printf("╚═══════════════════════════════════════╝\n");
 
-    size_t elem_size = (ops == GetDoubleOps())    ? sizeof(Double)
-                       : (ops == GetComplexOps()) ? sizeof(Complex)
+    size_t elem_size = (ops == get_double_ops())    ? sizeof(Double)
+                       : (ops == get_complex_ops()) ? sizeof(Complex)
                                                   : sizeof(Integer);
 
     void* a = malloc(elem_size);
@@ -576,15 +576,15 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     int total = 7;
 
     // Инициализация тестовых значений
-    if (ops == GetDoubleOps()) {
+    if (ops == get_double_ops()) {
         ((Double*)a)->value = 2.0;
         ((Double*)b)->value = 3.0;
         ((Double*)c)->value = 4.0;
-    } else if (ops == GetIntegerOps()) {
+    } else if (ops == get_integer_ops()) {
         ((Integer*)a)->value = 2;
         ((Integer*)b)->value = 3;
         ((Integer*)c)->value = 4;
-    } else if (ops == GetComplexOps()) {
+    } else if (ops == get_complex_ops()) {
         ((Complex*)a)->re = 2;
         ((Complex*)a)->im = 1;
         ((Complex*)b)->re = 3;
@@ -611,12 +611,12 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     ops->addFn(a, temp2, temp2);
 
     int assoc_ok = 0;
-    if (ops == GetDoubleOps()) {
+    if (ops == get_double_ops()) {
         assoc_ok =
             (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
+    } else if (ops == get_integer_ops()) {
         assoc_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
+    } else if (ops == get_complex_ops()) {
         assoc_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
     }
     if (assoc_ok) {
@@ -631,12 +631,12 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     ops->addFn(b, a, temp2);
 
     int comm_ok = 0;
-    if (ops == GetDoubleOps()) {
+    if (ops == get_double_ops()) {
         comm_ok =
             (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
+    } else if (ops == get_integer_ops()) {
         comm_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
+    } else if (ops == get_complex_ops()) {
         comm_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
     }
     if (comm_ok) {
@@ -651,11 +651,11 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     ops->addFn(a, temp1, temp2);
 
     int zero_ok = 0;
-    if (ops == GetDoubleOps()) {
+    if (ops == get_double_ops()) {
         zero_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
+    } else if (ops == get_integer_ops()) {
         zero_ok = (((Integer*)a)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
+    } else if (ops == get_complex_ops()) {
         zero_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
     }
     if (zero_ok) {
@@ -680,11 +680,11 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     ops->multiplyFn(a, temp1, temp2);
 
     int one_ok = 0;
-    if (ops == GetDoubleOps()) {
+    if (ops == get_double_ops()) {
         one_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
+    } else if (ops == get_integer_ops()) {
         one_ok = (((Integer*)a)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
+    } else if (ops == get_complex_ops()) {
         one_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
     }
     if (one_ok) {
@@ -702,12 +702,12 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     ops->addFn(temp2, c, temp2);
 
     int dist_ok = 0;
-    if (ops == GetDoubleOps()) {
+    if (ops == get_double_ops()) {
         dist_ok =
             (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
+    } else if (ops == get_integer_ops()) {
         dist_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
+    } else if (ops == get_complex_ops()) {
         dist_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
     }
     if (dist_ok) {
