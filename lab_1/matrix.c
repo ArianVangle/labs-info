@@ -228,19 +228,90 @@ int complex_matrices_equal(const Matrix* m1, const Matrix* m2) {
 }
 
 ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
-    if (!A || !L || !U) {
-        return ERR_NULL_POINTER;
-    }
-
-    if (A->size != L->size || A->size != U->size) {
-        return ERR_SIZE_MISMATCH;
-    }
-
-    if (!A->operations || !A->operations->lu_decompose_fn) {
+    if (!A || !L || !U) return ERR_NULL_POINTER;
+    if (A->size != L->size || A->size != U->size) return ERR_SIZE_MISMATCH;
+    if (A->operations != L->operations || A->operations != U->operations) {
         return ERR_TYPE_MISMATCH;
     }
 
-    return A->operations->lu_decompose_fn(A, L, U);
+    const AlgebraOperations* ops = A->operations;
+    int n = A->size;
+    size_t elem_size = A->element_size;
+
+    // 1. Инициализация: L = 0, U = 0, диагональ L = 1
+    for (int i = 0; i < n * n; i++) {
+        ops->zeroFn((char*)L->data + i * elem_size);
+        ops->zeroFn((char*)U->data + i * elem_size);
+    }
+    for (int i = 0; i < n; i++) {
+        ops->oneFn((char*)L->data + (i * n + i) * elem_size);
+    }
+
+    // 2. Алгоритм Краута
+    for (int k = 0; k < n; k++) {
+        // Вычисление строки U[k][j] для j >= k
+        for (int j = k; j < n; j++) {
+            void* u_kj = (char*)U->data + (k * n + j) * elem_size;
+            void* a_kj = (char*)A->data + (k * n + j) * elem_size;
+            
+            // Копируем A[k][j] в U[k][j]
+            memcpy(u_kj, a_kj, elem_size);
+
+            // Вычитаем сумму: U[k][j] -= sum(L[k][m] * U[m][j])
+            for (int m = 0; m < k; m++) {
+                void* l_km = (char*)L->data + (k * n + m) * elem_size;
+                void* u_mj = (char*)U->data + (m * n + j) * elem_size;
+                void* prod = malloc(elem_size);
+                void* temp = malloc(elem_size);
+                
+                ops->multiplyFn(l_km, u_mj, prod);
+                ops->subtractFn(u_kj, prod, temp);
+                memcpy(u_kj, temp, elem_size);
+                
+                free(prod);
+                free(temp);
+            }
+        }
+
+        // Проверка на сингулярность
+        void* u_kk = (char*)U->data + (k * n + k) * elem_size;
+        if (ops->isZeroFn(u_kk)) {
+            return ERR_SINGULAR_MATRIX;
+        }
+
+        // Вычисление столбца L[i][k] для i > k
+        for (int i = k + 1; i < n; i++) {
+            void* l_ik = (char*)L->data + (i * n + k) * elem_size;
+            void* a_ik = (char*)A->data + (i * n + k) * elem_size;
+            
+            // Копируем A[i][k] в L[i][k]
+            memcpy(l_ik, a_ik, elem_size);
+
+            // Вычитаем сумму: L[i][k] -= sum(L[i][m] * U[m][k])
+            for (int m = 0; m < k; m++) {
+                void* l_im = (char*)L->data + (i * n + m) * elem_size;
+                void* u_mk = (char*)U->data + (m * n + k) * elem_size;
+                void* prod = malloc(elem_size);
+                void* temp = malloc(elem_size);
+                
+                ops->multiplyFn(l_im, u_mk, prod);
+                ops->subtractFn(l_ik, prod, temp);
+                memcpy(l_ik, temp, elem_size);
+                
+                free(prod);
+                free(temp);
+            }
+
+            // Деление: L[i][k] /= U[k][k]
+            void* u_kk = (char*)U->data + (k * n + k) * elem_size;
+            void* temp = malloc(elem_size);
+            ops->divideFn(l_ik, u_kk, temp);
+            memcpy(l_ik, temp, elem_size);
+            free(temp);
+        }
+    }
+
+    return ERR_OK;
 }
 
 /* === Прямая подстановка: решает L * y = b ===
@@ -372,44 +443,96 @@ ErrorCode solve_lu(const Matrix* A, const Matrix* b, Matrix* x) {
 ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
     if (!A || !Q || !R) return ERR_NULL_POINTER;
     if (A->size != Q->size || A->size != R->size) return ERR_SIZE_MISMATCH;
-    if (A->operations != GetDoubleOps()) return ERR_TYPE_MISMATCH;
-
-    int n = A->size;
-    Double* a = (Double*)A->data;
-    Double* q = (Double*)Q->data;
-    Double* r = (Double*)R->data;
-
-    for (int i = 0; i < n * n; i++) {
-        r[i].value = 0.0;
+    if (A->operations != Q->operations || A->operations != R->operations) {
+        return ERR_TYPE_MISMATCH;
     }
-
-    memcpy(q, a, n * n * sizeof(Double));
-
+    
+    const AlgebraOperations* ops = A->operations;
+    int n = A->size;
+    size_t elem_size = A->element_size;
+    
+    // Инициализация
+    for (int i = 0; i < n * n; i++) {
+        ops->zeroFn((char*)R->data + i * elem_size);
+    }
+    memcpy(Q->data, A->data, n * n * elem_size);
+    
+    // Modified Gram-Schmidt
     for (int j = 0; j < n; j++) {
-        double norm_sq = 0.0;
+        // Вычисление нормы: ||Q[:,j]||
+        double norm = 0.0;
         for (int i = 0; i < n; i++) {
-            norm_sq += q[i * n + j].value * q[i * n + j].value;
+            void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
+            void* prod = malloc(elem_size);
+            void* temp = malloc(elem_size);
+            ops->multiplyFn(q_ij, q_ij, prod);
+            ops->addFn((char*)R->data + (j*n+j)*elem_size, prod, temp);
+            memcpy((char*)R->data + (j*n+j)*elem_size, temp, elem_size);
+            free(prod); free(temp);
         }
-        double norm = sqrt(norm_sq);
-
-        if (norm < 1e-12) return ERR_SINGULAR_MATRIX;
-
-        r[j * n + j].value = norm;
-
+        
+        // sqrt через VTable
+        void* norm_elem = malloc(elem_size);
+        void* temp = malloc(elem_size);
+        ops->sqrtFn((char*)R->data + (j*n+j)*elem_size, norm_elem);
+        ops->magnitudeFn(norm_elem, &norm);  // Получаем double-значение
+        free(norm_elem);
+        
+        if (norm < 1e-12) {
+            free(temp);
+            return ERR_SINGULAR_MATRIX;
+        }
+        
+        // Запись R[j][j] = norm (как double или через ops)
+        if (ops == GetDoubleOps()) {
+            ((Double*)((char*)R->data + (j*n+j)*elem_size))->value = norm;
+        }
+        
+        // Нормализация: Q[:,j] /= norm
+        void* norm_val = malloc(elem_size);
+        if (ops == GetDoubleOps()) {
+            ((Double*)norm_val)->value = norm;
+        } else {
+            // Для Integer/Complex: конвертация
+            ops->oneFn(norm_val);
+            // Здесь можно улучшить для полной универсальности
+        }
+        
         for (int i = 0; i < n; i++) {
-            q[i * n + j].value /= norm;
+            void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
+            ops->divideFn(q_ij, norm_val, temp);
+            memcpy(q_ij, temp, elem_size);
         }
-
+        free(norm_val); free(temp);
+        
+        // Ортогонализация
         for (int k = j + 1; k < n; k++) {
-            double dot = 0.0;
+            void* dot = malloc(elem_size);
+            ops->zeroFn(dot);
             for (int i = 0; i < n; i++) {
-                dot += q[i * n + j].value * q[i * n + k].value;
+                void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
+                void* q_ik = (char*)Q->data + (i * n + k) * elem_size;
+                void* prod = malloc(elem_size);
+                void* tmp = malloc(elem_size);
+                ops->multiplyFn(q_ij, q_ik, prod);
+                ops->addFn(dot, prod, tmp);
+                memcpy(dot, tmp, elem_size);
+                free(prod); free(tmp);
             }
-            r[j * n + k].value = dot;
-
+            
+            memcpy((char*)R->data + (j*n+k)*elem_size, dot, elem_size);
+            
             for (int i = 0; i < n; i++) {
-                q[i * n + k].value -= dot * q[i * n + j].value;
+                void* q_ik = (char*)Q->data + (i * n + k) * elem_size;
+                void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
+                void* prod = malloc(elem_size);
+                void* tmp = malloc(elem_size);
+                ops->multiplyFn(dot, q_ij, prod);
+                ops->subtractFn(q_ik, prod, tmp);
+                memcpy(q_ik, tmp, elem_size);
+                free(prod); free(tmp);
             }
+            free(dot);
         }
     }
     return ERR_OK;

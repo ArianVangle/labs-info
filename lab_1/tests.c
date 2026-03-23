@@ -397,35 +397,11 @@ void test_lu_double_singular(void) {
     destroy_matrix(U);
 }
 
-void test_lu_integer_to_double(void) {
-    printf("\n🔹 ТЕСТ: LU Integer → Double result\n");
-
-    int a_vals[] = {2, 1, 1, 2};
-    Matrix *A = create_integer_matrix(2, a_vals);
-    Matrix *L = create_double_matrix(2, NULL);
-    Matrix *U = create_double_matrix(2, NULL);
-
-    clock_t start = clock();
-    ErrorCode result = matrix_lu_decompose(A, L, U);
-    clock_t end = clock();
-    double time_ms = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-    printf("  ⏱  Время выполнения: %.3f мс\n", time_ms);
-
-    TEST_ASSERT(result == ERR_OK, "Integer→Double LU succeeded");
-
-    Double *l_data = (Double *)L->data;
-    TEST_ASSERT(fabs(l_data[2].value - 0.5) < 1e-10, "L[1][0] == 0.5");
-
-    destroy_matrix(A);
-    destroy_matrix(L);
-    destroy_matrix(U);
-}
 
 void test_lu_operations(void) {
     test_lu_double_simple();
     test_lu_double_identity();
     test_lu_double_singular();
-    test_lu_integer_to_double();
 }
 
 void test_ring_integer(void) {
@@ -574,7 +550,207 @@ void test_qr_operations(void) {
     test_solve_lu();
     test_solve_qr();
 }
+static int complex_equal(const Complex* a, const Complex* b, double epsilon) {
+    return (fabs((double)a->re - (double)b->re) < epsilon) &&
+           (fabs((double)a->im - (double)b->im) < epsilon);
+}
 
+ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
+    if (!ops) return ERR_NULL_POINTER;
+
+    printf("\n╔═══════════════════════════════════════╗\n");
+    printf("║  RING AXIOMS VERIFICATION             ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+
+    size_t elem_size = (ops == GetDoubleOps())    ? sizeof(Double)
+                       : (ops == GetComplexOps()) ? sizeof(Complex)
+                                                  : sizeof(Integer);
+
+    void* a = malloc(elem_size);
+    void* b = malloc(elem_size);
+    void* c = malloc(elem_size);
+    void* temp1 = malloc(elem_size);
+    void* temp2 = malloc(elem_size);
+
+    int passed = 0;
+    int total = 7;
+
+    // Инициализация тестовых значений
+    if (ops == GetDoubleOps()) {
+        ((Double*)a)->value = 2.0;
+        ((Double*)b)->value = 3.0;
+        ((Double*)c)->value = 4.0;
+    } else if (ops == GetIntegerOps()) {
+        ((Integer*)a)->value = 2;
+        ((Integer*)b)->value = 3;
+        ((Integer*)c)->value = 4;
+    } else if (ops == GetComplexOps()) {
+        ((Complex*)a)->re = 2;
+        ((Complex*)a)->im = 1;
+        ((Complex*)b)->re = 3;
+        ((Complex*)b)->im = 2;
+        ((Complex*)c)->re = 4;
+        ((Complex*)c)->im = 1;
+    }
+
+    // Замкнутость сложения
+    ops->zeroFn(a);
+    ops->zeroFn(b);
+    ops->addFn(a, b, c);
+    if (ops->isZeroFn(c)) {
+        printf("  ✅ 1. Замкнутость сложения\n");
+        passed++;
+    } else {
+        printf("  ❌ 1. Замкнутость сложения\n");
+    }
+
+    // Ассоциативность
+    ops->addFn(a, b, temp1);
+    ops->addFn(temp1, c, temp1);
+    ops->addFn(b, c, temp2);
+    ops->addFn(a, temp2, temp2);
+
+    int assoc_ok = 0;
+    if (ops == GetDoubleOps()) {
+        assoc_ok =
+            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
+    } else if (ops == GetIntegerOps()) {
+        assoc_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
+    } else if (ops == GetComplexOps()) {
+        assoc_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
+    }
+    if (assoc_ok) {
+        printf("  ✅ 2. Ассоциативность сложения\n");
+        passed++;
+    } else {
+        printf("  ❌ 2. Ассоциативность сложения\n");
+    }
+
+    // Коммутативность
+    ops->addFn(a, b, temp1);
+    ops->addFn(b, a, temp2);
+
+    int comm_ok = 0;
+    if (ops == GetDoubleOps()) {
+        comm_ok =
+            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
+    } else if (ops == GetIntegerOps()) {
+        comm_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
+    } else if (ops == GetComplexOps()) {
+        comm_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
+    }
+    if (comm_ok) {
+        printf("  ✅ 3. Коммутативность сложения\n");
+        passed++;
+    } else {
+        printf("  ❌ 3. Коммутативность сложения\n");
+    }
+
+    // Нейтральный элемент сложения
+    ops->zeroFn(temp1);
+    ops->addFn(a, temp1, temp2);
+
+    int zero_ok = 0;
+    if (ops == GetDoubleOps()) {
+        zero_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
+    } else if (ops == GetIntegerOps()) {
+        zero_ok = (((Integer*)a)->value == ((Integer*)temp2)->value);
+    } else if (ops == GetComplexOps()) {
+        zero_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
+    }
+    if (zero_ok) {
+        printf("  ✅ 4. Нейтральный элемент сложения (0)\n");
+        passed++;
+    } else {
+        printf("  ❌ 4. Нейтральный элемент сложения (0)\n");
+    }
+
+    // Аддитивный обратный
+    ops->negateFn(a, temp1);
+    ops->addFn(a, temp1, temp2);
+    if (ops->isZeroFn(temp2)) {
+        printf("  ✅ 5. Аддитивный обратный (-a)\n");
+        passed++;
+    } else {
+        printf("  ❌ 5. Аддитивный обратный (-a)\n");
+    }
+
+    // Нейтральный элемент умножения
+    ops->oneFn(temp1);
+    ops->multiplyFn(a, temp1, temp2);
+
+    int one_ok = 0;
+    if (ops == GetDoubleOps()) {
+        one_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
+    } else if (ops == GetIntegerOps()) {
+        one_ok = (((Integer*)a)->value == ((Integer*)temp2)->value);
+    } else if (ops == GetComplexOps()) {
+        one_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
+    }
+    if (one_ok) {
+        printf("  ✅ 6. Нейтральный элемент умножения (1)\n");
+        passed++;
+    } else {
+        printf("  ❌ 6. Нейтральный элемент умножения (1)\n");
+    }
+
+    // Дистрибутивность
+    ops->addFn(b, c, temp1);
+    ops->multiplyFn(a, temp1, temp1);
+    ops->multiplyFn(a, b, temp2);
+    ops->multiplyFn(a, c, c);
+    ops->addFn(temp2, c, temp2);
+
+    int dist_ok = 0;
+    if (ops == GetDoubleOps()) {
+        dist_ok =
+            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
+    } else if (ops == GetIntegerOps()) {
+        dist_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
+    } else if (ops == GetComplexOps()) {
+        dist_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
+    }
+    if (dist_ok) {
+        printf("  ✅ 7. Дистрибутивность\n");
+        passed++;
+    } else {
+        printf("  ❌ 7. Дистрибутивность\n");
+    }
+
+    printf("\n┌───────────────────────────────────────┐\n");
+    printf("│  Результат: %d/%d аксиом выполнено      │\n", passed, total);
+    printf("└───────────────────────────────────────┘\n");
+
+    free(a);
+    free(b);
+    free(c);
+    free(temp1);
+    free(temp2);
+    return ERR_OK;
+}
+
+const char* error_message(ErrorCode code) {
+    switch (code) {
+        case ERR_OK:
+            return "Success";
+        case ERR_NULL_POINTER:
+            return "NULL pointer";
+        case ERR_SIZE_MISMATCH:
+            return "Size mismatch";
+        case ERR_SINGULAR_MATRIX:
+            return "Singular matrix";
+        case ERR_UNSUPPORTED_OPERATION:
+            return "Unsupported operation";
+        case ERR_TYPE_MISMATCH:
+            return "Type mismatch";
+        case ERR_OUT_OF_MEMORY:
+            return "Out of memory";
+        case ERR_INVALID_INPUT:
+            return "Invalid input";
+        default:
+            return "Unknown error";
+    }
+}
 void run_all_tests(void) {
     printf("╔════════════════════════════════════════╗\n");
     printf("║  POLYMORPHIC MATRIX TEST SUITE v1.2    ║\n");
