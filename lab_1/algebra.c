@@ -42,6 +42,29 @@ static void integer_multiply(const void* e1, const void* e2, void* result) {
         ((const Integer*)e1)->value * ((const Integer*)e2)->value;
 }
 
+static void integer_divide(const void* a, const void* b, void* result) {
+    int denom = ((const Integer*)b)->value;
+    if (denom == 0) {
+        ((Integer*)result)->value = 0; 
+    } else {
+        ((Integer*)result)->value = ((const Integer*)a)->value / denom;
+    }
+}
+
+
+static void integer_sqrt(const void* a, void* result) {
+    int val = ((const Integer*)a)->value;
+    if (val < 0) {
+        ((Integer*)result)->value = 0;  // или обработка ошибки
+    } else {
+        ((Integer*)result)->value = (int)sqrt((double)val);
+    }
+}
+
+static void integer_magnitude(const void* a, double* result) {
+    *result = (double)abs(((const Integer*)a)->value);
+}
+
 static void complex_zero(void* result) {
     ((Complex*)result)->re = 0;
     ((Complex*)result)->im = 0;
@@ -90,9 +113,33 @@ static void complex_multiply(const void* e1, const void* e2, void* result) {
     res->re = new_re;
     res->im = new_im;
 }
-static int complex_equal(const Complex* a, const Complex* b, double epsilon) {
-    return (fabs((double)a->re - (double)b->re) < epsilon) &&
-           (fabs((double)a->im - (double)b->im) < epsilon);
+
+
+static void complex_divide(const void* a, const void* b, void* result) {
+    const Complex* z1 = (const Complex*)a;
+    const Complex* z2 = (const Complex*)b;
+    double denom = (double)z2->re * z2->re + (double)z2->im * z2->im;
+    if (denom < 1e-12) {
+        ((Complex*)result)->re = 0;
+        ((Complex*)result)->im = 0;
+    } else {
+        ((Complex*)result)->re = (int)((z1->re * z2->re + z1->im * z2->im) / denom);
+        ((Complex*)result)->im = (int)((z1->im * z2->re - z1->re * z2->im) / denom);
+    }
+}
+
+static void complex_sqrt(const void* a, void* result) {
+    const Complex* z = (const Complex*)a;
+    double r = sqrt((double)z->re * z->re + (double)z->im * z->im);
+    double theta = atan2((double)z->im, (double)z->re);
+    double sqrt_r = sqrt(r);
+    ((Complex*)result)->re = (int)(sqrt_r * cos(theta / 2));
+    ((Complex*)result)->im = (int)(sqrt_r * sin(theta / 2));
+}
+
+static void complex_magnitude(const void* a, double* result) {
+    const Complex* z = (const Complex*)a;
+    *result = sqrt((double)z->re * z->re + (double)z->im * z->im);
 }
 
 static void double_zero(void* result) { ((Double*)result)->value = 0.0; }
@@ -126,156 +173,25 @@ static void double_multiply(const void* e1, const void* e2, void* result) {
         ((const Double*)e1)->value * ((const Double*)e2)->value;
 }
 
-static Complex complex_div_helper(const Complex* a, const Complex* b) {
-    double denom = (double)b->re * b->re + (double)b->im * b->im;
-    if (denom < 1e-12) return (Complex){0, 0};
 
-    double re = ((double)a->re * b->re + (double)a->im * b->im) / denom;
-    double im = ((double)a->im * b->re - (double)a->re * b->im) / denom;
-    return (Complex){(int)re, (int)im};
+static void double_divide(const void* a, const void* b, void* result) {
+    double denom = ((const Double*)b)->value;
+    if (fabs(denom) < 1e-12) {
+        ((Double*)result)->value = 0.0;
+    } else {
+        ((Double*)result)->value = ((const Double*)a)->value / denom;
+    }
 }
 
-static double complex_magnitude(const Complex* c) {
-    return sqrt((double)c->re * c->re + (double)c->im * c->im);
+static void double_sqrt(const void* a, void* result) {
+    double val = ((const Double*)a)->value;
+    ((Double*)result)->value = (val < 0) ? 0.0 : sqrt(val);
 }
 
-static ErrorCode integer_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
-    if (L->operations != GetDoubleOps() || U->operations != GetDoubleOps()) {
-        return ERR_TYPE_MISMATCH;
-    }
-
-    int n = A->size;
-    Integer* a = (Integer*)A->data;
-    Double* l = (Double*)L->data;
-    Double* u = (Double*)U->data;
-
-    for (int i = 0; i < n * n; i++) {
-        l[i].value = 0.0;
-        u[i].value = 0.0;
-    }
-    for (int i = 0; i < n; i++) {
-        l[i * n + i].value = 1.0;
-    }
-
-    for (int k = 0; k < n; k++) {
-        for (int j = k; j < n; j++) {
-            double sum = 0.0;
-            for (int m = 0; m < k; m++) {
-                sum += l[k * n + m].value * u[m * n + j].value;
-            }
-            u[k * n + j].value = (double)a[k * n + j].value - sum;
-        }
-        for (int i = k + 1; i < n; i++) {
-            double sum = 0.0;
-            for (int m = 0; m < k; m++) {
-                sum += l[i * n + m].value * u[m * n + k].value;
-            }
-            double u_kk = u[k * n + k].value;
-            if (fabs(u_kk) < 1e-12) return -2;
-            l[i * n + k].value = ((double)a[i * n + k].value - sum) / u_kk;
-        }
-    }
-    return ERR_OK;
+static void double_magnitude(const void* a, double* result) {
+    *result = fabs(((const Double*)a)->value);
 }
 
-static ErrorCode double_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
-    if (!A || !L || !U) return ERR_TYPE_MISMATCH;
-    if (A->size != L->size || A->size != U->size) return ERR_SIZE_MISMATCH;
-
-    int n = A->size;
-    Double* a = (Double*)A->data;
-    Double* l = (Double*)L->data;
-    Double* u = (Double*)U->data;
-
-    for (int i = 0; i < n * n; i++) {
-        l[i].value = 0.0;
-        u[i].value = 0.0;
-    }
-    for (int i = 0; i < n; i++) {
-        l[i * n + i].value = 1.0;
-    }
-
-    for (int k = 0; k < n; k++) {
-        for (int j = k; j < n; j++) {
-            double sum = 0.0;
-            for (int m = 0; m < k; m++) {
-                sum += l[k * n + m].value * u[m * n + j].value;
-            }
-            u[k * n + j].value = a[k * n + j].value - sum;
-
-            if (j == k && fabs(u[k * n + k].value) < 1e-12) {
-                return ERR_SINGULAR_MATRIX;
-            }
-        }
-
-        for (int i = k + 1; i < n; i++) {
-            double sum = 0.0;
-            for (int m = 0; m < k; m++) {
-                sum += l[i * n + m].value * u[m * n + k].value;
-            }
-            double u_kk = u[k * n + k].value;
-            if (fabs(u_kk) < 1e-12) return ERR_SINGULAR_MATRIX;
-            l[i * n + k].value = (a[i * n + k].value - sum) / u_kk;
-        }
-    }
-    return ERR_OK;
-}
-
-static ErrorCode complex_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
-    if (!A || !L || !U) return ERR_NULL_POINTER;
-    if (A->size != L->size || A->size != U->size) return ERR_SIZE_MISMATCH;
-
-    int n = A->size;
-    Complex* a = (Complex*)A->data;
-    Complex* l = (Complex*)L->data;
-    Complex* u = (Complex*)U->data;
-
-    for (int i = 0; i < n * n; i++) {
-        l[i].re = l[i].im = 0;
-        u[i].re = u[i].im = 0;
-    }
-    for (int i = 0; i < n; i++) {
-        l[i * n + i].re = 1;
-        l[i * n + i].im = 0;
-    }
-
-    for (int k = 0; k < n; k++) {
-        for (int j = k; j < n; j++) {
-            Complex sum = {0, 0};
-            for (int m = 0; m < k; m++) {
-                Complex l_val = l[k * n + m];
-                Complex u_val = u[m * n + j];
-                Complex prod = {l_val.re * u_val.re - l_val.im * u_val.im,
-                                l_val.re * u_val.im + l_val.im * u_val.re};
-                sum.re += prod.re;
-                sum.im += prod.im;
-            }
-            u[k * n + j].re = a[k * n + j].re - sum.re;
-            u[k * n + j].im = a[k * n + j].im - sum.im;
-        }
-
-        for (int i = k + 1; i < n; i++) {
-            Complex sum = {0, 0};
-            for (int m = 0; m < k; m++) {
-                Complex l_val = l[i * n + m];
-                Complex u_val = u[m * n + k];
-                Complex prod = {l_val.re * u_val.re - l_val.im * u_val.im,
-                                l_val.re * u_val.im + l_val.im * u_val.re};
-                sum.re += prod.re;
-                sum.im += prod.im;
-            }
-            Complex numerator = {a[i * n + k].re - sum.re,
-                                 a[i * n + k].im - sum.im};
-            Complex u_kk = u[k * n + k];
-
-            if (complex_magnitude(&u_kk) < 1e-12) return ERR_SINGULAR_MATRIX;
-
-            Complex result = complex_div_helper(&numerator, &u_kk);
-            l[i * n + k] = result;
-        }
-    }
-    return ERR_OK;
-}
 
 const AlgebraOperations* GetIntegerOps(void) {
     if (IntegerOpsInstance == NULL) {
@@ -288,7 +204,9 @@ const AlgebraOperations* GetIntegerOps(void) {
         IntegerOpsInstance->oneFn = integer_one;
         IntegerOpsInstance->isZeroFn = integer_is_zero;
         IntegerOpsInstance->isOneFn = integer_is_one;
-        IntegerOpsInstance->lu_decompose_fn = integer_lu_decompose;
+        IntegerOpsInstance->divideFn = integer_divide;
+        IntegerOpsInstance->sqrtFn = integer_sqrt;
+        IntegerOpsInstance->magnitudeFn = integer_magnitude;
     }
     return IntegerOpsInstance;
 }
@@ -304,7 +222,9 @@ const AlgebraOperations* GetDoubleOps(void) {
         DoubleOpsInstance->oneFn = double_one;
         DoubleOpsInstance->isZeroFn = double_is_zero;
         DoubleOpsInstance->isOneFn = double_is_one;
-        DoubleOpsInstance->lu_decompose_fn = double_lu_decompose;
+        DoubleOpsInstance->divideFn = double_divide;
+        DoubleOpsInstance->sqrtFn = double_sqrt;
+        DoubleOpsInstance->magnitudeFn = double_magnitude;
     }
     return DoubleOpsInstance;
 }
@@ -320,205 +240,10 @@ const AlgebraOperations* GetComplexOps(void) {
         ComplexOpsInstance->oneFn = complex_one;
         ComplexOpsInstance->isZeroFn = complex_is_zero;
         ComplexOpsInstance->isOneFn = complex_is_one;
-        ComplexOpsInstance->lu_decompose_fn = complex_lu_decompose;
+        ComplexOpsInstance->divideFn = complex_divide;
+        ComplexOpsInstance->sqrtFn = complex_sqrt;
+        ComplexOpsInstance->magnitudeFn = complex_magnitude;
     }
     return ComplexOpsInstance;
 }
 
-ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
-    if (!ops) return ERR_NULL_POINTER;
-
-    printf("\n╔═══════════════════════════════════════╗\n");
-    printf("║  RING AXIOMS VERIFICATION             ║\n");
-    printf("╚═══════════════════════════════════════╝\n");
-
-    size_t elem_size = (ops == GetDoubleOps())    ? sizeof(Double)
-                       : (ops == GetComplexOps()) ? sizeof(Complex)
-                                                  : sizeof(Integer);
-
-    void* a = malloc(elem_size);
-    void* b = malloc(elem_size);
-    void* c = malloc(elem_size);
-    void* temp1 = malloc(elem_size);
-    void* temp2 = malloc(elem_size);
-
-    int passed = 0;
-    int total = 7;
-
-    // Инициализация тестовых значений
-    if (ops == GetDoubleOps()) {
-        ((Double*)a)->value = 2.0;
-        ((Double*)b)->value = 3.0;
-        ((Double*)c)->value = 4.0;
-    } else if (ops == GetIntegerOps()) {
-        ((Integer*)a)->value = 2;
-        ((Integer*)b)->value = 3;
-        ((Integer*)c)->value = 4;
-    } else if (ops == GetComplexOps()) {
-        ((Complex*)a)->re = 2;
-        ((Complex*)a)->im = 1;
-        ((Complex*)b)->re = 3;
-        ((Complex*)b)->im = 2;
-        ((Complex*)c)->re = 4;
-        ((Complex*)c)->im = 1;
-    }
-
-    // Замкнутость сложения
-    ops->zeroFn(a);
-    ops->zeroFn(b);
-    ops->addFn(a, b, c);
-    if (ops->isZeroFn(c)) {
-        printf("  ✅ 1. Замкнутость сложения\n");
-        passed++;
-    } else {
-        printf("  ❌ 1. Замкнутость сложения\n");
-    }
-
-    // Ассоциативность
-    ops->addFn(a, b, temp1);
-    ops->addFn(temp1, c, temp1);
-    ops->addFn(b, c, temp2);
-    ops->addFn(a, temp2, temp2);
-
-    int assoc_ok = 0;
-    if (ops == GetDoubleOps()) {
-        assoc_ok =
-            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
-        assoc_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
-        assoc_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
-    }
-    if (assoc_ok) {
-        printf("  ✅ 2. Ассоциативность сложения\n");
-        passed++;
-    } else {
-        printf("  ❌ 2. Ассоциативность сложения\n");
-    }
-
-    // Коммутативность
-    ops->addFn(a, b, temp1);
-    ops->addFn(b, a, temp2);
-
-    int comm_ok = 0;
-    if (ops == GetDoubleOps()) {
-        comm_ok =
-            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
-        comm_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
-        comm_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
-    }
-    if (comm_ok) {
-        printf("  ✅ 3. Коммутативность сложения\n");
-        passed++;
-    } else {
-        printf("  ❌ 3. Коммутативность сложения\n");
-    }
-
-    // Нейтральный элемент сложения
-    ops->zeroFn(temp1);
-    ops->addFn(a, temp1, temp2);
-
-    int zero_ok = 0;
-    if (ops == GetDoubleOps()) {
-        zero_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
-        zero_ok = (((Integer*)a)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
-        zero_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
-    }
-    if (zero_ok) {
-        printf("  ✅ 4. Нейтральный элемент сложения (0)\n");
-        passed++;
-    } else {
-        printf("  ❌ 4. Нейтральный элемент сложения (0)\n");
-    }
-
-    // Аддитивный обратный
-    ops->negateFn(a, temp1);
-    ops->addFn(a, temp1, temp2);
-    if (ops->isZeroFn(temp2)) {
-        printf("  ✅ 5. Аддитивный обратный (-a)\n");
-        passed++;
-    } else {
-        printf("  ❌ 5. Аддитивный обратный (-a)\n");
-    }
-
-    // Нейтральный элемент умножения
-    ops->oneFn(temp1);
-    ops->multiplyFn(a, temp1, temp2);
-
-    int one_ok = 0;
-    if (ops == GetDoubleOps()) {
-        one_ok = (fabs(((Double*)a)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
-        one_ok = (((Integer*)a)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
-        one_ok = complex_equal((Complex*)a, (Complex*)temp2, 1e-12);
-    }
-    if (one_ok) {
-        printf("  ✅ 6. Нейтральный элемент умножения (1)\n");
-        passed++;
-    } else {
-        printf("  ❌ 6. Нейтральный элемент умножения (1)\n");
-    }
-
-    // Дистрибутивность
-    ops->addFn(b, c, temp1);
-    ops->multiplyFn(a, temp1, temp1);
-    ops->multiplyFn(a, b, temp2);
-    ops->multiplyFn(a, c, c);
-    ops->addFn(temp2, c, temp2);
-
-    int dist_ok = 0;
-    if (ops == GetDoubleOps()) {
-        dist_ok =
-            (fabs(((Double*)temp1)->value - ((Double*)temp2)->value) < 1e-12);
-    } else if (ops == GetIntegerOps()) {
-        dist_ok = (((Integer*)temp1)->value == ((Integer*)temp2)->value);
-    } else if (ops == GetComplexOps()) {
-        dist_ok = complex_equal((Complex*)temp1, (Complex*)temp2, 1e-12);
-    }
-    if (dist_ok) {
-        printf("  ✅ 7. Дистрибутивность\n");
-        passed++;
-    } else {
-        printf("  ❌ 7. Дистрибутивность\n");
-    }
-
-    printf("\n┌───────────────────────────────────────┐\n");
-    printf("│  Результат: %d/%d аксиом выполнено      │\n", passed, total);
-    printf("└───────────────────────────────────────┘\n");
-
-    free(a);
-    free(b);
-    free(c);
-    free(temp1);
-    free(temp2);
-
-    return ERR_OK;
-}
-
-const char* error_message(ErrorCode code) {
-    switch (code) {
-        case ERR_OK:
-            return "Success";
-        case ERR_NULL_POINTER:
-            return "NULL pointer";
-        case ERR_SIZE_MISMATCH:
-            return "Size mismatch";
-        case ERR_SINGULAR_MATRIX:
-            return "Singular matrix";
-        case ERR_UNSUPPORTED_OPERATION:
-            return "Unsupported operation";
-        case ERR_TYPE_MISMATCH:
-            return "Type mismatch";
-        case ERR_OUT_OF_MEMORY:
-            return "Out of memory";
-        case ERR_INVALID_INPUT:
-            return "Invalid input";
-        default:
-            return "Unknown error";
-    }
-}

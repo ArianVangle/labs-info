@@ -41,7 +41,9 @@ typedef struct AlgebraOperations {
     int (*isZeroFn)(const void*);
     int (*isOneFn)(const void*);
 
-    ErrorCode (*lu_decompose_fn)(const Matrix* A, Matrix* L, Matrix* U);
+    void (*divideFn)(const void* a, const void* b, void* result); 
+    void (*sqrtFn)(const void* a, void* result);    
+    void (*magnitudeFn)(const void* a, double* result);
 
 } AlgebraOperations;
 
@@ -49,7 +51,5 @@ const AlgebraOperations* GetIntegerOps(void);
 const AlgebraOperations* GetComplexOps(void);
 const AlgebraOperations* GetDoubleOps(void);
 
-ErrorCode test_ring_axioms(const AlgebraOperations* ops);
-const char* error_message(ErrorCode code);
 
 #endif  // ALGEBRA_H

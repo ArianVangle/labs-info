@@ -1,6 +1,8 @@
 #ifndef TESTS_H
 #define TESTS_H
 
+#include "algebra.h"
+
 void run_all_tests(void);
 
 void test_integer_operations(void);
@@ -21,12 +23,14 @@ void test_ring_operations(void);
 void test_lu_double_simple(void);
 void test_lu_double_identity(void);
 void test_lu_double_singular(void);
-void test_lu_integer_to_double(void);
 void test_lu_operations(void);
 
 void test_qr_decompose(void);
 void test_solve_lu(void);
 void test_solve_qr(void);
 void test_qr_decompose(void);
+
+const char* error_message(ErrorCode code);
+ErrorCode test_ring_axioms(const AlgebraOperations* ops);
 
 #endif  // TESTS_H
