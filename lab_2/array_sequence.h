@@ -100,9 +100,13 @@ class ArraySequence : public Sequence<T> {
     }
 
     Sequence<T>* Concat(Sequence<T>* list) override {
+        int currentLen = items->GetSize();
+        int addLen = list->GetLength();
+        items->Resize(currentLen + addLen);
         IEnumerator<T>* en = list->GetEnumerator();
+        int i = currentLen;
         while (en->MoveNext()) {
-            Append(en->Current());
+            items->Set(i++, en->Current());
         }
         delete en;
         return this;

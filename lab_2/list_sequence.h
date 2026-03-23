@@ -59,7 +59,7 @@ class ListSequence : public Sequence<T> {
     Sequence<T>* Concat(Sequence<T>* list) override {
         IEnumerator<T>* en = list->GetEnumerator();
         while (en->MoveNext()) {
-            Append(en->Current());
+            items->Append(en->Current());  
         }
         delete en;
         return this;
