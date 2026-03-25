@@ -312,20 +312,38 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
 ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
     if (!L || !b || !y) return ERR_NULL_POINTER;
     if (L->size != b->size || L->size != y->size) return ERR_SIZE_MISMATCH;
-    if (L->operations != get_double_ops()) return ERR_TYPE_MISMATCH;
+    if (L->operations != b->operations || L->operations != y->operations) {
+        return ERR_TYPE_MISMATCH;
+    }
 
+    const AlgebraOperations* ops = L->operations;
     int n = L->size;
-    Double* l_data = (Double*)L->data;
-    Double* b_data = (Double*)b->data;
-    Double* y_data = (Double*)y->data;
+    size_t elem_size = L->element_size;
 
     for (int i = 0; i < n; i++) {
-        double sum = 0.0;
+        void* sum = malloc(elem_size);
+        ops->zeroFn(sum);
+
         for (int j = 0; j < i; j++) {
-            sum += l_data[i * n + j].value * y_data[j].value;
+            void* l_ij = (char*)L->data + (i * n + j) * elem_size;
+            void* y_j = (char*)y->data + j * elem_size;
+            void* prod = malloc(elem_size);
+            void* temp = malloc(elem_size);
+
+            ops->multiplyFn(l_ij, y_j, prod);
+            ops->addFn(sum, prod, temp);
+            memcpy(sum, temp, elem_size);
+
+            free(prod);
+            free(temp);
         }
-        y_data[i].value = b_data[i].value - sum;
+
+        void* b_i = (char*)b->data + i * elem_size;
+        ops->subtractFn(b_i, sum, (char*)y->data + i * elem_size);
+
+        free(sum);
     }
+
     return ERR_OK;
 }
 
@@ -337,22 +355,49 @@ ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
 ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x) {
     if (!U || !y || !x) return ERR_NULL_POINTER;
     if (U->size != y->size || U->size != x->size) return ERR_SIZE_MISMATCH;
-    if (U->operations != get_double_ops()) return ERR_TYPE_MISMATCH;
+    if (U->operations != y->operations || U->operations != x->operations) {
+        return ERR_TYPE_MISMATCH;
+    }
 
+    const AlgebraOperations* ops = U->operations;
     int n = U->size;
-    Double* u_data = (Double*)U->data;
-    Double* y_data = (Double*)y->data;
-    Double* x_data = (Double*)x->data;
+    size_t elem_size = U->element_size;
 
     for (int i = n - 1; i >= 0; i--) {
-        double sum = 0.0;
+        void* sum = malloc(elem_size);
+        ops->zeroFn(sum);
+
         for (int j = i + 1; j < n; j++) {
-            sum += u_data[i * n + j].value * x_data[j].value;
+            void* u_ij = (char*)U->data + (i * n + j) * elem_size;
+            void* x_j = (char*)x->data + j * elem_size;
+            void* prod = malloc(elem_size);
+            void* temp = malloc(elem_size);
+
+            ops->multiplyFn(u_ij, x_j, prod);
+            ops->addFn(sum, prod, temp);
+            memcpy(sum, temp, elem_size);
+
+            free(prod);
+            free(temp);
         }
-        double u_ii = u_data[i * n + i].value;
-        if (fabs(u_ii) < 1e-12) return ERR_SINGULAR_MATRIX;
-        x_data[i].value = (y_data[i].value - sum) / u_ii;
+
+        void* y_i = (char*)y->data + i * elem_size;
+        void* temp = malloc(elem_size);
+        ops->subtractFn(y_i, sum, temp);
+
+        void* u_ii = (char*)U->data + (i * n + i) * elem_size;
+        if (ops->isZeroFn(u_ii)) {
+            free(sum);
+            free(temp);
+            return ERR_SINGULAR_MATRIX;
+        }
+
+        ops->divideFn(temp, u_ii, (char*)x->data + i * elem_size);
+
+        free(sum);
+        free(temp);
     }
+
     return ERR_OK;
 }
 
@@ -364,64 +409,38 @@ ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x) {
 ErrorCode solve_lu(const Matrix* A, const Matrix* b, Matrix* x) {
     if (!A || !b || !x) return ERR_NULL_POINTER;
     if (A->size != b->size || A->size != x->size) return ERR_SIZE_MISMATCH;
-    if (A->size != A->size) return ERR_SIZE_MISMATCH;
-
-    int n = A->size;
-
-    Matrix* L = create_double_matrix(n, NULL);
-    Matrix* U = create_double_matrix(n, NULL);
-    Matrix* b_double = create_double_matrix(n, NULL);
-    Matrix* y = create_double_matrix(n, NULL);
-
-    if (!L || !U || !b_double || !y) {
-        destroy_matrix(L);
-        destroy_matrix(U);
-        destroy_matrix(b_double);
-        destroy_matrix(y);
-        return ERR_OUT_OF_MEMORY;
+    if (A->operations != b->operations || A->operations != x->operations) {
+        return ERR_TYPE_MISMATCH; 
     }
 
-    if (b->operations == get_double_ops()) {
-        memcpy(b_double->data, b->data, n * sizeof(Double));
-    } else if (b->operations == get_integer_ops()) {
-        Double* bd = (Double*)b_double->data;
-        Integer* bi = (Integer*)b->data;
-        for (int i = 0; i < n; i++) {
-            bd[i].value = (double)bi[i].value;
-        }
-    } else {
-        destroy_matrix(L);
-        destroy_matrix(U);
-        destroy_matrix(b_double);
-        destroy_matrix(y);
-        return ERR_TYPE_MISMATCH;
+    int n = A->size;
+    const AlgebraOperations* ops = A->operations;
+    size_t elem_size = A->element_size;
+
+    Matrix* L = create_matrix(n, ops, elem_size);
+    Matrix* U = create_matrix(n, ops, elem_size);
+    Matrix* y = create_matrix(n, ops, elem_size);
+
+    if (!L || !U || !y) {
+        destroy_matrix(L); destroy_matrix(U); destroy_matrix(y);
+        return ERR_OUT_OF_MEMORY;
     }
 
     ErrorCode lu = matrix_lu_decompose(A, L, U);
     if (lu != ERR_OK) {
-        destroy_matrix(L);
-        destroy_matrix(U);
-        destroy_matrix(b_double);
-        destroy_matrix(y);
+        destroy_matrix(L); destroy_matrix(U); destroy_matrix(y);
         return lu;
     }
 
-    ErrorCode fwd = forward_substitution(L, b_double, y);
+    ErrorCode fwd = forward_substitution(L, b, y);
     if (fwd != ERR_OK) {
-        destroy_matrix(L);
-        destroy_matrix(U);
-        destroy_matrix(b_double);
-        destroy_matrix(y);
+        destroy_matrix(L); destroy_matrix(U); destroy_matrix(y);
         return fwd;
     }
 
     ErrorCode bwd = backward_substitution(U, y, x);
 
-    destroy_matrix(L);
-    destroy_matrix(U);
-    destroy_matrix(b_double);
-    destroy_matrix(y);
-
+    destroy_matrix(L); destroy_matrix(U); destroy_matrix(y);
     return bwd;
 }
 
@@ -521,46 +540,47 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
 ErrorCode solve_qr(const Matrix* A, const Matrix* b, Matrix* x) {
     if (!A || !b || !x) return ERR_NULL_POINTER;
     if (A->size != b->size || A->size != x->size) return ERR_SIZE_MISMATCH;
+    if (A->operations != b->operations || A->operations != x->operations) {
+        return ERR_TYPE_MISMATCH;
+    }
 
     int n = A->size;
+    const AlgebraOperations* ops = A->operations;
+    size_t elem_size = A->element_size;
 
-    Matrix* Q = create_double_matrix(n, NULL);
-    Matrix* R = create_double_matrix(n, NULL);
-    Matrix* y = create_double_matrix(n, NULL);
+    Matrix* Q = create_matrix(n, ops, elem_size);
+    Matrix* R = create_matrix(n, ops, elem_size);
+    Matrix* y = create_matrix(n, ops, elem_size);
 
     if (!Q || !R || !y) {
-        destroy_matrix(Q);
-        destroy_matrix(R);
-        destroy_matrix(y);
+        destroy_matrix(Q); destroy_matrix(R); destroy_matrix(y);
         return ERR_OUT_OF_MEMORY;
     }
 
     ErrorCode qr = matrix_qr_decompose(A, Q, R);
     if (qr != ERR_OK) {
-        destroy_matrix(Q);
-        destroy_matrix(R);
-        destroy_matrix(y);
+        destroy_matrix(Q); destroy_matrix(R); destroy_matrix(y);
         return qr;
     }
 
-    Double* q_data = (Double*)Q->data;
-    Double* b_data = (Double*)b->data;
-    Double* y_data = (Double*)y->data;
-
     for (int i = 0; i < n; i++) {
-        double sum = 0.0;
+        void* y_i = (char*)y->data + i * elem_size;
+        ops->zeroFn(y_i);
         for (int j = 0; j < n; j++) {
-            sum += q_data[j * n + i].value * b_data[j].value;
+            void* q_ji = (char*)Q->data + (j * n + i) * elem_size;
+            void* b_j = (char*)b->data + j * elem_size;
+            void* prod = malloc(elem_size);
+            void* temp = malloc(elem_size);
+            ops->multiplyFn(q_ji, b_j, prod);
+            ops->addFn(y_i, prod, temp);
+            memcpy(y_i, temp, elem_size);
+            free(prod); free(temp);
         }
-        y_data[i].value = sum;
     }
 
     ErrorCode bwd = backward_substitution(R, y, x);
 
-    destroy_matrix(Q);
-    destroy_matrix(R);
-    destroy_matrix(y);
-
+    destroy_matrix(Q); destroy_matrix(R); destroy_matrix(y);
     return bwd;
 }
 
@@ -602,7 +622,6 @@ void benchmark_lu_vs_qr(int size) {
         return;
     }
 
-    // LU Benchmark
     const int iterations = 100;
     clock_t lu_start = clock();
     for (int i = 0; i < iterations; i++) {
@@ -612,7 +631,6 @@ void benchmark_lu_vs_qr(int size) {
     double lu_time =
         (double)(lu_end - lu_start) * 1000.0 / CLOCKS_PER_SEC / iterations;
 
-    // QR Benchmark
     clock_t qr_start = clock();
     for (int i = 0; i < iterations; i++) {
         solve_qr(A, b, x_qr);
