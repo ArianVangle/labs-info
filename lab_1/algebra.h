@@ -44,6 +44,7 @@ typedef struct AlgebraOperations {
     void (*divideFn)(const void* a, const void* b, void* result); 
     void (*sqrtFn)(const void* a, void* result);    
     void (*magnitudeFn)(const void* a, double* result);
+    void (*setFromDoubleFn)(void* a, double value); 
 
 } AlgebraOperations;
 

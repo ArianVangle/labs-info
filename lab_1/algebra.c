@@ -65,6 +65,10 @@ static void integer_magnitude(const void* a, double* result) {
     *result = (double)abs(((const Integer*)a)->value);
 }
 
+static void integer_set_from_double(void* a, double value) {
+    ((Integer*)a)->value = (int)value;
+}
+
 static void complex_zero(void* result) {
     ((Complex*)result)->re = 0;
     ((Complex*)result)->im = 0;
@@ -142,6 +146,11 @@ static void complex_magnitude(const void* a, double* result) {
     *result = sqrt((double)z->re * z->re + (double)z->im * z->im);
 }
 
+static void complex_set_from_double(void* a, double value) {
+    ((Complex*)a)->re = (int)value;
+    ((Complex*)a)->im = 0;
+}
+
 static void double_zero(void* result) { ((Double*)result)->value = 0.0; }
 
 static void double_one(void* result) { ((Double*)result)->value = 1.0; }
@@ -192,6 +201,9 @@ static void double_magnitude(const void* a, double* result) {
     *result = fabs(((const Double*)a)->value);
 }
 
+static void double_set_from_double(void* a, double value) {
+    ((Double*)a)->value = value;
+}
 
 const AlgebraOperations* get_integer_ops(void) {
     if (IntegerOpsInstance == NULL) {
@@ -207,6 +219,7 @@ const AlgebraOperations* get_integer_ops(void) {
         IntegerOpsInstance->divideFn = integer_divide;
         IntegerOpsInstance->sqrtFn = integer_sqrt;
         IntegerOpsInstance->magnitudeFn = integer_magnitude;
+        IntegerOpsInstance->setFromDoubleFn = integer_set_from_double;
     }
     return IntegerOpsInstance;
 }
@@ -225,6 +238,7 @@ const AlgebraOperations* get_double_ops(void) {
         DoubleOpsInstance->divideFn = double_divide;
         DoubleOpsInstance->sqrtFn = double_sqrt;
         DoubleOpsInstance->magnitudeFn = double_magnitude;
+        DoubleOpsInstance->setFromDoubleFn = double_set_from_double;
     }
     return DoubleOpsInstance;
 }
@@ -243,6 +257,7 @@ const AlgebraOperations* get_complex_ops(void) {
         ComplexOpsInstance->divideFn = complex_divide;
         ComplexOpsInstance->sqrtFn = complex_sqrt;
         ComplexOpsInstance->magnitudeFn = complex_magnitude;
+        ComplexOpsInstance->setFromDoubleFn = complex_set_from_double;
     }
     return ComplexOpsInstance;
 }

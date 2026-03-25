@@ -469,16 +469,10 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
             return ERR_SINGULAR_MATRIX;
         }
         
-        if (ops == get_double_ops()) {
-            ((Double*)((char*)R->data + (j*n+j)*elem_size))->value = norm;
-        }
+        ops->setFromDoubleFn((char*)R->data + (j*n+j)*elem_size, norm);
         
         void* norm_val = malloc(elem_size);
-        if (ops == get_double_ops()) {
-            ((Double*)norm_val)->value = norm;
-        } else {
-            ops->oneFn(norm_val);
-        }
+        ops->setFromDoubleFn(norm_val, norm);
         
         for (int i = 0; i < n; i++) {
             void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
