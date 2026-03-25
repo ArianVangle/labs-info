@@ -594,10 +594,10 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Замкнутость сложения
-    ops->zeroFn(a);
-    ops->zeroFn(b);
-    ops->addFn(a, b, c);
-    if (ops->isZeroFn(c)) {
+    ops->zero_fn(a);
+    ops->zero_fn(b);
+    ops->add_fn(a, b, c);
+    if (ops->is_zero_fn(c)) {
         printf("  ✅ 1. Замкнутость сложения\n");
         passed++;
     } else {
@@ -605,10 +605,10 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Ассоциативность
-    ops->addFn(a, b, temp1);
-    ops->addFn(temp1, c, temp1);
-    ops->addFn(b, c, temp2);
-    ops->addFn(a, temp2, temp2);
+    ops->add_fn(a, b, temp1);
+    ops->add_fn(temp1, c, temp1);
+    ops->add_fn(b, c, temp2);
+    ops->add_fn(a, temp2, temp2);
 
     int assoc_ok = 0;
     if (ops == get_double_ops()) {
@@ -627,8 +627,8 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Коммутативность
-    ops->addFn(a, b, temp1);
-    ops->addFn(b, a, temp2);
+    ops->add_fn(a, b, temp1);
+    ops->add_fn(b, a, temp2);
 
     int comm_ok = 0;
     if (ops == get_double_ops()) {
@@ -647,8 +647,8 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Нейтральный элемент сложения
-    ops->zeroFn(temp1);
-    ops->addFn(a, temp1, temp2);
+    ops->zero_fn(temp1);
+    ops->add_fn(a, temp1, temp2);
 
     int zero_ok = 0;
     if (ops == get_double_ops()) {
@@ -666,9 +666,9 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Аддитивный обратный
-    ops->negateFn(a, temp1);
-    ops->addFn(a, temp1, temp2);
-    if (ops->isZeroFn(temp2)) {
+    ops->negate_fn(a, temp1);
+    ops->add_fn(a, temp1, temp2);
+    if (ops->is_zero_fn(temp2)) {
         printf("  ✅ 5. Аддитивный обратный (-a)\n");
         passed++;
     } else {
@@ -676,8 +676,8 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Нейтральный элемент умножения
-    ops->oneFn(temp1);
-    ops->multiplyFn(a, temp1, temp2);
+    ops->one_fn(temp1);
+    ops->multiply_fn(a, temp1, temp2);
 
     int one_ok = 0;
     if (ops == get_double_ops()) {
@@ -695,11 +695,11 @@ ErrorCode test_ring_axioms(const AlgebraOperations* ops) {
     }
 
     // Дистрибутивность
-    ops->addFn(b, c, temp1);
-    ops->multiplyFn(a, temp1, temp1);
-    ops->multiplyFn(a, b, temp2);
-    ops->multiplyFn(a, c, c);
-    ops->addFn(temp2, c, temp2);
+    ops->add_fn(b, c, temp1);
+    ops->multiply_fn(a, temp1, temp1);
+    ops->multiply_fn(a, b, temp2);
+    ops->multiply_fn(a, c, c);
+    ops->add_fn(temp2, c, temp2);
 
     int dist_ok = 0;
     if (ops == get_double_ops()) {
