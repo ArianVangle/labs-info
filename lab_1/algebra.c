@@ -208,18 +208,18 @@ static void double_set_from_double(void* a, double value) {
 const AlgebraOperations* get_integer_ops(void) {
     if (IntegerOpsInstance == NULL) {
         IntegerOpsInstance = malloc(sizeof(AlgebraOperations));
-        IntegerOpsInstance->addFn = integer_add;
-        IntegerOpsInstance->subtractFn = integer_subtract;
-        IntegerOpsInstance->negateFn = integer_negate;
-        IntegerOpsInstance->zeroFn = integer_zero;
-        IntegerOpsInstance->multiplyFn = integer_multiply;
-        IntegerOpsInstance->oneFn = integer_one;
-        IntegerOpsInstance->isZeroFn = integer_is_zero;
-        IntegerOpsInstance->isOneFn = integer_is_one;
-        IntegerOpsInstance->divideFn = integer_divide;
-        IntegerOpsInstance->sqrtFn = integer_sqrt;
-        IntegerOpsInstance->magnitudeFn = integer_magnitude;
-        IntegerOpsInstance->setFromDoubleFn = integer_set_from_double;
+        IntegerOpsInstance->add_fn = integer_add;
+        IntegerOpsInstance->subtract_fn = integer_subtract;
+        IntegerOpsInstance->negate_fn = integer_negate;
+        IntegerOpsInstance->zero_fn = integer_zero;
+        IntegerOpsInstance->multiply_fn = integer_multiply;
+        IntegerOpsInstance->one_fn = integer_one;
+        IntegerOpsInstance->is_zero_fn = integer_is_zero;
+        IntegerOpsInstance->is_one_fn = integer_is_one;
+        IntegerOpsInstance->divide_fn = integer_divide;
+        IntegerOpsInstance->sqrt_fn = integer_sqrt;
+        IntegerOpsInstance->magnitude_fn = integer_magnitude;
+        IntegerOpsInstance->set_from_double_fn = integer_set_from_double;
     }
     return IntegerOpsInstance;
 }
@@ -227,18 +227,18 @@ const AlgebraOperations* get_integer_ops(void) {
 const AlgebraOperations* get_double_ops(void) {
     if (DoubleOpsInstance == NULL) {
         DoubleOpsInstance = malloc(sizeof(AlgebraOperations));
-        DoubleOpsInstance->addFn = double_add;
-        DoubleOpsInstance->subtractFn = double_subtract;
-        DoubleOpsInstance->negateFn = double_negate;
-        DoubleOpsInstance->zeroFn = double_zero;
-        DoubleOpsInstance->multiplyFn = double_multiply;
-        DoubleOpsInstance->oneFn = double_one;
-        DoubleOpsInstance->isZeroFn = double_is_zero;
-        DoubleOpsInstance->isOneFn = double_is_one;
-        DoubleOpsInstance->divideFn = double_divide;
-        DoubleOpsInstance->sqrtFn = double_sqrt;
-        DoubleOpsInstance->magnitudeFn = double_magnitude;
-        DoubleOpsInstance->setFromDoubleFn = double_set_from_double;
+        DoubleOpsInstance->add_fn = double_add;
+        DoubleOpsInstance->subtract_fn = double_subtract;
+        DoubleOpsInstance->negate_fn = double_negate;
+        DoubleOpsInstance->zero_fn = double_zero;
+        DoubleOpsInstance->multiply_fn = double_multiply;
+        DoubleOpsInstance->one_fn = double_one;
+        DoubleOpsInstance->is_zero_fn = double_is_zero;
+        DoubleOpsInstance->is_one_fn = double_is_one;
+        DoubleOpsInstance->divide_fn = double_divide;
+        DoubleOpsInstance->sqrt_fn = double_sqrt;
+        DoubleOpsInstance->magnitude_fn = double_magnitude;
+        DoubleOpsInstance->set_from_double_fn = double_set_from_double;
     }
     return DoubleOpsInstance;
 }
@@ -246,18 +246,18 @@ const AlgebraOperations* get_double_ops(void) {
 const AlgebraOperations* get_complex_ops(void) {
     if (ComplexOpsInstance == NULL) {
         ComplexOpsInstance = malloc(sizeof(AlgebraOperations));
-        ComplexOpsInstance->addFn = complex_add;
-        ComplexOpsInstance->subtractFn = complex_subtract;
-        ComplexOpsInstance->negateFn = complex_negate;
-        ComplexOpsInstance->zeroFn = complex_zero;
-        ComplexOpsInstance->multiplyFn = complex_multiply;
-        ComplexOpsInstance->oneFn = complex_one;
-        ComplexOpsInstance->isZeroFn = complex_is_zero;
-        ComplexOpsInstance->isOneFn = complex_is_one;
-        ComplexOpsInstance->divideFn = complex_divide;
-        ComplexOpsInstance->sqrtFn = complex_sqrt;
-        ComplexOpsInstance->magnitudeFn = complex_magnitude;
-        ComplexOpsInstance->setFromDoubleFn = complex_set_from_double;
+        ComplexOpsInstance->add_fn = complex_add;
+        ComplexOpsInstance->subtract_fn = complex_subtract;
+        ComplexOpsInstance->negate_fn = complex_negate;
+        ComplexOpsInstance->zero_fn = complex_zero;
+        ComplexOpsInstance->multiply_fn = complex_multiply;
+        ComplexOpsInstance->one_fn = complex_one;
+        ComplexOpsInstance->is_zero_fn = complex_is_zero;
+        ComplexOpsInstance->is_one_fn = complex_is_one;
+        ComplexOpsInstance->divide_fn = complex_divide;
+        ComplexOpsInstance->sqrt_fn = complex_sqrt;
+        ComplexOpsInstance->magnitude_fn = complex_magnitude;
+        ComplexOpsInstance->set_from_double_fn = complex_set_from_double;
     }
     return ComplexOpsInstance;
 }

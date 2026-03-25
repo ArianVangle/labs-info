@@ -30,21 +30,21 @@ typedef struct {
 typedef struct Matrix Matrix;
 
 typedef struct AlgebraOperations {
-    void (*addFn)(const void*, const void*, void*);
-    void (*subtractFn)(const void*, const void*, void*);
-    void (*negateFn)(const void*, void*);
-    void (*zeroFn)(void*);
+    void (*add_fn)(const void*, const void*, void*);
+    void (*subtract_fn)(const void*, const void*, void*);
+    void (*negate_fn)(const void*, void*);
+    void (*zero_fn)(void*);
 
-    void (*multiplyFn)(const void*, const void*, void*);
-    void (*oneFn)(void*);
+    void (*multiply_fn)(const void*, const void*, void*);
+    void (*one_fn)(void*);
 
-    int (*isZeroFn)(const void*);
-    int (*isOneFn)(const void*);
+    int (*is_zero_fn)(const void*);
+    int (*is_one_fn)(const void*);
 
-    void (*divideFn)(const void* a, const void* b, void* result); 
-    void (*sqrtFn)(const void* a, void* result);    
-    void (*magnitudeFn)(const void* a, double* result);
-    void (*setFromDoubleFn)(void* a, double value); 
+    void (*divide_fn)(const void* a, const void* b, void* result); 
+    void (*sqrt_fn)(const void* a, void* result);    
+    void (*magnitude_fn)(const void* a, double* result);
+    void (*set_from_double_fn)(void* a, double value); 
 
 } AlgebraOperations;
 

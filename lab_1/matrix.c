@@ -88,7 +88,7 @@ ErrorCode matrix_add(const Matrix* m1, const Matrix* m2, Matrix* result) {
     }
 
     for (int i = 0; i < m1->size * m1->size; i++) {
-        m1->operations->addFn((char*)m1->data + i * m1->element_size,
+        m1->operations->add_fn((char*)m1->data + i * m1->element_size,
                               (char*)m2->data + i * m2->element_size,
                               (char*)result->data + i * result->element_size);
     }
@@ -110,7 +110,7 @@ ErrorCode matrix_multiply_scalar(const Matrix* m, const void* scalar,
     }
 
     for (int i = 0; i < m->size * m->size; i++) {
-        m->operations->multiplyFn(
+        m->operations->multiply_fn(
             (char*)m->data + i * m->element_size, scalar,
             (char*)result->data + i * result->element_size);
     }
@@ -147,13 +147,13 @@ ErrorCode matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
         for (int j = 0; j < n; j++) {
             void* a_i0 = (char*)A->data + (i * n + 0) * elem_size;
             void* b_0j = (char*)B->data + (0 * n + j) * elem_size;
-            ops->multiplyFn(a_i0, b_0j, accumulator);
+            ops->multiply_fn(a_i0, b_0j, accumulator);
 
             for (int k = 1; k < n; k++) {
                 void* a_ik = (char*)A->data + (i * n + k) * elem_size;
                 void* b_kj = (char*)B->data + (k * n + j) * elem_size;
-                ops->multiplyFn(a_ik, b_kj, temp_product);
-                ops->addFn(accumulator, temp_product, accumulator);
+                ops->multiply_fn(a_ik, b_kj, temp_product);
+                ops->add_fn(accumulator, temp_product, accumulator);
             }
 
             void* c_ij = (char*)result->data + (i * n + j) * elem_size;
@@ -167,27 +167,27 @@ ErrorCode matrix_multiply(const Matrix* A, const Matrix* B, Matrix* result) {
 }
 
 ErrorCode matrix_zero(Matrix* m) {
-    if (!m || !m->operations->zeroFn) return ERR_NULL_POINTER;
+    if (!m || !m->operations->zero_fn) return ERR_NULL_POINTER;
     for (int i = 0; i < m->size * m->size; i++) {
-        m->operations->zeroFn((char*)m->data + i * m->element_size);
+        m->operations->zero_fn((char*)m->data + i * m->element_size);
     }
     return ERR_OK;
 }
 
 ErrorCode matrix_negate(const Matrix* m, Matrix* result) {
-    if (!m || !result || !m->operations->negateFn) return ERR_NULL_POINTER;
+    if (!m || !result || !m->operations->negate_fn) return ERR_NULL_POINTER;
     for (int i = 0; i < m->size * m->size; i++) {
-        m->operations->negateFn((char*)m->data + i * m->element_size,
+        m->operations->negate_fn((char*)m->data + i * m->element_size,
                                 (char*)result->data + i * result->element_size);
     }
     return ERR_OK;
 }
 
 ErrorCode matrix_subtract(const Matrix* m1, const Matrix* m2, Matrix* result) {
-    if (!m1 || !m2 || !result || !m1->operations->subtractFn)
+    if (!m1 || !m2 || !result || !m1->operations->subtract_fn)
         return ERR_NULL_POINTER;
     for (int i = 0; i < m1->size * m1->size; i++) {
-        m1->operations->subtractFn(
+        m1->operations->subtract_fn(
             (char*)m1->data + i * m1->element_size,
             (char*)m2->data + i * m2->element_size,
             (char*)result->data + i * result->element_size);
@@ -239,11 +239,11 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
     size_t elem_size = A->element_size;
 
     for (int i = 0; i < n * n; i++) {
-        ops->zeroFn((char*)L->data + i * elem_size);
-        ops->zeroFn((char*)U->data + i * elem_size);
+        ops->zero_fn((char*)L->data + i * elem_size);
+        ops->zero_fn((char*)U->data + i * elem_size);
     }
     for (int i = 0; i < n; i++) {
-        ops->oneFn((char*)L->data + (i * n + i) * elem_size);
+        ops->one_fn((char*)L->data + (i * n + i) * elem_size);
     }
 
     for (int k = 0; k < n; k++) {
@@ -259,8 +259,8 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
                 void* prod = malloc(elem_size);
                 void* temp = malloc(elem_size);
                 
-                ops->multiplyFn(l_km, u_mj, prod);
-                ops->subtractFn(u_kj, prod, temp);
+                ops->multiply_fn(l_km, u_mj, prod);
+                ops->subtract_fn(u_kj, prod, temp);
                 memcpy(u_kj, temp, elem_size);
                 
                 free(prod);
@@ -269,7 +269,7 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
         }
 
         void* u_kk = (char*)U->data + (k * n + k) * elem_size;
-        if (ops->isZeroFn(u_kk)) {
+        if (ops->is_zero_fn(u_kk)) {
             return ERR_SINGULAR_MATRIX;
         }
 
@@ -285,8 +285,8 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
                 void* prod = malloc(elem_size);
                 void* temp = malloc(elem_size);
                 
-                ops->multiplyFn(l_im, u_mk, prod);
-                ops->subtractFn(l_ik, prod, temp);
+                ops->multiply_fn(l_im, u_mk, prod);
+                ops->subtract_fn(l_ik, prod, temp);
                 memcpy(l_ik, temp, elem_size);
                 
                 free(prod);
@@ -295,7 +295,7 @@ ErrorCode matrix_lu_decompose(const Matrix* A, Matrix* L, Matrix* U) {
 
             void* u_kk = (char*)U->data + (k * n + k) * elem_size;
             void* temp = malloc(elem_size);
-            ops->divideFn(l_ik, u_kk, temp);
+            ops->divide_fn(l_ik, u_kk, temp);
             memcpy(l_ik, temp, elem_size);
             free(temp);
         }
@@ -322,7 +322,7 @@ ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
 
     for (int i = 0; i < n; i++) {
         void* sum = malloc(elem_size);
-        ops->zeroFn(sum);
+        ops->zero_fn(sum);
 
         for (int j = 0; j < i; j++) {
             void* l_ij = (char*)L->data + (i * n + j) * elem_size;
@@ -330,8 +330,8 @@ ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
             void* prod = malloc(elem_size);
             void* temp = malloc(elem_size);
 
-            ops->multiplyFn(l_ij, y_j, prod);
-            ops->addFn(sum, prod, temp);
+            ops->multiply_fn(l_ij, y_j, prod);
+            ops->add_fn(sum, prod, temp);
             memcpy(sum, temp, elem_size);
 
             free(prod);
@@ -339,7 +339,7 @@ ErrorCode forward_substitution(const Matrix* L, const Matrix* b, Matrix* y) {
         }
 
         void* b_i = (char*)b->data + i * elem_size;
-        ops->subtractFn(b_i, sum, (char*)y->data + i * elem_size);
+        ops->subtract_fn(b_i, sum, (char*)y->data + i * elem_size);
 
         free(sum);
     }
@@ -365,7 +365,7 @@ ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x) {
 
     for (int i = n - 1; i >= 0; i--) {
         void* sum = malloc(elem_size);
-        ops->zeroFn(sum);
+        ops->zero_fn(sum);
 
         for (int j = i + 1; j < n; j++) {
             void* u_ij = (char*)U->data + (i * n + j) * elem_size;
@@ -373,8 +373,8 @@ ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x) {
             void* prod = malloc(elem_size);
             void* temp = malloc(elem_size);
 
-            ops->multiplyFn(u_ij, x_j, prod);
-            ops->addFn(sum, prod, temp);
+            ops->multiply_fn(u_ij, x_j, prod);
+            ops->add_fn(sum, prod, temp);
             memcpy(sum, temp, elem_size);
 
             free(prod);
@@ -383,16 +383,16 @@ ErrorCode backward_substitution(const Matrix* U, const Matrix* y, Matrix* x) {
 
         void* y_i = (char*)y->data + i * elem_size;
         void* temp = malloc(elem_size);
-        ops->subtractFn(y_i, sum, temp);
+        ops->subtract_fn(y_i, sum, temp);
 
         void* u_ii = (char*)U->data + (i * n + i) * elem_size;
-        if (ops->isZeroFn(u_ii)) {
+        if (ops->is_zero_fn(u_ii)) {
             free(sum);
             free(temp);
             return ERR_SINGULAR_MATRIX;
         }
 
-        ops->divideFn(temp, u_ii, (char*)x->data + i * elem_size);
+        ops->divide_fn(temp, u_ii, (char*)x->data + i * elem_size);
 
         free(sum);
         free(temp);
@@ -461,7 +461,7 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
     size_t elem_size = A->element_size;
     
     for (int i = 0; i < n * n; i++) {
-        ops->zeroFn((char*)R->data + i * elem_size);
+        ops->zero_fn((char*)R->data + i * elem_size);
     }
     memcpy(Q->data, A->data, n * n * elem_size);
     
@@ -471,16 +471,16 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
             void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
             void* prod = malloc(elem_size);
             void* temp = malloc(elem_size);
-            ops->multiplyFn(q_ij, q_ij, prod);
-            ops->addFn((char*)R->data + (j*n+j)*elem_size, prod, temp);
+            ops->multiply_fn(q_ij, q_ij, prod);
+            ops->add_fn((char*)R->data + (j*n+j)*elem_size, prod, temp);
             memcpy((char*)R->data + (j*n+j)*elem_size, temp, elem_size);
             free(prod); free(temp);
         }
         
         void* norm_elem = malloc(elem_size);
         void* temp = malloc(elem_size);
-        ops->sqrtFn((char*)R->data + (j*n+j)*elem_size, norm_elem);
-        ops->magnitudeFn(norm_elem, &norm);  
+        ops->sqrt_fn((char*)R->data + (j*n+j)*elem_size, norm_elem);
+        ops->magnitude_fn(norm_elem, &norm);  
         free(norm_elem);
         
         if (norm < 1e-12) {
@@ -488,28 +488,28 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
             return ERR_SINGULAR_MATRIX;
         }
         
-        ops->setFromDoubleFn((char*)R->data + (j*n+j)*elem_size, norm);
+        ops->set_from_double_fn((char*)R->data + (j*n+j)*elem_size, norm);
         
         void* norm_val = malloc(elem_size);
-        ops->setFromDoubleFn(norm_val, norm);
+        ops->set_from_double_fn(norm_val, norm);
         
         for (int i = 0; i < n; i++) {
             void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
-            ops->divideFn(q_ij, norm_val, temp);
+            ops->divide_fn(q_ij, norm_val, temp);
             memcpy(q_ij, temp, elem_size);
         }
         free(norm_val); free(temp);
         
         for (int k = j + 1; k < n; k++) {
             void* dot = malloc(elem_size);
-            ops->zeroFn(dot);
+            ops->zero_fn(dot);
             for (int i = 0; i < n; i++) {
                 void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
                 void* q_ik = (char*)Q->data + (i * n + k) * elem_size;
                 void* prod = malloc(elem_size);
                 void* tmp = malloc(elem_size);
-                ops->multiplyFn(q_ij, q_ik, prod);
-                ops->addFn(dot, prod, tmp);
+                ops->multiply_fn(q_ij, q_ik, prod);
+                ops->add_fn(dot, prod, tmp);
                 memcpy(dot, tmp, elem_size);
                 free(prod); free(tmp);
             }
@@ -521,8 +521,8 @@ ErrorCode matrix_qr_decompose(const Matrix* A, Matrix* Q, Matrix* R) {
                 void* q_ij = (char*)Q->data + (i * n + j) * elem_size;
                 void* prod = malloc(elem_size);
                 void* tmp = malloc(elem_size);
-                ops->multiplyFn(dot, q_ij, prod);
-                ops->subtractFn(q_ik, prod, tmp);
+                ops->multiply_fn(dot, q_ij, prod);
+                ops->subtract_fn(q_ik, prod, tmp);
                 memcpy(q_ik, tmp, elem_size);
                 free(prod); free(tmp);
             }
@@ -565,14 +565,14 @@ ErrorCode solve_qr(const Matrix* A, const Matrix* b, Matrix* x) {
 
     for (int i = 0; i < n; i++) {
         void* y_i = (char*)y->data + i * elem_size;
-        ops->zeroFn(y_i);
+        ops->zero_fn(y_i);
         for (int j = 0; j < n; j++) {
             void* q_ji = (char*)Q->data + (j * n + i) * elem_size;
             void* b_j = (char*)b->data + j * elem_size;
             void* prod = malloc(elem_size);
             void* temp = malloc(elem_size);
-            ops->multiplyFn(q_ji, b_j, prod);
-            ops->addFn(y_i, prod, temp);
+            ops->multiply_fn(q_ji, b_j, prod);
+            ops->add_fn(y_i, prod, temp);
             memcpy(y_i, temp, elem_size);
             free(prod); free(temp);
         }
