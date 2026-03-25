@@ -55,7 +55,7 @@ static void integer_divide(const void* a, const void* b, void* result) {
 static void integer_sqrt(const void* a, void* result) {
     int val = ((const Integer*)a)->value;
     if (val < 0) {
-        ((Integer*)result)->value = 0;  // или обработка ошибки
+        ((Integer*)result)->value = 0; 
     } else {
         ((Integer*)result)->value = (int)sqrt((double)val);
     }
