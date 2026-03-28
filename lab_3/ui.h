@@ -766,7 +766,6 @@ class ConsoleUI {
         if (diskCount < 1) diskCount = 1;
         if (diskCount > 10) diskCount = 10;
 
-        // 🔧 Очищаем буфер ПОСЛЕ cin >>
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         PrintEmpty();
@@ -810,7 +809,6 @@ class ConsoleUI {
         std::cin >> mode;
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-        // 🔧 Создаём башню
         HanoiTower hanoi(diskCount, startTower, mode == 2);
 
         PrintEmpty();
