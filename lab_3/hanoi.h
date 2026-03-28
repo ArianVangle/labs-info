@@ -2,8 +2,8 @@
 
 #include <iostream>
 #include <limits>
-#include <vector>
 
+#include "array_sequence.h"
 #include "deque_segmented.h"
 #include "ring.h"
 #include "utils.h"
@@ -13,7 +13,7 @@ class HanoiTower {
     DequeSegmented<Ring>* towers[3];
     int diskCount;
     int moveCount;
-    std::vector<std::string> moves;
+    Sequence<std::string>* moves;
     bool interactive;
 
    public:
@@ -21,6 +21,8 @@ class HanoiTower {
         for (int i = 0; i < 3; i++) {
             towers[i] = new DequeSegmented<Ring>(disks > 4 ? disks : 4);
         }
+
+        moves = new MutableArraySequence<std::string>();
 
         std::string colors[] = {
             "\033[91m", "\033[93m", "\033[92m", "\033[96m", "\033[94m", "\033[95m", "\033[97m",
@@ -38,6 +40,8 @@ class HanoiTower {
         for (int i = 0; i < 3; i++) {
             towers[i] = new DequeSegmented<Ring>(disks > 4 ? disks : 4);
         }
+
+        moves = new MutableArraySequence<std::string>();
 
         std::string colors[] = {
             "\033[91m", "\033[93m", "\033[92m", "\033[96m", "\033[94m", "\033[95m", "\033[97m",
@@ -58,16 +62,17 @@ class HanoiTower {
                 towers[i] = nullptr;
             }
         }
+        if (moves != nullptr) {
+            delete moves;
+            moves = nullptr;
+        }
     }
 
     void Print() const {
         std::cout << "\n";
-        std::cout << "╔════════════════════════════════════════════════════════"
-                     "═══╗\n";
-        std::cout << "║                    ХАНОЙСКАЯ БАШНЯ                     "
-                     "   ║\n";
-        std::cout << "╚════════════════════════════════════════════════════════"
-                     "═══╝\n\n";
+        std::cout << "╔═══════════════════════════════════════════════════════════╗\n";
+        std::cout << "║                    ХАНОЙСКАЯ БАШНЯ                        ║\n";
+        std::cout << "╚═══════════════════════════════════════════════════════════╝\n\n";
 
         int maxHeight = diskCount;
         int maxRingWidth = diskCount * 2 + 1;
@@ -186,7 +191,8 @@ class HanoiTower {
 
         std::string move = "Ход " + std::to_string(moveCount) + ": Кольцо " + std::to_string(ring.GetSize()) +
                            " | Стержень " + std::to_string(from + 1) + " → Стержень " + std::to_string(to + 1);
-        moves.push_back(move);
+
+        moves->Append(move);
 
         if (interactive) {
 #ifdef _WIN32
@@ -254,7 +260,7 @@ class HanoiTower {
         for (int i = 0; i < BOX_WIDTH - 2; i++) std::cout << "─";
         std::cout << "┐\n";
 
-        std::string title = " ИСТОРИЯ ХОДОВ (" + std::to_string(moves.size()) + " ходов) ";
+        std::string title = " ИСТОРИЯ ХОДОВ (" + std::to_string(moveCount) + " ходов) ";
         int titlePad = (BOX_WIDTH - 2 - VisibleLength(title)) / 2;
         std::cout << "│";
         for (int i = 0; i < titlePad; i++) std::cout << " ";
@@ -266,9 +272,9 @@ class HanoiTower {
         for (int i = 0; i < BOX_WIDTH - 2; i++) std::cout << "─";
         std::cout << "┤\n";
 
-        int start = moves.size() > 10 ? moves.size() - 10 : 0;
-        for (size_t i = start; i < moves.size(); i++) {
-            std::string line = " " + moves[i];
+        int start = moveCount > 10 ? moveCount - 10 : 0;
+        for (int i = start; i < moveCount; i++) {
+            std::string line = " " + moves->Get(i);
             int linePad = BOX_WIDTH - 2 - VisibleLength(line);
             std::cout << "│" << line;
             for (int j = 0; j < linePad; j++) std::cout << " ";
