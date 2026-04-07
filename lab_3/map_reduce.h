@@ -12,6 +12,9 @@ struct Pair {
 
     Pair() : first(T1()), second(T2()) {}
     Pair(T1 f, T2 s) : first(f), second(s) {}
+    bool operator==(const Pair<T1, T2>& other) const { return first == other.first && second == other.second; }
+
+    bool operator!=(const Pair<T1, T2>& other) const { return !(*this == other); }
 };
 
 template <class T1, class T2>
@@ -21,6 +24,9 @@ struct Tuple2 {
 
     Tuple2() : item1(T1()), item2(T2()) {}
     Tuple2(T1 i1, T2 i2) : item1(i1), item2(i2) {}
+    bool operator==(const Tuple2<T1, T2>& other) const { return item1 == other.item1 && item2 == other.item2; }
+
+    bool operator!=(const Tuple2<T1, T2>& other) const { return !(*this == other); }
 };
 
 template <class T1, class T2>

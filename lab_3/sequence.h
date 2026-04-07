@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <iostream>
 
 #include "icollection.h"
 #include "option.h"
@@ -23,10 +24,10 @@ class Sequence : public ICollection<T> {
     virtual Sequence<T>* GetSubsequence(int startIndex, int endIndex) const = 0;
     virtual int GetLength() const = 0;
 
-    virtual void Set(size_t index, T value) = 0;
-    virtual Sequence<T>* Append(T item) = 0;
-    virtual Sequence<T>* Prepend(T item) = 0;
-    virtual Sequence<T>* InsertAt(T item, int index) = 0;
+    virtual void Set(size_t index, const T& value) = 0;
+    virtual Sequence<T>* Append(const T& item) = 0;
+    virtual Sequence<T>* Prepend(const T& item) = 0;
+    virtual Sequence<T>* InsertAt(const T& item, int index) = 0;
     virtual Sequence<T>* Concat(Sequence<T>* list) = 0;
 
     template <class R>
@@ -38,4 +39,13 @@ class Sequence : public ICollection<T> {
     virtual Option<T> TryGet(int index) const = 0;
     virtual IEnumerator<T>* GetEnumerator() const = 0;
     virtual T operator[](int index) const = 0;
+    virtual bool operator==(const Sequence<T>& other) const {
+        if (this->GetLength() != other.GetLength()) return false;
+        for (int i = 0; i < this->GetLength(); i++) {
+            if (!(this->Get(i) == other.Get(i))) return false;
+        }
+        return true;
+    }
+
+    virtual Sequence<T>* operator+(Sequence<T>& other) { return this->Concat(&other); }
 };
