@@ -12,22 +12,45 @@ class Ring {
 
    public:
     Ring(int s = 1, const std::string& c = "\033[96m") : size(s), color(c), id(++nextId) {}
-
     Ring(const Ring& other) : size(other.size), color(other.color), id(++nextId) {}
-
     ~Ring() {}
 
-    int GetSize() const { return size; }
-    std::string GetColor() const { return color; }
-    int GetId() const { return id; }
+    int GetSize() const {
+        return size;
+    }
 
-    void SetSize(int s) { size = s; }
-    void SetColor(const std::string& c) { color = c; }
+    std::string GetColor() const {
+        return color;
+    }
 
-    bool operator<(const Ring& other) const { return size < other.size; }
-    bool operator>(const Ring& other) const { return size > other.size; }
-    bool operator==(const Ring& other) const { return size == other.size; }
-    bool operator!=(const Ring& other) const { return size != other.size; }
+    int GetId() const {
+        return id;
+    }
+
+    void SetSize(int s) {
+        size = s;
+    }
+
+    void SetColor(const std::string& c) {
+        color = c;
+    }
+
+    bool operator<(const Ring& other) const {
+        return size < other.size;
+    }
+
+    bool operator>(const Ring& other) const {
+        return size > other.size;
+    }
+
+    bool operator==(const Ring& other) const {
+        return size == other.size;
+    }
+
+    bool operator!=(const Ring& other) const {
+        return size != other.size;
+    }
+    
 
     Ring& operator=(const Ring& other) {
         if (this != &other) {
@@ -44,7 +67,9 @@ class Ring {
         std::cout << "\033[0m";
     }
 
-    static void ResetIdCounter() { nextId = 0; }
+    static void ResetIdCounter() {
+        nextId = 0;
+    }
 };
 
 inline int Ring::nextId = 0;

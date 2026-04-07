@@ -52,9 +52,13 @@ class ConsoleUI {
 #endif
     }
 
-    void SetColor(const std::string& c) { std::cout << c; }
+    void SetColor(const std::string& c) {
+        std::cout << c;
+    }
 
-    void ResetColor() { std::cout << Color::RESET; }
+    void ResetColor() {
+        std::cout << Color::RESET;
+    }
 
     void PrintChars(char c, int count) {
         for (int i = 0; i < count; i++) std::cout << c;
@@ -154,10 +158,13 @@ class ConsoleUI {
         ResetColor();
     }
 
-    void Sleep(int ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }
+    void Sleep(int ms) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+    }
 
    public:
-    ConsoleUI() {}
+    ConsoleUI() {
+    }
 
     std::string PrintSequence(Sequence<int>* seq) {
         IEnumerator<int>* en = seq->GetEnumerator();
@@ -180,7 +187,7 @@ class ConsoleUI {
         PrintLine('#');
         PrintEmpty();
 
-        std::string title = "ЛАБОРАТОРНАЯ РАБОТА №2";
+        std::string title = "ЛАБОРАТОРНАЯ РАБОТА №3";
         int visibleTitle = VisibleLength(title);
         int pad1 = (WIDTH - 2 - visibleTitle) / 2;
 
