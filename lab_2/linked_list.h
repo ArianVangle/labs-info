@@ -56,7 +56,7 @@ class LinkedList {
 
     ~LinkedList() { Clear(); }
 
-    void Set(int index, T value) {
+    void Set(int index, const T &value) {
         if (index < 0 || index >= length) {
             throw IndexOutOfRangeException("Index out of range");
         }
@@ -104,7 +104,7 @@ class LinkedList {
 
     int GetLength() const { return length; }
 
-    void Append(T item) {
+    void Append(const T& item) {
         Node* newNode = new Node(item);
         if (length == 0) {
             head = tail = newNode;
@@ -115,7 +115,7 @@ class LinkedList {
         length++;
     }
 
-    void Prepend(T item) {
+    void Prepend(const T& item) {
         Node* newNode = new Node(item);
         if (length == 0) {
             head = tail = newNode;
@@ -126,7 +126,7 @@ class LinkedList {
         length++;
     }
 
-    void InsertAt(T item, int index) {
+    void InsertAt(const T& item, int index) {
         if (index < 0 || index >= length)
             throw IndexOutOfRangeException("Index out of range");
         if (index == 0) {
