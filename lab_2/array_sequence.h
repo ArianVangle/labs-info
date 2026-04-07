@@ -21,13 +21,13 @@ class ArraySequence : public Sequence<T> {
 
     virtual ArraySequence<T>* CreateEmpty() const = 0;
 
-    Sequence<T>* AppendInternal(T item) {
+    Sequence<T>* AppendInternal(const T& item) {
         items->Resize(items->GetSize() + 1);
         items->Set(items->GetSize() - 1, item);
         return this;
     }
 
-    Sequence<T>* PrependInternal(T item) {
+    Sequence<T>* PrependInternal(const T& item) {
         DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
         newItems->Set(0, item);
         for (int i = 0; i < items->GetSize(); i++) {
@@ -38,7 +38,7 @@ class ArraySequence : public Sequence<T> {
         return this;
     }
 
-    Sequence<T>* InsertAtInternal(T item, int index) {
+    Sequence<T>* InsertAtInternal(const T& item, int index) {
         if (index < 0 || index > items->GetSize())
             throw IndexOutOfRangeException("Index out of range");
         DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
@@ -51,7 +51,7 @@ class ArraySequence : public Sequence<T> {
         return this;
     }
 
-    void SetInternal(size_t index, T value) { items->Set(index, value); }
+    void SetInternal(size_t index, const T& value) { items->Set(index, value); }
 
    public:
     ArraySequence() { items = new DynamicArray<T>(0); }
@@ -109,19 +109,19 @@ class ArraySequence : public Sequence<T> {
 
     int GetLength() const override { return items->GetSize(); }
 
-    Sequence<T>* Append(T item) override {
+    Sequence<T>* Append(const T& item) override {
         return ((ArraySequence<T>*)Instance())->AppendInternal(item);
     }
 
-    Sequence<T>* Prepend(T item) override {
+    Sequence<T>* Prepend(const T& item) override {
         return ((ArraySequence<T>*)Instance())->PrependInternal(item);
     }
 
-    Sequence<T>* InsertAt(T item, int index) override {
+    Sequence<T>* InsertAt(const T& item, int index) override {
         return ((ArraySequence<T>*)Instance())->InsertAtInternal(item, index);
     }
 
-    void Set(size_t index, T value) override {
+    void Set(size_t index, const T& value) override {
         ((ArraySequence<T>*)Instance())->SetInternal(index, value);
     }
 
@@ -174,9 +174,11 @@ class ArraySequence : public Sequence<T> {
 
     T Reduce(std::function<T(T, T)> func, T start) const override {
         T res = start;
-        for (int i = 0; i < items->GetSize(); i++) {
-            res = func(res, items->Get(i));
+        IEnumerator<T>* en = this->GetEnumerator();
+        while (en->MoveNext()) {
+            res = func(res, en->Current());
         }
+        delete en;
         return res;
     }
 

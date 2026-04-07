@@ -20,22 +20,22 @@ class ListSequence : public Sequence<T> {
 
     virtual ListSequence<T>* CreateEmpty() const = 0;
 
-    Sequence<T>* AppendInternal(T item) {
+    Sequence<T>* AppendInternal(const T& item) {
         items->Append(item);
         return this;
     }
 
-    Sequence<T>* PrependInternal(T item) {
+    Sequence<T>* PrependInternal(const T& item) {
         items->Prepend(item);
         return this;
     }
 
-    Sequence<T>* InsertAtInternal(T item, int index) {
+    Sequence<T>* InsertAtInternal(const T& item, int index) {
         items->InsertAt(item, index);
         return this;
     }
 
-    void SetInternal(size_t index, T value) { items->Set(index, value); }
+    void SetInternal(size_t index, const T& value) { items->Set(index, value); }
 
    public:
     ListSequence() { items = new LinkedList<T>(); }
@@ -76,19 +76,19 @@ class ListSequence : public Sequence<T> {
 
     int GetLength() const override { return items->GetLength(); }
 
-    Sequence<T>* Append(T item) override {
+    Sequence<T>* Append(const T& item) override {
         return ((ListSequence<T>*)Instance())->AppendInternal(item);
     }
 
-    Sequence<T>* Prepend(T item) override {
+    Sequence<T>* Prepend(const T& item) override {
         return ((ListSequence<T>*)Instance())->PrependInternal(item);
     }
 
-    Sequence<T>* InsertAt(T item, int index) override {
+    Sequence<T>* InsertAt(const T& item, int index) override {
         return ((ListSequence<T>*)Instance())->InsertAtInternal(item, index);
     }
 
-    void Set(size_t index, T value) override {
+    void Set(size_t index, const T& value) override {
         ((ListSequence<T>*)Instance())->SetInternal(index, value);
     }
 
@@ -128,9 +128,11 @@ class ListSequence : public Sequence<T> {
 
     T Reduce(std::function<T(T, T)> func, T start) const override {
         T res = start;
-        for (int i = 0; i < items->GetLength(); i++) {
-            res = func(res, items->Get(i));
+        IEnumerator<T>* en = this->GetEnumerator();
+        while (en->MoveNext()) {
+            res = func(res, en->Current());
         }
+        delete en;
         return res;
     }
 
