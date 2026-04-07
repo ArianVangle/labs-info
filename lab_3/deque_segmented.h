@@ -272,16 +272,16 @@ class DequeSegmented : public Sequence<T> {
     T GetFirst() const override { return GetFront(); }
     T GetLast() const override { return GetBack(); }
 
-    Sequence<T>* Append(T item) override {
+    Sequence<T>* Append(const T& item) override {
         PushBack(item);
         return this;
     }
-    Sequence<T>* Prepend(T item) override {
+    Sequence<T>* Prepend(const T& item) override {
         PushFront(item);
         return this;
     }
 
-    Sequence<T>* InsertAt(T item, int index) override {
+    Sequence<T>* InsertAt(const T& item, int index) override {
         if (index < 0 || index > totalCount) throw IndexOutOfRangeException("Index out of range");
         DequeSegmented<T>* newDeque = new DequeSegmented<T>(segmentSize);
         for (int i = 0; i < totalCount; i++) {
@@ -292,7 +292,7 @@ class DequeSegmented : public Sequence<T> {
         return newDeque;
     }
 
-    void Set(size_t index, T value) override {
+    void Set(size_t index, const T& value) override {
         if (index >= (size_t)totalCount) throw IndexOutOfRangeException("Index out of range");
         int remaining = (int)index;
         for (int i = 0; i < segmentCount; i++) {
@@ -335,19 +335,20 @@ class DequeSegmented : public Sequence<T> {
         if (totalCount <= 1) return;
 
         int count = totalCount;
+        T** arr = new T*[count];
 
-        T* arr = new T[count];
         for (int i = 0; i < count; i++) {
-            arr[i] = Get(i);
+            arr[i] = new T(Get(i));
         }
 
-        std::sort(arr, arr + count, comparator);
-
+        std::sort(arr, arr + count, [comparator](T* a, T* b) { return comparator(*a, *b); });
         Clear();
 
         for (int i = 0; i < count; i++) {
-            PushBack(arr[i]);
+            PushBack(*arr[i]);
+            delete arr[i];
         }
+
         delete[] arr;
     }
 
