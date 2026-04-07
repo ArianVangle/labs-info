@@ -15,9 +15,13 @@
 #include "ui.h"
 #include "utils.h"
 
-void TestRunner::SetColor(const std::string& color) { std::cout << color; }
+void TestRunner::SetColor(const std::string& color) {
+    std::cout << color;
+}
 
-void TestRunner::ResetColor() { std::cout << COLOR_RESET; }
+void TestRunner::ResetColor() {
+    std::cout << COLOR_RESET;
+}
 
 void TestRunner::PrintChars(char c, int count) {
     for (int i = 0; i < count; i++) std::cout << c;
@@ -139,7 +143,9 @@ void TestRunner::PrintSummary() {
 
 TestRunner::TestRunner(ConsoleUI* ui) : passed(0), failed(0), ui(ui) {}
 
-void TestRunner::Assert(bool condition, const std::string& testName) { PrintTestResult(condition, testName); }
+void TestRunner::Assert(bool condition, const std::string& testName) {
+    PrintTestResult(condition, testName);
+}
 
 void TestRunner::RunAll() {
     PrintTestHeader("ЗАПУСК ВСЕХ МОДУЛЬНЫХ ТЕСТОВ");

@@ -96,7 +96,8 @@ class HanoiTower {
                     for (int i = 0; i < padding; i++) std::cout << " ";
                 }
 
-                if (tower < 2) std::cout << "   ";
+                if (tower < 2) 
+                    std::cout << "   ";
             }
 
             std::cout << "  \n";
@@ -104,18 +105,25 @@ class HanoiTower {
 
         std::cout << "\n  ";
         for (int tower = 0; tower < 3; tower++) {
-            for (int i = 0; i < maxRingWidth; i++) std::cout << "═";
-            if (tower < 2) std::cout << "   ";
+            for (int i = 0; i < maxRingWidth; i++) 
+                std::cout << "═";
+            if (tower < 2) 
+                std::cout << "   ";
         }
         std::cout << "  \n";
 
         std::cout << "  ";
         for (int tower = 0; tower < 3; tower++) {
             int numPadding = (maxRingWidth - 1) / 2;
-            for (int i = 0; i < numPadding; i++) std::cout << " ";
+
+            for (int i = 0; i < numPadding; i++) 
+                std::cout << " ";
+                
             std::cout << (tower + 1);
-            for (int i = 0; i < numPadding; i++) std::cout << " ";
-            if (tower < 2) std::cout << "   ";
+            for (int i = 0; i < numPadding; i++) 
+                std::cout << " ";
+            if (tower < 2) 
+                std::cout << "   ";
         }
         std::cout << "  \n\n";
     }
@@ -223,7 +231,9 @@ class HanoiTower {
         Solve(aux, to, from, n - 1);
     }
 
-    void Solve() { Solve(0, 2, 1, diskCount); }
+    void Solve() {
+        Solve(0, 2, 1, diskCount);
+    }
 
     void SolveInteractive() {
         interactive = true;
@@ -250,8 +260,12 @@ class HanoiTower {
         return towers[index];
     }
 
-    int GetMoveCount() const { return moveCount; }
-    int GetDiskCount() const { return diskCount; }
+    int GetMoveCount() const {
+        return moveCount;
+    }
+    int GetDiskCount() const {
+        return diskCount;
+    }
 
     void PrintMoveHistory() const {
         const int BOX_WIDTH = 70;
