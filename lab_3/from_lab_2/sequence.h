@@ -27,7 +27,7 @@ class Sequence : public ICollection<T> {
     virtual Sequence<T>* Append(const T& item) = 0;
     virtual Sequence<T>* Prepend(const T& item) = 0;
     virtual Sequence<T>* InsertAt(const T& item, int index) = 0;
-    virtual Sequence<T>* Concat(Sequence<T>* list) = 0;
+    virtual Sequence<T>* Concat(const Sequence<T>& list) = 0;
 
     template <class R>
     Sequence<R>* Map(std::function<R(T)> func) const;

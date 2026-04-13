@@ -2,106 +2,80 @@
 #include "deque_segmented.h"
 
 template <class T>
-Segment<T>::Segment(int cap) : capacity(cap), size(0) {
-    data = new T[capacity];
-}
+Segment<T>::Segment(int cap) : DynamicArray<T>(cap), count(0) {}
 
 template <class T>
-Segment<T>::~Segment() {
-    delete[] data;
-}
-
-template <class T>
-Segment<T>::Segment(const Segment<T>& other) : capacity(other.capacity), size(other.size) {
-    data = new T[capacity];
-    for (int i = 0; i < size; i++) 
-        data[i] = other.data[i];
-}
+Segment<T>::Segment(const Segment<T>& other) : DynamicArray<T>(other), count(other.count) {}
 
 template <class T>
 void Segment<T>::PushBack(const T& item) {
-    if (size >= capacity) 
-        throw InvalidOperationException("Segment is full");
-    data[size++] = item;
+    if (IsFull()) throw std::out_of_range("Segment is full");
+    
+    this->DynamicArray<T>::Set(count, item); 
+    count++;
 }
 
 template <class T>
 void Segment<T>::PushFront(const T& item) {
-    if (size >= capacity)
-        throw InvalidOperationException("Segment is full");
-    for (int i = size; i > 0; i--) 
-        data[i] = data[i - 1];
-    data[0] = item;
-    size++;
+    if (IsFull()) throw std::out_of_range("Segment is full");
+    
+    for (int i = count; i > 0; --i) {
+        this->DynamicArray<T>::Set(i, this->DynamicArray<T>::Get(i - 1));
+    }
+    
+    this->DynamicArray<T>::Set(0, item);
+    count++;
 }
 
 template <class T>
 T Segment<T>::PopBack() {
-    if (size == 0) 
-        throw InvalidOperationException("Segment is empty");
-    return data[--size];
+    if (IsEmpty()) throw std::out_of_range("Segment is empty");
+    
+    count--;
+    return this->DynamicArray<T>::Get(count);
 }
 
 template <class T>
 T Segment<T>::PopFront() {
-    if (size == 0) 
-        throw InvalidOperationException("Segment is empty");
-    T value = data[0];
-    for (int i = 0; i < size - 1; i++) 
-        data[i] = data[i + 1];
-    size--;
-    return value;
+    if (IsEmpty()) throw std::out_of_range("Segment is empty");
+    
+    T frontItem = this->DynamicArray<T>::Get(0);
+    
+    for (int i = 0; i < count - 1; ++i) {
+        this->DynamicArray<T>::Set(i, this->DynamicArray<T>::Get(i + 1));
+    }
+    
+    count--;
+    return frontItem;
 }
 
 template <class T>
 T Segment<T>::Get(int index) const {
-    if (index < 0 || index >= size) 
-        throw IndexOutOfRangeException("Index out of range in Segment");
-    return data[index];
+    if (index < 0 || index >= count) throw std::out_of_range("Index out of range");
+    return this->DynamicArray<T>::Get(index);
 }
 
 template <class T>
 void Segment<T>::Set(int index, const T& value) {
-    if (index < 0 || index >= size) 
-        throw IndexOutOfRangeException("Index out of range in Segment");
-    data[index] = value;
+    if (index < 0 || index >= count) throw std::out_of_range("Index out of range");
+    this->DynamicArray<T>::Set(index, value);
 }
 
 template <class T>
 int Segment<T>::GetSize() const {
-    return size;
+    return count;
 }
 
 template <class T>
 bool Segment<T>::IsFull() const {
-    return size >= capacity;
+    return count == this->DynamicArray<T>::GetSize(); 
 }
 
 template <class T>
 bool Segment<T>::IsEmpty() const {
-    return size == 0;
+    return count == 0;
 }
 
-template <class T>
-DequeEnumerator<T>::DequeEnumerator(const DequeSegmented<T>* d) : deque(d), currentIndex(-1) {}
-
-template <class T>
-T DequeEnumerator<T>::Current() const {
-    if (currentIndex < 0 || currentIndex >= deque->GetLength())
-        throw InvalidOperationException("Enumerator out of range");
-    return deque->Get(currentIndex);
-}
-
-template <class T>
-bool DequeEnumerator<T>::MoveNext() {
-    currentIndex++;
-    return currentIndex < deque->GetLength();
-}
-
-template <class T>
-void DequeEnumerator<T>::Reset() {
-    currentIndex = -1;
-}
 
 template <class T>
 DequeSegmented<T>::DequeSegmented(int segSize)
@@ -344,14 +318,14 @@ Sequence<T>* DequeSegmented<T>::GetSubsequence(int startIndex, int endIndex) con
 }
 
 template <class T>
-Sequence<T>* DequeSegmented<T>::Concat(Sequence<T>* list) {
+Sequence<T>* DequeSegmented<T>::Concat(const Sequence<T>& list) {
     DequeSegmented<T>* result = new DequeSegmented<T>(segmentSize);
     IEnumerator<T>* en = this->GetEnumerator();
     while (en->MoveNext()) {
         result->PushBack(en->Current());
     }
     delete en;
-    IEnumerator<T>* en2 = list->GetEnumerator();
+    IEnumerator<T>* en2 = list.GetEnumerator();
     while (en2->MoveNext()) {
         result->PushBack(en2->Current());
     }
@@ -378,15 +352,15 @@ void DequeSegmented<T>::Sort(std::function<bool(T, T)> comparator) {
 }
 
 template <class T>
-int DequeSegmented<T>::FindSubsequence(Sequence<T>* pattern) const {
-    if (pattern->GetLength() == 0) 
+int DequeSegmented<T>::FindSubsequence(const Sequence<T>& pattern) const {
+    if (pattern.GetLength() == 0) 
         return 0;
-    if (pattern->GetLength() > totalCount) 
+    if (pattern.GetLength() > totalCount) 
         return -1;
-    for (int i = 0; i <= totalCount - pattern->GetLength(); i++) {
+    for (int i = 0; i <= totalCount - pattern.GetLength(); i++) {
         bool found = true;
-        for (int j = 0; j < pattern->GetLength(); j++) {
-            if (Get(i + j) != pattern->Get(j)) {
+        for (int j = 0; j < pattern.GetLength(); j++) {
+            if (Get(i + j) != pattern.Get(j)) {
                 found = false;
                 break;
             }
@@ -397,10 +371,10 @@ int DequeSegmented<T>::FindSubsequence(Sequence<T>* pattern) const {
 }
 
 template <class T>
-Sequence<T>* DequeSegmented<T>::Merge(Sequence<T>* other, std::function<bool(T, T)> comparator) {
+Sequence<T>* DequeSegmented<T>::Merge(const Sequence<T>& other, std::function<bool(T, T)> comparator) {
     DequeSegmented<T>* result = new DequeSegmented<T>(segmentSize);
     IEnumerator<T>* en1 = this->GetEnumerator();
-    IEnumerator<T>* en2 = other->GetEnumerator();
+    IEnumerator<T>* en2 = other.GetEnumerator();
     bool has1 = en1->MoveNext();
     bool has2 = en2->MoveNext();
     while (has1 && has2) {

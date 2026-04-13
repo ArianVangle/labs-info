@@ -435,7 +435,7 @@ class ConsoleUI {
         PrintRowIndented("Разделитель: 0", Color::BRIGHT_MAGENTA);
         PrintEmpty();
 
-        auto* splitted = Split(seq, [](int x) { return x == 0; });
+        auto* splitted = Split(*seq, [](int x) { return x == 0; });
         PrintRowIndented("Результат: [[1,2], [3,4], [5]]", Color::BRIGHT_GREEN);
         PrintRowIndented("Фрагментов: 3", Color::BRIGHT_CYAN);
 
@@ -459,7 +459,7 @@ class ConsoleUI {
         PrintRowIndented("Seq2: [10, 20, 30]", Color::BRIGHT_BLUE);
         PrintEmpty();
 
-        auto* zipped = Zip(seq1, seq2);
+        auto* zipped = Zip(*seq1, *seq2);
         PrintRowIndented("Zip Result: [(1,10), (2,20), (3,30)]", Color::BRIGHT_GREEN);
         PrintEmpty();
 
@@ -484,7 +484,7 @@ class ConsoleUI {
         PrintRowIndented("Slice(1, 2, [9, 10])", Color::BRIGHT_MAGENTA);
         PrintEmpty();
 
-        Sequence<int>* sliced = Slice(seq, 1, 2, insertSeq);
+        Sequence<int>* sliced = Slice(*seq, 1, 2, insertSeq);
         PrintRowIndented("Результат: [1, 9, 10, 4, 5]", Color::BRIGHT_GREEN);
         PrintRowIndented("(удалили 2 элемента с позиции 1, вставили [9,10])", Color::BRIGHT_BLACK);
 
@@ -681,7 +681,7 @@ class ConsoleUI {
         int data2[] = {4, 5, 6};
         Sequence<int>* seq1 = From(data1, 3);
         Sequence<int>* seq2 = From(data2, 3);
-        Sequence<int>* concatenated = Concat(seq1, seq2);
+        Sequence<int>* concatenated = Concat(*seq1, *seq2);
 
         PrintRowIndented("Seq1: " + PrintSequence(seq1), Color::BRIGHT_BLUE);
         PrintRowIndented("Seq2: " + PrintSequence(seq2), Color::BRIGHT_BLUE);

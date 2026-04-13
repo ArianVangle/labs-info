@@ -13,7 +13,7 @@ bool Sequence<T>::operator==(const Sequence<T>& other) const {
 
 template <class T>
 Sequence<T>* Sequence<T>::operator+(Sequence<T>& other) {
-    return this->Concat(&other);
+    return this->Concat(other);
 }
 
 template <class T>

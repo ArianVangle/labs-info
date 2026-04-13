@@ -145,11 +145,11 @@ void ArraySequence<T>::Set(size_t index, const T& value) {
 }
 
 template <class T>
-Sequence<T>* ArraySequence<T>::Concat(Sequence<T>* list) {
+Sequence<T>* ArraySequence<T>::Concat(const Sequence<T>& list) {
     int currentLen = items->GetSize();
-    int addLen = list->GetLength();
+    int addLen = list.GetLength();
     items->Resize(currentLen + addLen);
-    IEnumerator<T>* en = list->GetEnumerator();
+    IEnumerator<T>* en = list.GetEnumerator();
     int i = currentLen;
     while (en->MoveNext()) {
         items->Set(i++, en->Current());

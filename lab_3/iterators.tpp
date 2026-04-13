@@ -1,46 +1,22 @@
-#pragma once
 #include "iterators.h"
 
 template <class T>
-ArrayEnumerator<T>::ArrayEnumerator(const ArraySequence<T>* s) : seq(s), index(-1) {}
+DequeEnumerator<T>::DequeEnumerator(const DequeSegmented<T>* d) : deque(d), currentIndex(-1) {}
 
 template <class T>
-ArrayEnumerator<T>::~ArrayEnumerator() {}
-
-template <class T>
-T ArrayEnumerator<T>::Current() const {
-    return seq->Get(index);
+T DequeEnumerator<T>::Current() const {
+    if (currentIndex < 0 || currentIndex >= deque->GetLength())
+        throw InvalidOperationException("Enumerator out of range");
+    return deque->Get(currentIndex);
 }
 
 template <class T>
-bool ArrayEnumerator<T>::MoveNext() {
-    index++;
-    return index < seq->GetLength();
+bool DequeEnumerator<T>::MoveNext() {
+    currentIndex++;
+    return currentIndex < deque->GetLength();
 }
 
 template <class T>
-void ArrayEnumerator<T>::Reset() {
-    index = -1;
-}
-
-template <class T>
-ListEnumerator<T>::ListEnumerator(const ListSequence<T>* s) : seq(s), index(-1) {}
-
-template <class T>
-ListEnumerator<T>::~ListEnumerator() {}
-
-template <class T>
-T ListEnumerator<T>::Current() const {
-    return seq->Get(index);
-}
-
-template <class T>
-bool ListEnumerator<T>::MoveNext() {
-    index++;
-    return index < seq->GetLength();
-}
-
-template <class T>
-void ListEnumerator<T>::Reset() {
-    index = -1;
+void DequeEnumerator<T>::Reset() {
+    currentIndex = -1;
 }

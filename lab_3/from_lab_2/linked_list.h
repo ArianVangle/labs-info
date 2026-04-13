@@ -31,7 +31,7 @@ class LinkedList {
     void Append(const T& item);
     void Prepend(const T& item);
     void InsertAt(const T& item, int index);
-    LinkedList<T>* Concat(LinkedList<T>* list) const;
+    LinkedList<T>* Concat(const LinkedList<T>& list) const;
 };
 
 #include "linked_list.tpp"
