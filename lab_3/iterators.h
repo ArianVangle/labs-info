@@ -1,49 +1,21 @@
 #pragma once
 
-template <class T>
-class IEnumerator {
-   public:
-    virtual ~IEnumerator() {
-    }
-    virtual T Current() const = 0;
-    virtual bool MoveNext() = 0;
-    virtual void Reset() = 0;
-};
+#include "from_lab_2/iterators.h"
+
 
 template <class T>
-class IEnumerable {
-   public:
-    virtual ~IEnumerable() {
-    }
-    virtual IEnumerator<T>* GetEnumerator() const = 0;
-};
+class DequeEnumerator;
+template <class T>
+class DequeSegmented;
 
 template <class T>
-class ArraySequence;
-template <class T>
-class ArrayEnumerator : public IEnumerator<T> {
-    const ArraySequence<T>* seq;
-    int index;
+class DequeEnumerator : public IEnumerator<T> {
+   private:
+    const DequeSegmented<T>* deque;
+    int currentIndex;
 
    public:
-    ArrayEnumerator(const ArraySequence<T>* s);
-    ~ArrayEnumerator();
-    T Current() const override;
-    bool MoveNext() override;
-    void Reset() override;
-};
-
-template <class T>
-class ListSequence;
-
-template <class T>
-class ListEnumerator : public IEnumerator<T> {
-    const ListSequence<T>* seq;
-    int index;
-
-   public:
-    ListEnumerator(const ListSequence<T>* s);
-    ~ListEnumerator();
+    DequeEnumerator(const DequeSegmented<T>* d);
     T Current() const override;
     bool MoveNext() override;
     void Reset() override;

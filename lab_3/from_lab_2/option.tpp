@@ -6,7 +6,7 @@ Option<T>::Option() : hasValue(false), value(T()) {
 }
 
 template <class T>
-Option<T> Option<T>::Some(T val) {
+Option<T> Option<T>::Some(const T& val) {
     Option<T> opt;
     opt.hasValue = true;
     opt.value = val;

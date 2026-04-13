@@ -9,7 +9,7 @@ class Option {
    public:
     Option();
 
-    static Option<T> Some(T val);
+    static Option<T> Some(const T& val);
     static Option<T> None();
     bool IsSome() const;
     bool IsNone() const;

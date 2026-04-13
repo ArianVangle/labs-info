@@ -329,7 +329,7 @@ void TestRunner::RunAll() {
     Sequence<int>* zipSeq1 = new MutableArraySequence<int>(zip1, 3);
     Sequence<int>* zipSeq2 = new MutableArraySequence<int>(zip2, 3);
 
-    auto* zipped = Zip(zipSeq1, zipSeq2);
+    auto* zipped = Zip(*zipSeq1, *zipSeq2);
     Assert(zipped->GetLength() == 3, "Zip Length");
 
     IEnumerator<Tuple2<int, int>>* zipEn = zipped->GetEnumerator();
@@ -344,8 +344,8 @@ void TestRunner::RunAll() {
     delete zipped;
 
     auto unzipped = Unzip(zipped);
-    delete unzipped.first;
-    delete unzipped.second;
+    delete unzipped.item1;
+    delete unzipped.item2;
     delete zipSeq1;
     delete zipSeq2;
 
@@ -354,7 +354,7 @@ void TestRunner::RunAll() {
     int splitData[] = {1, 2, 0, 3, 4, 0, 5};
     Sequence<int>* splitSeq = new MutableArraySequence<int>(splitData, 7);
 
-    auto* splitted = Split(splitSeq, [](int x) { return x == 0; });
+    auto* splitted = Split(*splitSeq, [](int x) { return x == 0; });
     Assert(splitted->GetLength() == 3, "Split Count (3 fragments)");
 
     IEnumerator<Sequence<int>*>* splitEn = splitted->GetEnumerator();
@@ -373,11 +373,11 @@ void TestRunner::RunAll() {
     PrintTestHeader("Option/Find");
     Sequence<int>* findSeq = new MutableArraySequence<int>(whereData, 5);
 
-    Option<int> found = Find(findSeq, [](int x) { return x > 3; });
+    Option<int> found = Find(*findSeq, [](int x) { return x > 3; });
     Assert(found.IsSome(), "Find Some");
     Assert(found.GetValue() == 4, "Find Value");
 
-    Option<int> notFound = Find(findSeq, [](int x) { return x > 100; });
+    Option<int> notFound = Find(*findSeq, [](int x) { return x > 100; });
     Assert(notFound.IsNone(), "Find None");
     delete findSeq;
 
@@ -403,7 +403,7 @@ void TestRunner::RunAll() {
     Sequence<int>* concatSeq1 = From(concat1, 3);
     Sequence<int>* concatSeq2 = From(concat2, 3);
 
-    Sequence<int>* concatenated = Concat(concatSeq1, concatSeq2);
+    Sequence<int>* concatenated = Concat(*concatSeq1, *concatSeq2);
     Assert(concatenated->GetLength() == 6, "Concat Length");
 
     IEnumerator<int>* concatEn = concatenated->GetEnumerator();
@@ -424,7 +424,7 @@ void TestRunner::RunAll() {
     int sliceInsert[] = {9, 10};
     Sequence<int>* sliceInsertSeq = new MutableArraySequence<int>(sliceInsert, 2);
 
-    Sequence<int>* sliced = Slice(sliceSeq, 1, 2, sliceInsertSeq);
+    Sequence<int>* sliced = Slice(*sliceSeq, 1, 2, sliceInsertSeq);
     Assert(sliced->GetLength() == 5, "Slice Length");
 
     IEnumerator<int>* sliceEn = sliced->GetEnumerator();
@@ -500,7 +500,7 @@ void TestRunner::RunAll() {
     deque1.PushBack(1);
     DequeSegmented<int> deque2(4);
     deque2.PushBack(2);
-    Sequence<int>* dequeConcatenated = deque1.Concat(&deque2);
+    Sequence<int>* dequeConcatenated = deque1.Concat(deque2);
     Assert(dequeConcatenated->GetLength() == 2, "DequeSegmented Concat Length");
     delete dequeConcatenated;
 

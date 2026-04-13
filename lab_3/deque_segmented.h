@@ -12,15 +12,12 @@ template <class T>
 class DequeSegmented;
 
 template <class T>
-class Segment {
+class Segment : public DynamicArray<T> {
    private:
-    T* data;
-    int capacity;
-    int size;
+    int count;
 
    public:
     Segment(int cap = 4);
-    ~Segment();
     Segment(const Segment<T>& other);
 
     void PushBack(const T& item);
@@ -36,18 +33,6 @@ class Segment {
     bool IsEmpty() const;
 };
 
-template <class T>
-class DequeEnumerator : public IEnumerator<T> {
-   private:
-    const DequeSegmented<T>* deque;
-    int currentIndex;
-
-   public:
-    DequeEnumerator(const DequeSegmented<T>* d);
-    T Current() const override;
-    bool MoveNext() override;
-    void Reset() override;
-};
 
 template <class T>
 class DequeSegmented : public Sequence<T> {
@@ -96,9 +81,9 @@ class DequeSegmented : public Sequence<T> {
     void Sort(std::function<bool(T, T)> comparator = [](T a, T b) { return a < b; });
     Sequence<T>* Clone() const override;
 
-    Sequence<T>* Concat(Sequence<T>* list) override;
-    int FindSubsequence(Sequence<T>* pattern) const;
-    Sequence<T>* Merge(Sequence<T>* other, std::function<bool(T, T)> comparator = [](T a, T b) { return a < b; });
+    Sequence<T>* Concat(const Sequence<T>& list) override;
+    int FindSubsequence(const Sequence<T>& pattern) const;
+    Sequence<T>* Merge(const Sequence<T>& other, std::function<bool(T, T)> comparator = [](T a, T b) { return a < b; });
     template <class R>
     Sequence<R>* Map(std::function<R(T)> func) const;
     Sequence<T>* Where(std::function<bool(T)> func) const override;

@@ -134,9 +134,9 @@ void LinkedList<T>::InsertAt(const T& item, int index) {
 }
 
 template <class T>
-LinkedList<T>* LinkedList<T>::Concat(LinkedList<T>* list) const {
+LinkedList<T>* LinkedList<T>::Concat(const LinkedList<T>& list) const {
     LinkedList<T>* result = new LinkedList<T>(*this);
-    Node* current = list->head;
+    Node* current = list.head;
     while (current != nullptr) {
         result->Append(current->value);
         current = current->next;

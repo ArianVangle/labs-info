@@ -116,8 +116,8 @@ void ListSequence<T>::Set(size_t index, const T& value) {
 }
 
 template <class T>
-Sequence<T>* ListSequence<T>::Concat(Sequence<T>* list) {
-    IEnumerator<T>* en = list->GetEnumerator();
+Sequence<T>* ListSequence<T>::Concat(const Sequence<T>& list) {
+    IEnumerator<T>* en = list.GetEnumerator();
     while (en->MoveNext()) {
         items->Append(en->Current());
     }
