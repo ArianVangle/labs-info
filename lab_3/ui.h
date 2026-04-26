@@ -281,7 +281,7 @@ class ConsoleUI {
                 case 1: {
                     ClearScreen();
                     PrintHeader("ЗАПУСК ВСЕХ ТЕСТОВ");
-                    TestRunner runner(this);
+                    Lab3TestRunner runner(this);
                     runner.RunAll();
                     std::cout << std::endl;
                     SetColor(Color::BRIGHT_YELLOW);
