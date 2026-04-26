@@ -24,6 +24,13 @@ class TestRunner {
     void PrintTestHeader(const std::string& header);
     void PrintTestResult(bool success, const std::string& testName);
     void PrintSummary();
+    void TestDynamicArray();
+    void TestLinkedList();
+    void TestSequences(); 
+    void TestMapReduce();
+    void TestIterators();
+    void TestAlgorithms(); 
+    void TestCollections();
 
    public:
     TestRunner(ConsoleUI* ui = nullptr);
