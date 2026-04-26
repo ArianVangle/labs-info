@@ -1,6 +1,6 @@
 #pragma once
-
 #include <functional>
+#include <iostream>
 
 #include "icollection.h"
 #include "option.h"
@@ -15,27 +15,29 @@ class Sequence : public ICollection<T> {
 
     virtual T Get(size_t index) const override = 0;
     virtual size_t GetCount() const override = 0;
-
     virtual Sequence<T>* Clone() const override = 0;
-
     virtual T GetFirst() const = 0;
     virtual T GetLast() const = 0;
     virtual Sequence<T>* GetSubsequence(int startIndex, int endIndex) const = 0;
     virtual int GetLength() const = 0;
+    virtual IEnumerator<T>* GetEnumerator() const = 0;
 
     virtual void Set(size_t index, const T& value) = 0;
+
     virtual Sequence<T>* Append(const T& item) = 0;
     virtual Sequence<T>* Prepend(const T& item) = 0;
     virtual Sequence<T>* InsertAt(const T& item, int index) = 0;
-    virtual Sequence<T>* Concat(Sequence<T>* list) = 0;
+    virtual Sequence<T>* Concat(const Sequence<T>& list) = 0;
 
     template <class R>
     Sequence<R>* Map(std::function<R(T)> func) const;
-
     virtual Sequence<T>* Where(std::function<bool(T)> func) const = 0;
     virtual T Reduce(std::function<T(T, T)> func, T start) const = 0;
 
     virtual Option<T> TryGet(int index) const = 0;
-    virtual IEnumerator<T>* GetEnumerator() const = 0;
+    
     virtual T operator[](int index) const = 0;
+    virtual bool operator==(const Sequence<T>& other) const;
+    virtual Sequence<T>* operator+(Sequence<T>& other);
 };
+#include "sequence.tpp"

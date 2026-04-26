@@ -49,9 +49,13 @@ class ConsoleUI {
 #endif
     }
 
-    void SetColor(const std::string& c) { std::cout << c; }
+    void SetColor(const std::string& c) {
+        std::cout << c;
+    }
 
-    void ResetColor() { std::cout << Color::RESET; }
+    void ResetColor() {
+        std::cout << Color::RESET;
+    }
 
     void PrintChars(char c, int count) {
         for (int i = 0; i < count; i++) std::cout << c;
@@ -156,7 +160,8 @@ class ConsoleUI {
     }
 
    public:
-    ConsoleUI() {}
+    ConsoleUI() {
+    }
 
     std::string PrintSequence(Sequence<int>* seq) {
         IEnumerator<int>* en = seq->GetEnumerator();
@@ -237,13 +242,10 @@ class ConsoleUI {
             PrintRow("1. Запустить все тесты", Color::BRIGHT_GREEN);
             PrintRow("2. Тестировать DynamicArray", Color::BRIGHT_BLUE);
             PrintRow("3. Тестировать LinkedList", Color::BRIGHT_BLUE);
-            PrintRow("4. Тестировать Sequence (Mutable)",
-                     Color::BRIGHT_MAGENTA);
-            PrintRow("5. Тестировать Sequence (Immutable)",
-                     Color::BRIGHT_MAGENTA);
+            PrintRow("4. Тестировать Sequence (Mutable)", Color::BRIGHT_MAGENTA);
+            PrintRow("5. Тестировать Sequence (Immutable)", Color::BRIGHT_MAGENTA);
             PrintRow("6. Тестировать Map/Reduce/Where", Color::BRIGHT_YELLOW);
-            PrintRow("7. Тестировать From/Concat/Zip/Split",
-                     Color::BRIGHT_CYAN);
+            PrintRow("7. Тестировать From/Concat/Zip/Split", Color::BRIGHT_CYAN);
             PrintRow("8. Тестировать Итераторы", Color::BRIGHT_CYAN);
             PrintRow("9. Тестировать Option<T>", Color::BRIGHT_CYAN);
             PrintEmpty();
@@ -385,8 +387,7 @@ class ConsoleUI {
                 }
                 default: {
                     SetColor(Color::BRIGHT_RED);
-                    std::cout << "  [ERR] Неверный выбор! Попробуйте снова..."
-                              << std::endl;
+                    std::cout << "  [ERR] Неверный выбор! Попробуйте снова..." << std::endl;
                     ResetColor();
                     Sleep(1500);
                     break;
@@ -407,7 +408,7 @@ class ConsoleUI {
         PrintRowIndented("Разделитель: 0", Color::BRIGHT_MAGENTA);
         PrintEmpty();
 
-        auto* splitted = Split(seq, [](int x) { return x == 0; });
+        auto* splitted = Split(*seq, [](int x) { return x == 0; });
         PrintRowIndented("Результат: [[1,2], [3,4], [5]]", Color::BRIGHT_GREEN);
         PrintRowIndented("Фрагментов: 3", Color::BRIGHT_CYAN);
 
@@ -431,9 +432,8 @@ class ConsoleUI {
         PrintRowIndented("Seq2: [10, 20, 30]", Color::BRIGHT_BLUE);
         PrintEmpty();
 
-        auto* zipped = Zip(seq1, seq2);
-        PrintRowIndented("Zip Result: [(1,10), (2,20), (3,30)]",
-                         Color::BRIGHT_GREEN);
+        auto* zipped = Zip(*seq1, *seq2);
+        PrintRowIndented("Zip Result: [(1,10), (2,20), (3,30)]", Color::BRIGHT_GREEN);
         PrintEmpty();
 
         delete zipped;
@@ -457,10 +457,9 @@ class ConsoleUI {
         PrintRowIndented("Slice(1, 2, [9, 10])", Color::BRIGHT_MAGENTA);
         PrintEmpty();
 
-        Sequence<int>* sliced = Slice(seq, 1, 2, insertSeq);
+        Sequence<int>* sliced = Slice(*seq, 1, 2, insertSeq);
         PrintRowIndented("Результат: [1, 9, 10, 4, 5]", Color::BRIGHT_GREEN);
-        PrintRowIndented("(удалили 2 элемента с позиции 1, вставили [9,10])",
-                         Color::BRIGHT_BLACK);
+        PrintRowIndented("(удалили 2 элемента с позиции 1, вставили [9,10])", Color::BRIGHT_BLACK);
 
         delete sliced;
         delete seq;
@@ -476,16 +475,13 @@ class ConsoleUI {
         OpenBox();
         PrintSection("DYNAMIC ARRAY");
         PrintEmpty();
-        PrintRowIndented("[ДО] Массив: [10, 20, 30, 40, 50]",
-                         Color::BRIGHT_BLUE);
-        PrintRowIndented("Размер: " + std::to_string(da.GetSize()),
-                         Color::BRIGHT_CYAN);
+        PrintRowIndented("[ДО] Массив: [10, 20, 30, 40, 50]", Color::BRIGHT_BLUE);
+        PrintRowIndented("Размер: " + std::to_string(da.GetSize()), Color::BRIGHT_CYAN);
         PrintEmpty();
 
         PrintRowIndented("-> Set(2, 999)", Color::BRIGHT_MAGENTA);
         da.Set(2, 999);
-        PrintRowIndented("[ПОСЛЕ] Массив: [10, 20, 999, 40, 50]",
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Массив: [10, 20, 999, 40, 50]", Color::BRIGHT_GREEN);
         PrintEmpty();
 
         PrintRowIndented("-> Resize(7)", Color::BRIGHT_MAGENTA);
@@ -506,16 +502,13 @@ class ConsoleUI {
         ll.Append(100);
         ll.Append(200);
         ll.Append(300);
-        PrintRowIndented("[ПОСЛЕ] Append: [100, 200, 300]",
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Append: [100, 200, 300]", Color::BRIGHT_GREEN);
 
         ll.Prepend(50);
-        PrintRowIndented("[ПОСЛЕ] Prepend: [50, 100, 200, 300]",
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Prepend: [50, 100, 200, 300]", Color::BRIGHT_GREEN);
 
         ll.InsertAt(150, 2);
-        PrintRowIndented("[ПОСЛЕ] InsertAt: [50, 100, 150, 200, 300]",
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] InsertAt: [50, 100, 150, 200, 300]", Color::BRIGHT_GREEN);
 
         CloseBox();
     }
@@ -529,16 +522,13 @@ class ConsoleUI {
         PrintRowIndented("[ДО] " + PrintSequence(seq), Color::BRIGHT_BLUE);
 
         seq->Append(4);
-        PrintRowIndented("[ПОСЛЕ] Append(4): " + PrintSequence(seq),
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Append(4): " + PrintSequence(seq), Color::BRIGHT_GREEN);
 
         seq->Prepend(0);
-        PrintRowIndented("[ПОСЛЕ] Prepend(0): " + PrintSequence(seq),
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("[ПОСЛЕ] Prepend(0): " + PrintSequence(seq), Color::BRIGHT_GREEN);
 
         seq->Set(1, 999);
-        PrintRowIndented("[ПОСЛЕ] Set(1, 999): " + PrintSequence(seq),
-                         Color::BRIGHT_MAGENTA);
+        PrintRowIndented("[ПОСЛЕ] Set(1, 999): " + PrintSequence(seq), Color::BRIGHT_MAGENTA);
 
         CloseBox();
         delete seq;
@@ -554,8 +544,7 @@ class ConsoleUI {
         PrintRowIndented("Оригинал: [1, 2, 3]", Color::BRIGHT_BLUE);
 
         Sequence<int>* newSeq = seq->Append(4);
-        PrintRowIndented("Оригинал (без изменений): [1, 2, 3]",
-                         Color::BRIGHT_BLUE);
+        PrintRowIndented("Оригинал (без изменений): [1, 2, 3]", Color::BRIGHT_BLUE);
         PrintRowIndented("Новый объект: [1, 2, 3, 4]", Color::BRIGHT_GREEN);
 
         delete seq;
@@ -581,8 +570,7 @@ class ConsoleUI {
         delete filtered;
 
         int sum = seq->Reduce([](int acc, int x) { return acc + x; }, 0);
-        PrintRowIndented("Reduce(сумма): " + std::to_string(sum),
-                         Color::BRIGHT_CYAN);
+        PrintRowIndented("Reduce(сумма): " + std::to_string(sum), Color::BRIGHT_CYAN);
 
         CloseBox();
         delete seq;
@@ -640,15 +628,12 @@ class ConsoleUI {
 
         Option<int> opt1 = seq->TryGet(0);
         if (opt1.IsSome()) {
-            PrintRowIndented("TryGet(0): IsSome=true, Value=" +
-                                 std::to_string(opt1.GetValue()),
-                             Color::BRIGHT_GREEN);
+            PrintRowIndented("TryGet(0): IsSome=true, Value=" + std::to_string(opt1.GetValue()), Color::BRIGHT_GREEN);
         }
 
         Option<int> opt2 = seq->TryGet(100);
         if (opt2.IsNone()) {
-            PrintRowIndented("TryGet(100): IsNone=true (без исключения!)",
-                             Color::BRIGHT_GREEN);
+            PrintRowIndented("TryGet(100): IsNone=true (без исключения!)", Color::BRIGHT_GREEN);
         }
 
         CloseBox();
@@ -661,8 +646,7 @@ class ConsoleUI {
 
         int data1[] = {1, 2, 3};
         Sequence<int>* fromSeq = From(data1, 3);
-        PrintRowIndented("From([1,2,3]): " + PrintSequence(fromSeq),
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("From([1,2,3]): " + PrintSequence(fromSeq), Color::BRIGHT_GREEN);
         delete fromSeq;
 
         PrintEmpty();
@@ -670,12 +654,11 @@ class ConsoleUI {
         int data2[] = {4, 5, 6};
         Sequence<int>* seq1 = From(data1, 3);
         Sequence<int>* seq2 = From(data2, 3);
-        Sequence<int>* concatenated = Concat(seq1, seq2);
+        Sequence<int>* concatenated = Concat(*seq1, *seq2);
 
         PrintRowIndented("Seq1: " + PrintSequence(seq1), Color::BRIGHT_BLUE);
         PrintRowIndented("Seq2: " + PrintSequence(seq2), Color::BRIGHT_BLUE);
-        PrintRowIndented("Concat: " + PrintSequence(concatenated),
-                         Color::BRIGHT_GREEN);
+        PrintRowIndented("Concat: " + PrintSequence(concatenated), Color::BRIGHT_GREEN);
 
         delete seq1;
         delete seq2;
