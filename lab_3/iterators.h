@@ -2,9 +2,6 @@
 
 #include "from_lab_2/iterators.h"
 
-
-template <class T>
-class DequeEnumerator;
 template <class T>
 class DequeSegmented;
 
