@@ -136,6 +136,11 @@ Sequence<T>* LazySequence<T>::InsertAt(const T& item, int index) {
 
 template<class T>
 Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& list) {
+    if (cardinalLength.IsInfinite()) {
+        throw InvalidOperationException("Cannot concat infinite sequence with another list");
+    }
+    MaterializeUpTo(cardinalLength.GetValue() - 1);
+    
     auto* result = new MutableArraySequence<T>();
     for (size_t i = 0; i < (size_t)materialized->GetLength(); i++) {
         result->Append(materialized->Get(i));
