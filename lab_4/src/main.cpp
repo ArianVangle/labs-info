@@ -1,9 +1,6 @@
 #include <iostream>
 #include <locale>
-#include "../include/lab4_new/algorithms.hpp"
-
-class ConsoleUI;
-#include "ui.cpp"
+#include "../include/lab4_new/ui.hpp"
 
 int main() {
     try {
