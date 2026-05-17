@@ -35,7 +35,7 @@ template<class T>
 LazySequence<T>::LazySequence(T (*rule)(Sequence<T>*), Cardinal len)
     : materialized(nullptr), cardinalLength(len), isOwner(true) {
     materialized = new MutableArraySequence<T>();
-    generator = new Generator<T>(this, rule);
+    generator = new RecursiveGenerator<T>(this, rule);
 }
 
 template<class T>
@@ -136,21 +136,24 @@ Sequence<T>* LazySequence<T>::InsertAt(const T& item, int index) {
 
 template<class T>
 Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& list) {
-    if (cardinalLength.IsInfinite()) {
-        throw InvalidOperationException("Cannot concat infinite sequence with another list");
+    auto* result = new LazySequence<T>();
+    result->materialized = new MutableArraySequence<T>();
+    bool isFirstInfinite = cardinalLength.IsInfinite();
+    bool isSecondInfinite = false;
+    const LazySequence<T>* lazyList = dynamic_cast<const LazySequence<T>*>(&list);
+    if (lazyList && lazyList->GetCardinalLength().IsInfinite()) {
+        isSecondInfinite = true;
     }
-    MaterializeUpTo(cardinalLength.GetValue() - 1);
-    
-    auto* result = new MutableArraySequence<T>();
-    for (size_t i = 0; i < (size_t)materialized->GetLength(); i++) {
-        result->Append(materialized->Get(i));
+
+    if (isFirstInfinite || isSecondInfinite) {
+        result->cardinalLength = Cardinal::Infinity();
+    } else {
+        result->cardinalLength = cardinalLength + Cardinal(list.GetLength());
     }
-    IEnumerator<T>* en = list.GetEnumerator();
-    while (en->MoveNext()) { result->Append(en->Current()); }
-    delete en;
+    result->isOwner = true;
+    result->generator = new ConcatGenerator<T>(this->generator, &list);
     return result;
 }
-
 template<class T>
 template<class R>
 Sequence<R>* LazySequence<T>::Map(std::function<R(T)> func) const {
@@ -231,7 +234,7 @@ Option<T> LazySequence<T>::TryGet(int index) const {
 
 template<class T>
 IEnumerator<T>* LazySequence<T>::GetEnumerator() const {
-    return new Generator<T>(const_cast<LazySequence<T>*>(this), 
+    return new RecursiveGenerator<T>(const_cast<LazySequence<T>*>(this), 
         [](Sequence<T>* prev) -> T {
             if (prev->GetLength() == 0) return T();
             return prev->Get(prev->GetLength() - 1);

@@ -6,17 +6,18 @@
 #include "../lab3_base/exceptions.h"
 
 
-template<class T> class Generator;
+template<class T> class IGenerator;
+template<class T> class RecursiveGenerator;
 
 template<class T>
 class LazySequence : public Sequence<T> {
 private:
-    Generator<T>* generator;
+    IGenerator<T>* generator; 
     Sequence<T>* materialized;
     Cardinal cardinalLength;
     bool isOwner;
     
-    friend class Generator<T>;
+    friend class RecursiveGenerator<T>;
 
 protected:
     virtual bool CanGenerate(size_t position) const;

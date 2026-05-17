@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include <limits>
 #include <chrono>
 #include "../include/lab4_new/cardinal.hpp"
 #include "../include/lab4_new/lazy_sequence.hpp"
@@ -599,7 +598,7 @@ auto* factorials = new LazySequence<int>(
             Cardinal(100)
         );
         
-        auto* gen = new Generator<int>(seq, 
+        auto* gen = new RecursiveGenerator<int>(seq, 
             [](Sequence<int>* prev) -> int {
                 return prev->GetLength() + 1;
             },
