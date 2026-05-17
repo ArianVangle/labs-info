@@ -43,6 +43,7 @@ public:
     Sequence<T>* Prepend(const T& item) override;
     Sequence<T>* InsertAt(const T& item, int index) override;
     Sequence<T>* Concat(const Sequence<T>& list) override;
+    Sequence<T>* InsertSequenceAt(const Sequence<T>& other, int index);
 
     template<class R>
     Sequence<R>* Map(std::function<R(T)> func) const;
