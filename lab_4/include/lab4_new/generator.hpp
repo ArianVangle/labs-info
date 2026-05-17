@@ -89,4 +89,70 @@ public:
     }
 };
 
+template<class T>
+class InsertAtGenerator : public IGenerator<T> {
+private:
+    IGenerator<T>* genSource;
+    const Sequence<T>* seqToInsert;
+    IEnumerator<T>* iterInsert;
+    int splitIndex;
+    int currentPos;
+    enum State { PREFIX, INSERTING, SUFFIX } state;
+    bool insertExhausted;
+
+public:
+    InsertAtGenerator(IGenerator<T>* src, const Sequence<T>* ins, int idx)
+        : genSource(src), seqToInsert(ins), iterInsert(nullptr), 
+          splitIndex(idx), currentPos(0), state(PREFIX), insertExhausted(false) {}
+
+    ~InsertAtGenerator() { delete iterInsert; }
+
+    T GetNext() override {
+        switch (state) {
+            case PREFIX:
+                if (currentPos < splitIndex && genSource->HasNext()) {
+                    currentPos++;
+                    return genSource->GetNext();
+                }
+                state = INSERTING;
+                iterInsert = seqToInsert->GetEnumerator();
+                [[fallthrough]];
+                
+            case INSERTING:
+                if (iterInsert && iterInsert->MoveNext()) {
+                    return iterInsert->Current();
+                }
+                insertExhausted = true;
+                state = SUFFIX;
+                [[fallthrough]];
+                
+            case SUFFIX:
+                if (genSource->HasNext()) {
+                    currentPos++;
+                    return genSource->GetNext();
+                }
+                throw InvalidOperationException("End of inserted sequence");
+        }
+        return T();
+    }
+
+    bool HasNext() const override {
+        if (state == PREFIX) return currentPos < splitIndex && genSource->HasNext();
+        if (state == INSERTING) return true;
+        return genSource->HasNext();
+    }
+
+    void Reset() override {
+        state = PREFIX;
+        currentPos = 0;
+        insertExhausted = false;
+        delete iterInsert;
+        iterInsert = nullptr;
+        genSource->Reset();
+    }
+
+    size_t GetPosition() const override { return currentPos; }
+};
+
+
 #include "generator.tpp"

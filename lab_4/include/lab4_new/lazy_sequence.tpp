@@ -125,35 +125,57 @@ template<class T>
 Sequence<T>* LazySequence<T>::InsertAt(const T& item, int index) {
     if (index < 0 || (cardinalLength.IsFinite() && index > (int)cardinalLength.GetValue()))
         throw IndexOutOfRangeException("Index out of range");
+    
     MaterializeUpTo(index > 0 ? index - 1 : 0);
     auto* result = new LazySequence<T>();
-    for (int i = 0; i < index; i++) result->materialized->Append(materialized->Get(i));
+    for (int i = 0; i < index; i++) 
+        result->materialized->Append(materialized->Get(i));
+
     result->materialized->Append(item);
-    for (size_t i = index; i < (size_t)materialized->GetLength(); i++) result->materialized->Append(materialized->Get(i));
+    for (size_t i = index; i < (size_t)materialized->GetLength(); i++) 
+        result->materialized->Append(materialized->Get(i));
+
     result->cardinalLength = cardinalLength.IsFinite() ? Cardinal(cardinalLength.GetValue() + 1) : Cardinal::Infinity();
     return result;
 }
 
 template<class T>
-Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& list) {
+Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& other) {
     auto* result = new LazySequence<T>();
     result->materialized = new MutableArraySequence<T>();
-    bool isFirstInfinite = cardinalLength.IsInfinite();
-    bool isSecondInfinite = false;
-    const LazySequence<T>* lazyList = dynamic_cast<const LazySequence<T>*>(&list);
-    if (lazyList && lazyList->GetCardinalLength().IsInfinite()) {
-        isSecondInfinite = true;
-    }
-
-    if (isFirstInfinite || isSecondInfinite) {
+    
+    if (cardinalLength.IsInfinite()) {
         result->cardinalLength = Cardinal::Infinity();
     } else {
-        result->cardinalLength = cardinalLength + Cardinal(list.GetLength());
+        result->cardinalLength = cardinalLength + Cardinal(other.GetLength());
     }
+    
+    result->generator = new ConcatGenerator<T>(this->generator, &other);
     result->isOwner = true;
-    result->generator = new ConcatGenerator<T>(this->generator, &list);
     return result;
 }
+
+template<class T>
+Sequence<T>* LazySequence<T>::InsertSequenceAt(const Sequence<T>& other, int index) {
+    if (index < 0 || (cardinalLength.IsFinite() && index > (int)cardinalLength.GetValue())) {
+        throw IndexOutOfRangeException("Insert index out of range");
+    }
+
+    auto* result = new LazySequence<T>();
+    result->materialized = new MutableArraySequence<T>();
+    
+    if (cardinalLength.IsInfinite() || other.GetCardinalLength().IsInfinite()) {
+        result->cardinalLength = Cardinal::Infinity();
+    } else {
+        result->cardinalLength = cardinalLength + Cardinal(other.GetLength());
+    }
+
+    result->generator = new InsertAtGenerator<T>(this->generator, &other, index);
+    result->isOwner = true;
+    return result;
+}
+
+
 template<class T>
 template<class R>
 Sequence<R>* LazySequence<T>::Map(std::function<R(T)> func) const {
