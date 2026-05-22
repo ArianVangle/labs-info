@@ -125,17 +125,18 @@ template<class T>
 Sequence<T>* LazySequence<T>::InsertAt(const T& item, int index) {
     if (index < 0 || (cardinalLength.IsFinite() && index > (int)cardinalLength.GetValue()))
         throw IndexOutOfRangeException("Index out of range");
-    
-    MaterializeUpTo(index > 0 ? index - 1 : 0);
+
     auto* result = new LazySequence<T>();
-    for (int i = 0; i < index; i++) 
-        result->materialized->Append(materialized->Get(i));
+    auto* itemSeq = new MutableArraySequence<T>();
+    itemSeq->Append(item);
 
-    result->materialized->Append(item);
-    for (size_t i = index; i < (size_t)materialized->GetLength(); i++) 
-        result->materialized->Append(materialized->Get(i));
-
-    result->cardinalLength = cardinalLength.IsFinite() ? Cardinal(cardinalLength.GetValue() + 1) : Cardinal::Infinity();
+    result->generator = new InsertAtGenerator<T>(this->generator, itemSeq, index);
+    
+    result->cardinalLength = cardinalLength.IsFinite() 
+        ? Cardinal(cardinalLength.GetValue() + 1) 
+        : Cardinal::Infinity();
+        
+    result->isOwner = true;
     return result;
 }
 
