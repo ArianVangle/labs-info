@@ -101,13 +101,9 @@ size_t LazySequence<T>::GetMaterializedCount() const { return materialized->GetL
 
 template<class T>
 Sequence<T>* LazySequence<T>::Append(const T& item) {
-    auto* result = new LazySequence<T>(*this);
-    result->MaterializeUpTo(result->materialized->GetLength());
-    result->materialized->Append(item);
-    if (result->cardinalLength.IsFinite()) {
-        result->cardinalLength = Cardinal(result->cardinalLength.GetValue() + 1);
-    }
-    return result;
+    auto* singleton = new MutableArraySequence<T>();
+    singleton->Append(item);
+    return this->Concat(*singleton);
 }
 
 template<class T>
@@ -180,29 +176,32 @@ Sequence<T>* LazySequence<T>::InsertSequenceAt(const Sequence<T>& other, int ind
 template<class T>
 template<class R>
 Sequence<R>* LazySequence<T>::Map(std::function<R(T)> func) const {
-    auto* result = new MutableArraySequence<R>();
-    for (size_t i = 0; i < (size_t)materialized->GetLength(); i++) {
-        result->Append(func(materialized->Get(i)));
-    }
+    auto* result = new LazySequence<R>();
+    result->generator = new MapGenerator<T, R>(this->generator, func);
+    result->cardinalLength = cardinalLength;
+    result->isOwner = true;
     return result;
 }
 
 template<class T>
 Sequence<T>* LazySequence<T>::Where(std::function<bool(T)> func) const {
-    auto* result = new MutableArraySequence<T>();
-    for (size_t i = 0; i < (size_t)materialized->GetLength(); i++) {
-        T val = materialized->Get(i);
-        if (func(val)) result->Append(val);
-    }
+    auto* result = new LazySequence<T>();
+    result->generator = new WhereGenerator<T>(this->generator, func);
+    result->cardinalLength = cardinalLength; 
+    result->isOwner = true;
     return result;
 }
 
 template<class T>
 T LazySequence<T>::Reduce(std::function<T(T, T)> func, T start) const {
     T result = start;
-    for (size_t i = 0; i < (size_t)materialized->GetLength(); i++) {
-        result = func(result, materialized->Get(i));
+    auto* tempGen = new RecursiveGenerator<T>(const_cast<LazySequence<T>*>(this), 
+        [](Sequence<T>* p){ return p->GetLength()==0 ? T() : p->Get(p->GetLength()-1); });
+    
+    while (tempGen->HasNext()) {
+        result = func(result, tempGen->GetNext());
     }
+    delete tempGen;
     return result;
 }
 

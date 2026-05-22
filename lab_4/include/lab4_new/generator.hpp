@@ -155,4 +155,48 @@ public:
 };
 
 
+template<class T, class R>
+class MapGenerator : public IGenerator<R> {
+    IGenerator<T>* source;
+    std::function<R(T)> func;
+public:
+    MapGenerator(IGenerator<T>* src, std::function<R(T)> f) : source(src), func(f) {}
+    ~MapGenerator() { delete source; }
+
+    R GetNext() override { return func(source->GetNext()); }
+    bool HasNext() const override { return source->HasNext(); }
+    void Reset() override { source->Reset(); }
+    size_t GetPosition() const override { return source->GetPosition(); }
+};
+
+template<class T>
+class WhereGenerator : public IGenerator<T> {
+    IGenerator<T>* source;
+    std::function<bool(T)> predicate;
+    T bufferedValue;
+    bool hasBuffered;
+public:
+    WhereGenerator(IGenerator<T>* src, std::function<bool(T)> pred) 
+        : source(src), predicate(pred), hasBuffered(false) {}
+    ~WhereGenerator() { delete source; }
+    
+    T GetNext() override {
+        if (hasBuffered) { hasBuffered = false; return bufferedValue; }
+        while (source->HasNext()) {
+            T val = source->GetNext();
+            if (predicate(val)) return val;
+        }
+        throw InvalidOperationException("No matching element");
+    }
+    bool HasNext() const override {
+        if (hasBuffered) return true;
+        WhereGenerator<T>* self = const_cast<WhereGenerator<T>*>(this);
+        try { self->bufferedValue = self->GetNext(); self->hasBuffered = true; return true; }
+        catch (...) { return false; }
+    }
+    void Reset() override { source->Reset(); hasBuffered = false; }
+    size_t GetPosition() const override { return source->GetPosition(); }
+};
+
+
 #include "generator.tpp"
