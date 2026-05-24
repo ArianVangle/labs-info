@@ -2,64 +2,70 @@
 #include <iostream>
 #include <string>
 #include <chrono>
-#include "../include/lab4_new/cardinal.hpp"
-#include "../include/lab4_new/lazy_sequence.hpp"
-#include "../include/lab4_new/stream.hpp"
-#include "../include/lab4_new/stream_adapters.hpp"
-#include "../include/lab4_new/read_only_stream.hpp"
-#include "../include/lab4_new/algorithms.hpp"
-#include "../include/lab3_base/array_sequence.h"
-#include "../include/lab3_base/utils.h"
+#include <limits>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+
+#include "../lab4_new/cardinal.hpp"
+#include "../lab4_new/lazy_sequence.hpp"
+#include "../lab4_new/stream.hpp"
+#include "../lab4_new/stream_adapters.hpp"
+#include "../lab4_new/read_only_stream.hpp"
+#include "../lab4_new/write_only_stream.hpp"
+#include "../lab4_new/algorithms.hpp"
+#include "../lab3_base/array_sequence.h"
+#include "../lab3_base/utils.h"
 
 class ConsoleUI {
 private:
     static const int WIDTH = 70;
-    
+
     void PrintHeader(const std::string& text) {
-        std::cout << "\n╔";
-        for (int i = 0; i < WIDTH - 2; i++) std::cout << "═";
-        std::cout << "╗\n║";
-        
-        int padding = (WIDTH - 2 - VisibleLength(text)) / 2;
-        for (int i = 0; i < padding; i++) std::cout << " ";
+        std::cout << "\n╔"; for(int i=0; i<WIDTH-2; ++i) std::cout << "═"; std::cout << "╗\n";
+        std::cout << "║";
+        int pad = (WIDTH - 2 - VisibleLength(text)) / 2;
+        for(int i=0; i<pad; ++i) std::cout << " ";
         std::cout << text;
-        for (int i = 0; i < WIDTH - 2 - VisibleLength(text) - padding; i++) std::cout << " ";
-        std::cout << "║\n╚";
-        for (int i = 0; i < WIDTH - 2; i++) std::cout << "═";
-        std::cout << "╝\n\n";
+        for(int i=0; i<WIDTH-2-VisibleLength(text)-pad; ++i) std::cout << " ";
+        std::cout << "║\n";
+        std::cout << "╚"; for(int i=0; i<WIDTH-2; ++i) std::cout << "═"; std::cout << "╝\n";
     }
-    
+
     void PrintOption(int num, const std::string& text) {
-        std::cout << "  " << num << ". " << text << "\n";
+        std::cout << "  " << std::setw(2) << num << ". " << text << "\n";
     }
-    
+
     void PrintSeparator() {
-        std::cout << "  ";
-        for (int i = 0; i < WIDTH - 4; i++) std::cout << "─";
-        std::cout << "\n";
+        std::cout << "  "; for(int i=0; i<WIDTH-4; ++i) std::cout << "─"; std::cout << "\n";
     }
-    
+
     void WaitForEnter() {
-        std::cout << "\n  Нажмите Enter для продолжения...";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "\n  [Нажмите Enter для продолжения...] ";
         std::cin.get();
     }
-    
-    int GetIntInput(const std::string& prompt, int minVal, int maxVal) {
-        int value;
+
+    template<typename T>
+    T GetInput(const std::string& prompt, T minVal = std::numeric_limits<T>::lowest(), T maxVal = std::numeric_limits<T>::max()) {
+        T value;
         while (true) {
-            std::cout << "  " << prompt << " (" << minVal << "-" << maxVal << "): ";
-            std::cin >> value;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            
-            if (std::cin.fail() || value < minVal || value > maxVal) {
-                std::cout << "  Ошибка: введите число от " << minVal << " до " << maxVal << "\n";
+            std::cout << "  " << prompt;
+            if (!(std::cin >> value)) {
                 std::cin.clear();
-            } else {
-                return value;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "\n  ❌ Ошибка: введите корректное число.\n";
+                continue;
             }
+            if (value < minVal || value > maxVal) {
+                std::cout << "\n  ❌ Значение должно быть в диапазоне [" << minVal << "; " << maxVal << "]\n";
+                continue;
+            }
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            return value;
         }
     }
-    
+
     std::string GetStringInput(const std::string& prompt) {
         std::string value;
         std::cout << "  " << prompt << ": ";
@@ -67,612 +73,349 @@ private:
         return value;
     }
 
-public:
-    void ShowMenu() {
+    void InteractiveOnlineStats() {
+        ClearScreen();
+        PrintHeader("📊 ОНЛАЙН-СТАТИСТИКА (режим терминала)");
+        std::cout << "  Вводите числа по одному. Статистика обновляется мгновенно.\n";
+        std::cout << "  Введите 0 или пустую строку для завершения.\n";
+        PrintSeparator();
+
+        OnlineStatistics<double> stats;
+        double val;
         while (true) {
-            PrintHeader("ЛАБОРАТОРНАЯ РАБОТА №4");
-            std::cout << "  Ленивые последовательности и потоки данных\n\n";
-            
-            PrintSeparator();
-            PrintOption(1, "Демо: Факториалы (ленивая последовательность)");
-            PrintOption(2, "Демо: Фибоначчи (бесконечная последовательность)");
-            PrintOption(3, "Демо: Частичная материализация");
-            PrintOption(4, "Демо: Сортировка потока (куча)");
-            PrintOption(5, "Демо: Онлайн-статистика");
-            PrintSeparator();
-            PrintOption(6, "Ручной режим: Создать ленивую последовательность");
-            PrintOption(7, "Ручной режим: Тестирование потоков");
-            PrintOption(8, "Ручной режим: Тест с файлом CSV");
-            PrintOption(9, "Ручной режим: Тест с файлом JSON");
-            PrintSeparator();
-            PrintOption(10, "Запустить все автоматические тесты");
-            PrintOption(11, "Бенчмарк производительности");
-            PrintSeparator();
-            PrintOption(0, "Выход");
-            PrintSeparator();
-            
-            std::cout << "\n  Ваш выбор: ";
-            int choice;
-            std::cin >> choice;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            
-            switch (choice) {
-                case 1: DemoFactorials(); break;
-                case 2: DemoFibonacci(); break;
-                case 3: DemoPartialMaterialization(); break;
-                case 4: DemoHeapSort(); break;
-                case 5: DemoOnlineStats(); break;
-                case 6: ManualLazySequence(); break;
-                case 7: ManualStreams(); break;
-                case 8: ManualCSVTest(); break;
-                case 9: ManualJSONTest(); break;
-                case 10: RunAllTests(); break;
-                case 11: RunBenchmark(); break;
-                case 0: return;
-                default: 
-                    std::cout << "  Неверный выбор! Попробуйте снова.\n";
-                    WaitForEnter();
+            std::cout << "  ➤ Новое значение: ";
+            if (!(std::cin >> val)) {
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                break;
             }
-        }
-    }
-    
-void DemoFactorials() {
-    PrintHeader("ФАКТОРИАЛЫ (ленивая последовательность)");
-    
-    auto* factorials = new LazySequence<int>(
-        [](Sequence<int>* prev) -> int {
-            if (prev->GetLength() == 0) return 1;
-            return prev->Get(prev->GetLength() - 1) * (int)prev->GetLength();
-        },
-        Cardinal(10)
-    );
-        
-        std::cout << "  Первые 10 факториалов:\n  ";
-        for (int i = 0; i < 10; i++) {
-            std::cout << factorials->Get(i);
-            if (i < 9) std::cout << ", ";
-        }
-        std::cout << "\n\n";
-        
-        std::cout << "  Материализовано: " << factorials->GetMaterializedCount() << " из 10\n";
-        std::cout << "  Эффективность мемоизации: " << factorials->GetMemoizationRatio() << "%\n";
-        
-        delete factorials;
-        WaitForEnter();
-    }
-    
-    void DemoFibonacci() {
-        PrintHeader("ФИБОНАЧЧИ (бесконечная ленивая последовательность)");
-        
-        auto* fib = new LazySequence<int>(
-            [](Sequence<int>* prev) -> int {
-                if (prev->GetLength() < 2) return 1;
-                return prev->Get(prev->GetLength() - 1) + prev->Get(prev->GetLength() - 2);
-            },
-            Cardinal::Infinity()
-        );
-        
-        std::cout << "  Первые 12 чисел Фибоначчи:\n  ";
-        for (int i = 0; i < 12; i++) {
-            std::cout << fib->Get(i);
-            if (i < 11) std::cout << ", ";
-        }
-        std::cout << "\n\n";
-        
-        std::cout << "  Длина: ∞ (бесконечная)\n";
-        std::cout << "  Материализовано: " << fib->GetMaterializedCount() << "\n";
-        
-        delete fib;
-        WaitForEnter();
-    }
-    
-    void DemoHeapSort() {
-        PrintHeader("СОРТИРОВКА ПОТОКА (бинарная куча)");
-        
-        int data[] = {42, 7, 19, 3, 88, 15, 51};
-        auto* seq = new MutableArraySequence<int>(data, 7);
-        auto* stream = new SequenceReadStream<int>(seq);
-        
-        std::cout << "  Исходный поток: ";
-        stream->Open();
-        while (!stream->IsEndOfStream()) {
-            std::cout << stream->Read() << " ";
-        }
-        stream->Close();
-        
-        StreamSorter<int> sorter([](int a, int b) -> bool { return a < b; });
-        auto* sorted = sorter.SortWithHeap(new SequenceReadStream<int>(
-            new MutableArraySequence<int>(data, 7)
-        ));
-        
-        std::cout << "\n  Отсортированный: ";
-        sorted->Open();
-        while (!sorted->IsEndOfStream()) {
-            std::cout << sorted->Read() << " ";
-        }
-        sorted->Close();
-        std::cout << "\n";
-        
-        delete sorted;
-        delete stream;
-        delete seq;
-        WaitForEnter();
-    }
-    
-    void DemoOnlineStats() {
-        PrintHeader("ОНЛАЙН-СТАТИСТИКА");
-        
-        OnlineStatistics<int> stats;
-        int data[] = {10, 25, 3, 47, 19, 33, 8};
-        
-        std::cout << "  Данные: ";
-        for (int val : data) {
-            std::cout << val << " ";
+            if (val == 0 && std::cin.peek() == '\n') { std::cin.ignore(); break; }
+            
             stats.Add(val);
+            std::cout << "  ✅ Принято. Текущие метрики:\n";
+            std::cout << "  ┌─────────────────────────────────────┐\n";
+            std::cout << "  │ Элементов: " << std::setw(24) << stats.GetCount() << " │\n";
+            std::cout << "  │ Минимум:   " << std::setw(24) << stats.GetMin() << " │\n";
+            std::cout << "  │ Максимум:  " << std::setw(24) << stats.GetMax() << " │\n";
+            std::cout << "  │ Среднее:   " << std::setw(24) << stats.GetMean() << " │\n";
+            std::cout << "  │ Медиана:   " << std::setw(24) << stats.GetMedian() << " │\n";
+            std::cout << "  └─────────────────────────────────────┘\n\n";
         }
-        std::cout << "\n\n";
-        
-        std::cout << "  Количество: " << stats.GetCount() << "\n";
-        std::cout << "  Среднее:    " << stats.GetMean() << "\n";
-        std::cout << "  Медиана:    " << stats.GetMedian() << "\n";
-        std::cout << "  Минимум:    " << stats.GetMin() << "\n";
-        std::cout << "  Максимум:   " << stats.GetMax() << "\n";
-        
         WaitForEnter();
     }
-    
-    void ManualLazySequence() {
-        PrintHeader("РУЧНОЙ РЕЖИМ: ЛЕНИВАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ");
+
+    void InteractiveLazySequence() {
+        ClearScreen();
+        PrintHeader("🧩 КОНСТРУКТОР ЛЕНИВОЙ ПОСЛЕДОВАТЕЛЬНОСТИ");
+        PrintOption(1, "Натуральные числа (1, 2, 3...)");
+        PrintOption(2, "Факториалы (1, 1, 2, 6, 24...)");
+        PrintOption(3, "Фибоначчи (1, 1, 2, 3, 5...)");
+        PrintOption(0, "Отмена");
+        PrintSeparator();
         
-        int bufferSize = GetIntInput("Размер скользящего буфера генератора", 1, 1000);
-        
-        int length = GetIntInput("Длина последовательности", 1, 1000);
-        
-        std::cout << "\n  Выберите правило генерации:\n";
-        std::cout << "  1. Натуральные числа (1, 2, 3, ...)\n";
-        std::cout << "  2. Факториалы (1, 1, 2, 6, 24, ...)\n";
-        std::cout << "  3. Фибоначчи (1, 1, 2, 3, 5, ...)\n";
-        int rule = GetIntInput("Ваш выбор", 1, 3);
+        int rule = GetInput<int>("Выберите правило: ", 0, 3);
+        if (rule == 0) return;
+        int len = GetInput<int>("Длина последовательности (или -1 для бесконечности): ", -1, 100000);
         
         LazySequence<int>* seq = nullptr;
-        
         switch (rule) {
             case 1:
                 seq = new LazySequence<int>(
-                    [](Sequence<int>* prev) -> int {
-                        return prev->GetLength() + 1;
-                    },
-                    Cardinal(length)
+                    [](Sequence<int>* p) -> int { return p->GetLength() + 1; },
+                    (len == -1) ? Cardinal::Infinity() : Cardinal(len)
                 );
                 break;
             case 2:
                 seq = new LazySequence<int>(
-                    [](Sequence<int>* prev) -> int {
-                        if (prev->GetLength() == 0) return 1;
-                        return prev->Get(prev->GetLength() - 1) * (int)(prev->GetLength() + 1);
+                    [](Sequence<int>* p) -> int {
+                        int l = p->GetLength();
+                        return (l == 0) ? 1 : p->Get(l-1) * l;
                     },
-                    Cardinal(length)
+                    (len == -1) ? Cardinal::Infinity() : Cardinal(len)
                 );
                 break;
             case 3:
             default:
                 seq = new LazySequence<int>(
-                    [](Sequence<int>* prev) -> int {
-                        if (prev->GetLength() < 2) return 1;
-                        return prev->Get(prev->GetLength() - 1) + prev->Get(prev->GetLength() - 2);
+                    [](Sequence<int>* p) -> int {
+                        int l = p->GetLength();
+                        return (l < 2) ? 1 : p->Get(l-1) + p->Get(l-2);
                     },
-                    Cardinal(length)
+                    (len == -1) ? Cardinal::Infinity() : Cardinal(len)
                 );
                 break;
         }
-        
-        std::cout << "\n  Сгенерированная последовательность:\n  ";
-        int displayCount = (length < 20) ? length : 20;
-        for (int i = 0; i < displayCount; i++) {
-            std::cout << seq->Get(i) << " ";
+
+        while (true) {
+            ClearScreen();
+            PrintHeader("🔧 ОПЕРАЦИИ НАД ПОСЛЕДОВАТЕЛЬНОСТЬЮ");
+            std::cout << "  Текущая длина: " << (seq->GetLength() == -1 ? "∞" : std::to_string(seq->GetLength())) << "\n";
+            std::cout << "  Материализовано: " << seq->GetMaterializedCount() << "\n";
+            PrintSeparator();
+            PrintOption(1, "Получить элемент по индексу");
+            PrintOption(2, "Map (преобразование)");
+            PrintOption(3, "Where (фильтрация чётных)");
+            PrintOption(4, "Reduce (сумма)");
+            PrintOption(5, "Concat (сцепить с другой)");
+            PrintOption(6, "InsertAt (вставка элемента)");
+            PrintOption(7, "GetSubsequence");
+            PrintOption(0, "Выйти в главное меню");
+            PrintSeparator();
+            
+            int choice = GetInput<int>("Ваш выбор: ", 0, 7);
+            if (choice == 0) { delete seq; return; }
+            
+            ClearScreen();
+            try {
+                if (choice == 1) {
+                    int idx = GetInput<int>("Индекс: ", 0, (seq->GetLength() == -1) ? 1000 : seq->GetLength()-1);
+                    std::cout << "\n  ✅ seq[" << idx << "] = " << seq->Get(idx) << "\n";
+                } else if (choice == 2) {
+                    auto* mapped = seq->Map<int>([](int x){ return x * x; });
+                    std::cout << "\n  ✅ Map(x->x²) первые 5 элементов: ";
+                    for(int i=0; i<5; ++i) 
+                        std::cout << mapped->Get(i) << " ";
+                    std::cout << "\n  Материализовано в новой последовательности: " << 
+                        dynamic_cast<LazySequence<int>*>(mapped)->GetMaterializedCount() << "\n";
+                    delete mapped;
+                } else if (choice == 3) {
+                    auto* filtered = seq->Where([](int x){ return x % 2 == 0; });
+                    std::cout << "\n  ✅ Where(чётные) первые 3 элемента: ";
+                    for(int i=0; i<3; ++i) 
+                        std::cout << filtered->Get(i) << " ";
+                    std::cout << "\n";
+                    delete filtered;
+                } else if (choice == 4) {
+                    if (seq->GetLength() > 500) { std::cout << "\n  ⚠️ Reduce доступна только для последовательностей ≤ 500 элементов.\n"; }
+                    else {
+                        int sum = seq->Reduce([](int acc, int v){ return acc + v; }, 0);
+                        std::cout << "\n  ✅ Reduce(сумма) = " << sum << "\n";
+                    }
+                } else if (choice == 5) {
+                    int addLen = GetInput<int>("Длина добавляемой последовательности: ", 1, 10);
+                    auto* other = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 100; }, Cardinal(addLen));
+                    auto* concated = seq->Concat(*other);
+                    std::cout << "\n  ✅ Concat первые 3 элемента второй части: ";
+                    for(int i=0; i<3; ++i) std::cout << concated->Get(seq->GetLength() + i) << " ";
+                    std::cout << "\n  Итоговая длина: " << (concated->GetLength()==-1 ? "∞" : std::to_string(concated->GetLength())) << "\n";
+                    delete concated; delete other;
+                } else if (choice == 6) {
+                    int idx = GetInput<int>("Позиция вставки: ", 0, (seq->GetLength()==-1)?100:seq->GetLength());
+                    int val = GetInput<int>("Значение: ");
+                    auto* inserted = seq->InsertAt(val, idx);
+                    std::cout << "\n  ✅ Вставлено " << val << " в позицию " << idx << ". Новый элемент: " << inserted->Get(idx) << "\n";
+                    delete inserted;
+                } else if (choice == 7) {
+                    int s = GetInput<int>("Начало: ", 0, (seq->GetLength()==-1)?100:seq->GetLength()-1);
+                    int e = GetInput<int>("Конец: ", s, (seq->GetLength()==-1)?100:seq->GetLength()-1);
+                    auto* sub = seq->GetSubsequence(s, e);
+                    std::cout << "\n  ✅ Subsequence[" << s << ".." << e << "]: ";
+                    for(int i=0; i<sub->GetLength(); ++i) std::cout << sub->Get(i) << " ";
+                    std::cout << "\n";
+                    delete sub;
+                }
+            } catch (const std::exception& ex) {
+                std::cout << "\n  ❌ Ошибка: " << ex.what() << "\n";
+            }
+            WaitForEnter();
         }
-        if (length > 20) std::cout << "... (всего " << length << ")";
-        std::cout << "\n\n";
-        
-        std::cout << "  Материализовано: " << seq->GetMaterializedCount() << "\n";
-        std::cout << "  Размер буфера генератора: " << bufferSize << "\n";
-        
-        delete seq;
-        WaitForEnter();
-    }
-    
-    void ManualStreams() {
-        PrintHeader("РУЧНОЙ РЕЖИМ: ПОТОКИ");
-        
-        int count = GetIntInput("Количество элементов", 1, 100);
-        
-        int* data = new int[count];
-        std::cout << "  Введите " << count << " целых чисел:\n  ";
-        for (int i = 0; i < count; i++) {
-            std::cin >> data[i];
-        }
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        
-        auto* seq = new MutableArraySequence<int>(data, count);
-        auto* stream = new SequenceReadStream<int>(seq);
-        
-        stream->Open();
-        std::cout << "\n  Чтение из потока:\n  ";
-        while (!stream->IsEndOfStream()) {
-            std::cout << stream->Read() << " ";
-        }
-        stream->Close();
-        
-        std::cout << "\n\n  Позиция в потоке: " << stream->GetPosition() << "\n";
-        
-        delete stream;
-        delete seq;
-        delete[] data;
-        WaitForEnter();
-    }
-    
-    void ManualCSVTest() {
-    PrintHeader("РУЧНОЙ РЕЖИМ: ТЕСТ С ФАЙЛОМ CSV");
-    
-    std::string filename = GetStringInput("Имя файла CSV");
-    
-    if (filename.empty()) {
-        filename = "test_data.csv";
-        std::ofstream testFile(filename);
-        testFile << "1\n2\n3\n4\n5\n10\n20\n30\n";
-        testFile.close();
-        std::cout << "  Создан тестовый файл: " << filename << "\n";
-    }
-    
-    try {
-        auto* fileStream = new FileStream(filename, 
-            [](const std::string& line) -> std::string { return line; });
-        
-        auto* csvStream = new CsvReadStream<int>(fileStream,
-            [](Sequence<std::string>* fields) -> int {
-                if (fields->GetLength() == 0) return 0;
-                return std::stoi(fields->Get(0));
-            },
-            ','
-        );
-        
-        csvStream->Open();
-        
-        std::cout << "\n  Чтение из CSV:\n  ";
-        int count = 0;
-        while (!csvStream->IsEndOfStream() && count < 20) {
-            std::cout << csvStream->Read() << " ";
-            count++;
-        }
-        if (!csvStream->IsEndOfStream()) std::cout << "...";
-        std::cout << "\n\n";
-        
-        csvStream->Close();
-        delete csvStream;
-        delete fileStream;
-        
-    } catch (const std::exception& e) {
-        std::cout << "  Ошибка: " << e.what() << "\n";
-    }
-    
-    WaitForEnter();
     }
 
-    void ManualJSONTest() {
-        PrintHeader("РУЧНОЙ РЕЖИМ: ТЕСТ С ФАЙЛОМ JSON");
+    void InteractiveStreams() {
+        ClearScreen();
+        PrintHeader("🌊 ТЕСТИРОВАНИЕ ПОТОКОВ");
+        PrintOption(1, "Чтение из Sequence");
+        PrintOption(2, "Чтение из CSV-файла");
+        PrintOption(3, "Чтение из JSON-файла");
+        PrintOption(4, "Запись в Sequence");
+        PrintOption(0, "Отмена");
+        PrintSeparator();
         
-        std::string filename = GetStringInput("Имя файла JSON");
-        
-        if (filename.empty()) {
-            filename = "test_data.json";
-            std::ofstream testFile(filename);
-            testFile << "[10, 20, 30, 40, 50, 100, 200, 300]";
-            testFile.close();
-            std::cout << "  Создан тестовый файл: " << filename << "\n";
-        }
-        
+        int choice = GetInput<int>("Источник потока: ", 0, 4);
+        if (choice == 0) return;
+
         try {
-            std::ifstream file(filename);
-            if (!file.is_open()) throw std::runtime_error("Cannot open file: " + filename);
-            
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            std::string content = buffer.str();
-            file.close();
-            
-            Sequence<int>* items = new MutableArraySequence<int>();
-            std::string num;
-            for (char c : content) {
-                if (isdigit(c) || c == '-') {
-                    num += c;
-                } else if (!num.empty()) {
-                    items->Append(std::stoi(num));
-                    num.clear();
+            if (choice == 1) {
+                int data[] = {42, 7, 19, 3, 88, 15, 51};
+                auto* seq = new MutableArraySequence<int>(data, 7);
+                auto* stream = new SequenceReadStream<int>(seq);
+                stream->Open();
+                std::cout << "\n  📥 Поток: ";
+                while (!stream->IsEndOfStream()) std::cout << stream->Read() << " ";
+                std::cout << "\n  Позиция в конце: " << stream->GetPosition() << "\n";
+                stream->Close();
+                delete stream; delete seq;
+            } else if (choice == 2) {
+                std::string fname = "test_stream.csv";
+                std::ofstream f(fname); f << "10,20\n30,40\n50,60\n"; f.close();
+                
+                auto* fileStr = new FileStream(fname, [](const std::string& l){ return l; });
+                auto* csv = new CsvReadStream<int>(fileStr, [](Sequence<std::string>* fields){
+                    return fields->GetLength() > 0 ? std::stoi(fields->Get(0)) : 0;
+                }, ',');
+                csv->Open();
+                std::cout << "\n  📥 CSV поток (первый столбец): ";
+                while (!csv->IsEndOfStream()) std::cout << csv->Read() << " ";
+                std::cout << "\n";
+                csv->Close(); delete csv; delete fileStr;
+                std::remove(fname.c_str());
+            } else if (choice == 3) {
+                std::string fname = "test_stream.json";
+                std::ofstream f(fname); f << "[100, 200, 300]"; f.close();
+                
+                Sequence<int>* items = new MutableArraySequence<int>();
+                std::ifstream fin(fname); std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+                std::string num;
+                for(char c : content) {
+                    if (std::isdigit(c) || c=='-') num += c;
+                    else if (!num.empty()) { items->Append(std::stoi(num)); num.clear(); }
                 }
+                auto* json = new JsonReadStream<int>(items);
+                json->Open();
+                std::cout << "\n  📥 JSON поток: ";
+                while (!json->IsEndOfStream()) std::cout << json->Read() << " ";
+                std::cout << "\n";
+                json->Close(); delete json; delete items;
+                std::remove(fname.c_str());
+            } else if (choice == 4) {
+                auto* seq = new MutableArraySequence<int>();
+                auto* wStream = new SequenceWriteStream<int>(seq);
+                wStream->Open();
+                for(int i=1; i<=5; ++i) wStream->Write(i*10);
+                wStream->Close();
+                std::cout << "\n  📤 Записано 5 элементов. Проверка чтения: ";
+                for(int i=0; i<seq->GetLength(); ++i) std::cout << seq->Get(i) << " ";
+                std::cout << "\n";
+                delete wStream; delete seq;
             }
-            
-            auto* jsonStream = new JsonReadStream<int>(items);
-            
-            jsonStream->Open();
-            
-            std::cout << "\n  Чтение из JSON:\n  ";
-            while (!jsonStream->IsEndOfStream()) {
-                std::cout << jsonStream->Read() << " ";
-            }
-            std::cout << "\n\n";
-            
-            jsonStream->Close();
-            delete jsonStream;
-            delete items;
-            
-        } catch (const std::exception& e) {
-            std::cout << "  Ошибка: " << e.what() << "\n";
+        } catch (const std::exception& ex) {
+            std::cout << "\n  ❌ Ошибка потока: " << ex.what() << "\n";
         }
+        WaitForEnter();
+    }
+
+    void DemoCardinalOrdinal() {
+        ClearScreen();
+        PrintHeader("♾️ АЛГЕБРА КАРДИНАЛОВ И ОРДИНАЛОВ");
+        int n = GetInput<int>("Введите конечное n: ", 0, 1000000);
+        Cardinal c1(n), c2 = Cardinal::Infinity();
+        
+        std::cout << "\n  Кардинал " << c1.ToString() << " + ∞ = " << (c1 + c2).ToString() << "\n";
+        std::cout << "  Кардинал " << c1.ToString() << " < ∞ : " << (c1 < c2) << "\n";
+        
+        OrdinalIndex o1(0, n), o2(1, 0), o3(2, 5);
+        std::cout << "\n  Ординалы:\n";
+        std::cout << "    ω·0 + " << n << "  <  ω·1 + 0   : " << (o1 < o2) << "\n";
+        std::cout << "    ω·1 + 0  <  ω·2 + 5   : " << (o2 < o3) << "\n";
+        std::cout << "    Визуализация: " << o1.ToString() << " -> " << o2.ToString() << " -> " << o3.ToString() << "\n";
         
         WaitForEnter();
     }
-    
-    void RunAllTests() {
-        PrintHeader("ЗАПУСК ВСЕХ АВТОМАТИЧЕСКИХ ТЕСТОВ");
-        
-        TestCardinal();
-        TestLazySequence();
-        TestGenerator();
-        TestStreams();
-        TestAlgorithms();
-        TestPerformance();
-        
-        std::cout << "\n╔═══════════════════════════════════════════════════════════╗\n";
-        std::cout << "║                  ВСЕ ТЕСТЫ ЗАВЕРШЕНЫ                      ║\n";
-        std::cout << "╚═══════════════════════════════════════════════════════════╝\n";
-        
-        WaitForEnter();
-    }
-    
-    void RunBenchmark() {
-    PrintHeader("БЕНЧМАРК ПРОИЗВОДИТЕЛЬНОСТИ");
-    
-    int bufferSize = GetIntInput("Размер скользящего буфера генератора", 1, 10000);
-    
-    const int SIZES[] = {1000, 10000, 100000};
-    
-    std::cout << "\n  Ленивая последовательность (доступ по индексу):\n";
-    for (int size : SIZES) {
-        auto start = std::chrono::high_resolution_clock::now();
-        
-        auto* lazy = new LazySequence<int>(
-            [](Sequence<int>* prev) -> int {
-                return prev->GetLength() + 1;
-            },
-            Cardinal(size)
+
+    void DemoChains() {
+        ClearScreen();
+        PrintHeader("⛓️ ЦЕПОЧКИ ЛЕНИВЫХ ОПЕРАЦИЙ");
+        auto* fib = new LazySequence<int>(
+            [](Sequence<int>* p){ return p->GetLength()<2 ? 1 : p->Get(p->GetLength()-1)+p->Get(p->GetLength()-2); },
+            Cardinal::Infinity()
         );
         
+        auto* mapped = fib->Map<int>([](int x){ return x * 2; });
+        auto* filtered = mapped->Where([](int x){ return x % 3 == 0; });
+        
+        std::cout << "  Фибоначчи -> x2 -> фильтр(делится на 3)\n";
+        std::cout << "  Первые 4 элемента цепочки:\n";
+        for(int i=0; i<4; ++i) {
+            std::cout << "  [" << i << "] = " << filtered->Get(i) << "\n";
+        }
+        auto* lazyFiltered = dynamic_cast<LazySequence<int>*>(filtered);
+        std::cout << "\n  Материализовано в фильтре: " << (lazyFiltered ? lazyFiltered->GetMaterializedCount() : 0) << " (ленивая оценка!)\n";
+        
+        delete filtered; delete mapped; delete fib;
+        WaitForEnter();
+    }
+
+    void RunBenchmark() {
+        ClearScreen();
+        PrintHeader("⚡ БЕНЧМАРК ПРОИЗВОДИТЕЛЬНОСТИ");
+        int size = GetInput<int>("Размер теста N: ", 1000, 500000);
+        PrintSeparator();
+
+        auto start = std::chrono::high_resolution_clock::now();
+        auto* lazy = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal(size));
         volatile int dummy = lazy->Get(size - 1);
         (void)dummy;
-        
         auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        
-        std::cout << "    N=" << size << ": " << duration.count() << " мс"
-                  << " (материализовано: " << lazy->GetMaterializedCount() << ")\n";
-        
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "  ⏱️  LazySequence Get(" << size-1 << "): " << ms << " мс\n";
         delete lazy;
-    }
-    
+
+        start = std::chrono::high_resolution_clock::now();
+        int* data = new int[size];
+        for(int i=0; i<size; ++i) data[i] = size - i;
+        auto* seq = new MutableArraySequence<int>(data, size);
+        auto* stream = new SequenceReadStream<int>(seq);
+        StreamSorter<int> sorter([](int a, int b){ return a < b; });
+        auto* sorted = sorter.SortWithHeap(stream);
+        sorted->Open();
+        while(!sorted->IsEndOfStream()) sorted->Read();
+        sorted->Close();
+        end = std::chrono::high_resolution_clock::now();
+        ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "  ⏱️  HeapSort(" << size << "): " << ms << " мс\n";
         
-        std::cout << "\n  Сортировка кучей:\n";
-        for (int size : SIZES) {
-            auto* data = new int[size];
-            for (int i = 0; i < size; i++) data[i] = size - i;
-            
-            auto start = std::chrono::high_resolution_clock::now();
-            
-            auto* seq = new MutableArraySequence<int>(data, size);
-            auto* stream = new SequenceReadStream<int>(seq);
-            StreamSorter<int> sorter([](int a, int b) -> bool { return a < b; });
-            auto* sorted = sorter.SortWithHeap(stream);
-            
-            sorted->Open();
-            while (!sorted->IsEndOfStream()) sorted->Read();
-            sorted->Close();
-            
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            
-            std::cout << "    N=" << size << ": " << duration.count() << " мс\n";
-            
-            delete sorted;
-            delete stream;
-            delete seq;
-            delete[] data;
-        }
-        
-        std::cout << "\n  Размер буфера генератора: " << bufferSize << "\n";
+        delete sorted; delete stream; delete seq; delete[] data;
         WaitForEnter();
     }
-    void DemoPartialMaterialization() {
-    PrintHeader("ЧАСТИЧНАЯ МАТЕРИАЛИЗАЦИЯ");
-    
-    std::cout << "  Создаём последовательность натуральных чисел (1, 2, 3, ...)\n";
-    std::cout << "  Длина: 100 элементов\n\n";
-    
-    auto* seq = new LazySequence<int>(
-        [](Sequence<int>* prev) -> int {
-            return prev->GetLength() + 1;
-        },
-        Cardinal(100)
-    );
-    
-    std::cout << "  ┌───────────────────────────────────────────────┐\n";
-    std::cout << "  │  Шаг  │  Действие           │  Материализовано│\n";
-    std::cout << "  ├───────────────────────────────────────────────┤\n";
-    
-    std::cout << "  │   1   │  Создание           │  ";
-    std::cout << seq->GetMaterializedCount();
-    std::cout << " из 100       │\n";
-    
-    volatile int val1 = seq->Get(0);
-    (void)val1;
-    std::cout << "  │   2   │  Get(0)             │  ";
-    std::cout << seq->GetMaterializedCount();
-    std::cout << " из 100       │\n";
-    
-    volatile int val2 = seq->Get(5);
-    (void)val2;
-    std::cout << "  │   3   │  Get(5)             │  ";
-    std::cout << seq->GetMaterializedCount();
-    std::cout << " из 100       │\n";
-    
-    volatile int val3 = seq->Get(2);
-    (void)val3;
-    std::cout << "  │   4   │  Get(2) (из кэша)   │  ";
-    std::cout << seq->GetMaterializedCount();
-    std::cout << " из 100       │\n";
-    
-    volatile int val4 = seq->Get(20);
-    (void)val4;
-    std::cout << "  │   5   │  Get(20)            │  ";
-    std::cout << seq->GetMaterializedCount();
-    std::cout << " из 100      │\n";
-    
-    volatile int val5 = seq->Get(50);
-    (void)val5;
-    std::cout << "  │   6   │  Get(50)            │  ";
-    std::cout << seq->GetMaterializedCount();
-    std::cout << " из 100      │\n";
-    
-    std::cout << "  └───────────────────────────────────────────────┘\n\n";
-    
-    std::cout << "  Вывод:\n";
-    std::cout << "  • При Get(index) материализуются ВСЕ элементы от 0 до index\n";
-    std::cout << "  • Повторный доступ к тем же элементам — из кэша (O(1))\n";
-    std::cout << "  • Элементы после последнего запрошенного — НЕ материализованы\n";
-    std::cout << "  • Эффективность мемоизации: " << seq->GetMemoizationRatio() << "%\n";
-    
-    delete seq;
-    WaitForEnter();
-}
-    
-private:
-    void TestCardinal() {
-        std::cout << "\n=== Тесты Cardinal ===\n";
-        
-        Cardinal finite(42);
-        Cardinal infinite = Cardinal::Infinity();
-        
-        bool passed = finite.IsFinite() && 
-                      infinite.IsInfinite() && 
-                      (finite.GetValue() == 42) && 
-                      (finite < infinite);
-        
-        std::cout << "  " << (passed ? "✓" : "✗") << " Базовые операции Cardinal\n";
+
+    void RunAllTests() {
+        ClearScreen();
+        PrintHeader("ЗАПУСК АВТОМАТИЧЕСКИХ ТЕСТОВ");
+        std::cout << "  📜 Выполните в терминале: make clean && make test && ./test\n";
+        std::cout << "  (Тесты вынесены в отдельный бинарник для изоляции окружения)\n";
+        WaitForEnter();
     }
-    
-    void TestLazySequence() {
-        std::cout << "\n=== Тесты LazySequence ===\n";
-        
-auto* factorials = new LazySequence<int>(
-    [](Sequence<int>* prev) -> int {
-        if (prev->GetLength() == 0) return 1;
-        return prev->Get(prev->GetLength() - 1) * (int)prev->GetLength();
-    },
-    Cardinal(10)
-);
-        
-        bool passed = (factorials->Get(0) == 1) && 
-                      (factorials->Get(4) == 24) &&
-                      (factorials->GetMaterializedCount() <= 5);
-        
-        std::cout << "  " << (passed ? "✓" : "✗") << " Факториалы\n";
-        
-        delete factorials;
+
+public:
+    void ShowMenu() {
+        while (true) {
+            ClearScreen();
+            PrintHeader("ЛАБОРАТОРНАЯ РАБОТА №4");
+            std::cout << "  Ленивые последовательности, потоки и статистика\n";
+            PrintSeparator();
+            PrintOption(1, "📊 Онлайн-статистика (терминал)");
+            PrintOption(2, "🧩 Конструктор LazySequence + операции");
+            PrintOption(3, "🌊 Потоки ввода/вывода (Seq/CSV/JSON)");
+            PrintOption(4, "♾️ Кардиналы и Ординалы");
+            PrintOption(5, "⛓️ Цепочки Map → Where → Reduce");
+            PrintOption(6, "⚡ Бенчмарк производительности");
+            PrintSeparator();
+            PrintOption(7, "🧪 Запустить автоматические тесты");
+            PrintOption(0, "🚪 Выход");
+            PrintSeparator();
+            
+            int choice = GetInput<int>("Ваш выбор: ", 0, 7);
+            switch (choice) {
+                case 1: InteractiveOnlineStats(); break;
+                case 2: InteractiveLazySequence(); break;
+                case 3: InteractiveStreams(); break;
+                case 4: DemoCardinalOrdinal(); break;
+                case 5: DemoChains(); break;
+                case 6: RunBenchmark(); break;
+                case 7: RunAllTests(); break;
+                case 0: return;
+                default:
+                    std::cout << "\n  ❌ Неверный выбор! Попробуйте снова.\n";
+                    WaitForEnter();
+            }
+        }
     }
-    
-    void TestGenerator() {
-        std::cout << "\n=== Тесты Generator ===\n";
-        
-        auto* seq = new LazySequence<int>(
-            [](Sequence<int>* prev) -> int {
-                return prev->GetLength() + 1;
-            },
-            Cardinal(100)
-        );
-        
-        auto* gen = new RecursiveGenerator<int>(seq, 
-            [](Sequence<int>* prev) -> int {
-                return prev->GetLength() + 1;
-            },
-            10
-        );
-        
-        bool passed = gen->HasNext() && (gen->GetNext() > 0);
-        
-        std::cout << "  " << (passed ? "✓" : "✗") << " Generator\n";
-        
-        delete gen;
-        delete seq;
-    }
-    
-    void TestStreams() {
-        std::cout << "\n=== Тесты потоков ===\n";
-        
-        int data[] = {1, 2, 3, 4, 5};
-        auto* seq = new MutableArraySequence<int>(data, 5);
-        auto* stream = new SequenceReadStream<int>(seq);
-        
-        stream->Open();
-        bool passed = !stream->IsEndOfStream() && 
-                      (stream->Read() == 1) && 
-                      (stream->Read() == 2);
-        stream->Close();
-        
-        std::cout << "  " << (passed ? "✓" : "✗") << " SequenceReadStream\n";
-        
-        delete stream;
-        delete seq;
-    }
-    
-    void TestAlgorithms() {
-        std::cout << "\n=== Тесты алгоритмов ===\n";
-        
-        OnlineStatistics<int> stats;
-        stats.Add(10);
-        stats.Add(20);
-        stats.Add(30);
-        
-        bool passed = (stats.GetCount() == 3) && 
-                      (stats.GetMean() == 20) &&
-                      (stats.GetMin() == 10);
-        
-        std::cout << "  " << (passed ? "✓" : "✗") << " Онлайн-статистика\n";
-    }
-    
-    void TestPerformance() {
-        std::cout << "\n=== Тесты производительности ===\n";
-        
-        const int SIZE = 10000;
-        
-        auto start = std::chrono::high_resolution_clock::now();
-        
-        auto* lazy = new LazySequence<int>(
-            [](Sequence<int>* prev) -> int {
-                return prev->GetLength() + 1;
-            },
-            Cardinal(SIZE)
-        );
-        
-        volatile int dummy = lazy->Get(SIZE - 1);
-        (void)dummy;
-        
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        
-        bool passed = (lazy->GetMaterializedCount() == (size_t)SIZE) && 
-                      (duration.count() < 5000);
-        
-        std::cout << "  " << (passed ? "✓" : "✗") << " Большие данные (" << SIZE 
-                  << " элементов: " << duration.count() << " мс)\n";
-        
-        delete lazy;
+
+    void ClearScreen() {
+#ifdef _WIN32
+        system("cls");
+#else
+        std::cout << "\033[2J\033[H";
+#endif
     }
 };
