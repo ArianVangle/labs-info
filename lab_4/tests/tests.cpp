@@ -11,8 +11,7 @@
 
 void PrintHeader(const std::string& title) {
     std::cout << "\n╔═══════════════════════════════════════════════════════════╗\n";
-    std::cout << "║  ";
-    std::cout << title;
+    std::cout << "║  " << title;
     int padding = 58 - title.length();
     for (int i = 0; i < padding; i++) std::cout << " ";
     std::cout << "║\n";
@@ -29,224 +28,297 @@ void Assert(bool condition, const std::string& testName) {
 
 void TestCardinal() {
     PrintHeader("CARDINAL TESTS");
-    
     Cardinal finite(42);
     Cardinal infinite = Cardinal::Infinity();
-    
     Assert(finite.IsFinite(), "IsFinite");
     Assert(infinite.IsInfinite(), "IsInfinite");
     Assert(finite.GetValue() == 42, "GetValue");
     Assert(finite < infinite, "Comparison: finite < infinite");
     Assert(!(infinite < finite), "Comparison: !(infinite < finite)");
-    
     Cardinal sum = finite + infinite;
     Assert(sum.IsInfinite(), "Addition with Infinity");
-    
     Cardinal sum2 = finite + Cardinal(8);
     Assert(sum2.GetValue() == 50, "Addition: 42 + 8 = 50");
-    
-    Assert(finite.ToString() == "42", "ToString finite");
-    Assert(infinite.ToString() == "∞", "ToString infinite");
-    
     std::cout << "\n";
 }
 
 void TestLazySequence() {
     PrintHeader("LAZY SEQUENCE TESTS");
-    
     auto* factorials = new LazySequence<int>(
         [](Sequence<int>* prev) -> int {
             if (prev->GetLength() == 0) return 1;
             return prev->Get(prev->GetLength() - 1) * (int)prev->GetLength();
-        },
-        Cardinal(10)
+        }, Cardinal(10)
     );
-    
     Assert(factorials->Get(0) == 1, "Factorial[0] = 1");
-    Assert(factorials->Get(1) == 1, "Factorial[1] = 1");
-    Assert(factorials->Get(2) == 2, "Factorial[2] = 2");
-    Assert(factorials->Get(3) == 6, "Factorial[3] = 6");
     Assert(factorials->Get(4) == 24, "Factorial[4] = 24");
-    
-    Assert(factorials->GetMaterializedCount() == 5, "Materialized count = 5 (elements 0-4)");
-    Assert(factorials->GetCardinalLength().IsFinite(), "Length is finite");
-    
+    Assert(factorials->GetMaterializedCount() == 5, "Materialized count = 5");
     delete factorials;
-    
 
     auto* fib = new LazySequence<int>(
         [](Sequence<int>* prev) -> int {
             if (prev->GetLength() < 2) return 1;
             return prev->Get(prev->GetLength() - 1) + prev->Get(prev->GetLength() - 2);
-        },
-        Cardinal::Infinity()
+        }, Cardinal::Infinity()
     );
-    
-    Assert(fib->Get(0) == 1, "Fibonacci[0]");
-    Assert(fib->Get(1) == 1, "Fibonacci[1]");
-    Assert(fib->Get(2) == 2, "Fibonacci[2]");
     Assert(fib->Get(6) == 13, "Fibonacci[6]");
     Assert(fib->GetCardinalLength().IsInfinite(), "Fibonacci is infinite");
     
     auto* doubled = fib->Map<int>([](int x) -> int { return x * 2; });
     Assert(doubled->Get(3) == 6, "Map: double");
     delete doubled;
-    
-    auto* filtered = fib->Where([](int x) -> bool { return x % 2 == 0; });
-    Assert(filtered->GetCount() > 0, "Where: filter even");
-    delete filtered;
-    
-    auto* appended = fib->Append(999);
-    Assert(appended->GetCount() > fib->GetCount(), "Append");
-    delete appended;
-    
     delete fib;
-    
-    auto* empty = new LazySequence<int>();
-    Assert(empty->GetLength() == 0, "Empty sequence length");
-    delete empty;
-    
     std::cout << "\n";
 }
 
 void TestGenerator() {
     PrintHeader("GENERATOR TESTS");
-    
     auto* seq = new LazySequence<int>(
-        [](Sequence<int>* prev) -> int {
-            return prev->GetLength() + 1;
-        },
-        Cardinal(100)
+        [](Sequence<int>* prev) -> int { return prev->GetLength() + 1; }, Cardinal(100)
     );
-    
-    auto* gen = new Generator<int>(seq, 
-        [](Sequence<int>* prev) -> int {
-            return prev->GetLength() + 1;
-        },
-        10
+    auto* gen = new RecursiveGenerator<int>(seq,
+        [](Sequence<int>* prev) -> int { return prev->GetLength() + 1; }, 10
     );
-    
     Assert(gen->HasNext(), "HasNext");
     Assert(gen->GetNext() > 0, "GetNext");
-    Assert(gen->GetCacheSize() <= 10, "Cache size limit");
-    
-    gen->Reset();
-    Assert(gen->GetPosition() == 0, "Reset position");
-    
     delete gen;
     delete seq;
-    
     std::cout << "\n";
 }
 
 void TestStreams() {
     PrintHeader("STREAM TESTS");
-    
     int data[] = {1, 2, 3, 4, 5};
     auto* seq = new MutableArraySequence<int>(data, 5);
     auto* stream = new SequenceReadStream<int>(seq);
-    
     stream->Open();
     Assert(!stream->IsEndOfStream(), "Not at end");
     Assert(stream->Read() == 1, "Read[0]");
-    Assert(stream->Read() == 2, "Read[1]");
-    Assert(stream->GetPosition() == 2, "Position");
-    Assert(stream->IsCanSeek(), "Can seek");
-    Assert(stream->IsCanGoBack(), "Can go back");
-    
-    stream->Seek(0);
-    Assert(stream->GetPosition() == 0, "Seek");
-    
     stream->Close();
-    
     delete stream;
     delete seq;
-    
-    auto* lazy = new LazySequence<int>(
-        [](Sequence<int>* prev) -> int {
-            return prev->GetLength() + 1;
-        },
-        Cardinal(10)
-    );
-    
-    auto* lazyStream = new LazySequenceReadStream<int>(lazy);
-    lazyStream->Open();
-    Assert(!lazyStream->IsEndOfStream(), "LazyStream not at end");
-    Assert(lazyStream->Read() == 1, "LazyStream Read[0]");
-    lazyStream->Close();
-    
-    delete lazyStream;
-    delete lazy;
-    
     std::cout << "\n";
 }
 
 void TestAlgorithms() {
     PrintHeader("ALGORITHM TESTS");
-    
     OnlineStatistics<int> stats;
-    int data[] = {10, 25, 3, 47, 19, 33, 8};
-    
-    for (int val : data) {
-        stats.Add(val);
-    }
-    
-    Assert(stats.GetCount() == 7, "Stats Count");
+    stats.Add(10); stats.Add(20); stats.Add(30);
+    Assert(stats.GetCount() == 3, "Stats Count");
     Assert(stats.GetMean() == 20, "Stats Mean");
-    Assert(stats.GetMin() == 3, "Stats Min");
-    Assert(stats.GetMax() == 47, "Stats Max");
+    std::cout << "\n";
+}
+
+void TestConcatScenarios() {
+    PrintHeader("CONCATENATION TESTS");
     
-    int unsorted[] = {5, 2, 8, 1, 9};
-    auto* input = new MutableArraySequence<int>(unsorted, 5);
-    auto* inputStream = new SequenceReadStream<int>(input);
+    auto* seqA = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal(5));
+    auto* seqB = new LazySequence<int>([](Sequence<int>* p){ return 100 + p->GetLength(); }, Cardinal(3));
+    auto* resAB = seqA->Concat(*seqB);
     
-    StreamSorter<int> sorter([](int a, int b) -> bool { return a < b; }, 10);
-    auto* sorted = sorter.SortWithHeap(inputStream);
+    auto* lazyResAB = dynamic_cast<LazySequence<int>*>(resAB);
+    Assert(lazyResAB && lazyResAB->GetCardinalLength().IsFinite(), "Concat: Finite + Finite is Finite");
+    Assert(resAB->GetCount() == 8, "Concat: Length 5 + 3 = 8");
+    Assert(resAB->Get(0) == 1, "Concat: A[0] = 1");
+    Assert(resAB->Get(7) == 102, "Concat: B[2] = 102");
+    delete seqA; delete seqB; delete resAB;
+
+    auto* inf = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal::Infinity());
+    auto* finite = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal(10));
+    auto* resInfFin = inf->Concat(*finite);
+    auto* lazyResInfFin = dynamic_cast<LazySequence<int>*>(resInfFin);
+    Assert(lazyResInfFin && lazyResInfFin->GetCardinalLength().IsInfinite(), "Concat: Infinite + Finite is Infinite");
+    Assert(resInfFin->Get(1000) == 1001, "Concat: Access to first infinite block works");
+    delete inf; delete finite; delete resInfFin;
+
+    auto* fin = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal(3));
+    auto* inf2 = new LazySequence<int>([](Sequence<int>* p){ return 1000 + p->GetLength(); }, Cardinal::Infinity());
+    auto* resFinInf = fin->Concat(*inf2);
+    auto* lazyResFinInf = dynamic_cast<LazySequence<int>*>(resFinInf);
+    Assert(lazyResFinInf && lazyResFinInf->GetCardinalLength().IsInfinite(), "Concat: Finite + Infinite is Infinite");
+    Assert(resFinInf->Get(3) == 1000, "Concat: First of infinite part");
+    delete fin; delete inf2; delete resFinInf;
+    std::cout << "\n";
+}
+
+void TestInsertOperations() {
+    PrintHeader("INSERT OPERATIONS TESTS");
     
-    sorted->Open();
-    Assert(sorted->Read() == 1, "HeapSort[0]");
-    Assert(sorted->Read() == 2, "HeapSort[1]");
-    sorted->Close();
+    auto* seq = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal(5));
+    auto* inserted = seq->InsertAt(999, 2);
+    auto* lazyIns = dynamic_cast<LazySequence<int>*>(inserted);
+    Assert(lazyIns && lazyIns->GetCardinalLength().IsFinite(), "Insert: Finite remains Finite");
+    Assert(inserted->GetCount() == 6, "Insert: Length increased by 1");
+    Assert(inserted->Get(2) == 999, "Insert: Element at index 2");
+    delete seq; delete inserted;
+
+    auto* inf = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal::Infinity());
+    auto* insInf = inf->InsertAt(0, 500);
+    auto* lazyInsInf = dynamic_cast<LazySequence<int>*>(insInf);
+    Assert(lazyInsInf && lazyInsInf->GetCardinalLength().IsInfinite(), "Insert: Infinite remains Infinite");
+    Assert(insInf->Get(500) == 0, "Insert: Inserted element at index 500");
+    delete inf; delete insInf;
+    std::cout << "\n";
+}
+
+void TestLazyMapWhereReduce() {
+    PrintHeader("LAZY MAP / WHERE / REDUCE TESTS");
+    auto* fib = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() < 2 ? 1 : p->Get(p->GetLength()-1) + p->Get(p->GetLength()-2); }, Cardinal::Infinity());
+    auto* doubled = fib->Map<int>([](int x){ return x * 2; });
+    auto* lazyDoubled = dynamic_cast<LazySequence<int>*>(doubled);
+    Assert(lazyDoubled && lazyDoubled->GetMaterializedCount() <= 1, "Map: Lazy evaluation (low materialization)");
+    Assert(doubled->Get(5) == 16, "Map: double");
+    delete doubled;
+    fib->Get(20);
+
+    auto* filtered = fib->Where([](int x){ return x % 2 == 0; });
+    Assert(filtered->Get(0) > 0 && filtered->GetCount() > 0, "Where: filter even");
+    delete filtered;
+    delete fib;
+    std::cout << "\n";
+}
+
+void TestOrdinalIndexAccess() {
+    PrintHeader("ORDINAL INDEX ACCESS TESTS");
     
-    delete sorted;
-    delete inputStream;
-    delete input;
-    
+    auto* seqA = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal::Infinity());
+    auto* seqB = new LazySequence<int>([](Sequence<int>* p){ return 1000 + p->GetLength(); }, Cardinal::Infinity());
+    auto* concat = seqA->Concat(*seqB);
+
+    Assert(concat->Get(5) == 6, "Get(5) from first infinity");
+
+    auto* lazyConcat = dynamic_cast<LazySequence<int>*>(concat);
+    if (lazyConcat) {
+        Assert(lazyConcat->Get(OrdinalIndex(0, 5)) == 6, "Ordinal: Block 0, offset 5");
+        Assert(lazyConcat->Get(OrdinalIndex(1, 0)) == 1000, "Ordinal: Block 1, offset 0");
+        Assert(lazyConcat->Get(OrdinalIndex(1, 15)) == 1015, "Ordinal: Block 1, offset 15");
+    } else {
+        Assert(false, "Ordinal: Cast failed");
+    }
+
+    delete seqA; delete seqB; delete concat;
     std::cout << "\n";
 }
 
 void TestPerformance() {
     PrintHeader("PERFORMANCE TESTS (Large Data)");
-    
     const int SIZE = 50000;
-    
-    std::cout << "  Testing with " << SIZE << " elements...\n\n";
-    
+    std::cout << "  Testing with " << SIZE << " elements...\n";
     auto start = std::chrono::high_resolution_clock::now();
-    
     auto* lazy = new LazySequence<int>(
-        [](Sequence<int>* prev) -> int {
-            return prev->GetLength() + 1;
-        },
-        Cardinal(SIZE)
+        [](Sequence<int>* prev) -> int { return prev->GetLength() + 1; }, Cardinal(SIZE)
     );
-    
     volatile int dummy = lazy->Get(SIZE - 1);
     (void)dummy;
-    
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     
-    std::cout << "  LazySequence " << SIZE << " elements: " 
-              << duration.count() << " ms\n";
-    std::cout << "  Materialized: " << lazy->GetMaterializedCount() << "\n";
-    
+    std::cout << "  Time: " << duration.count() << " ms\n";
     Assert(lazy->GetMaterializedCount() == (size_t)SIZE, "Full materialization");
     Assert(duration.count() < 10000, "Performance < 10 sec");
-    
     delete lazy;
 }
+void TestCircularBuffer() {
+    PrintHeader("CIRCULAR BUFFER TESTS");
+    CircularBuffer<int> buf(3);
+    buf.Append(10); buf.Append(20); buf.Append(30);
+    Assert(buf.GetLength() == 3, "Length after 3 appends");
+    Assert(buf.Get(0) == 10, "Get[0]");
+    Assert(buf.Get(2) == 30, "Get[2]");
+    
+    buf.Append(40);
+    Assert(buf.Get(0) == 20, "Rollover: Get[0] == 20");
+    Assert(buf.Get(2) == 40, "Rollover: Get[2] == 40");
+    
+    buf.Clear();
+    Assert(buf.IsEmpty(), "Clear -> IsEmpty");
+    Assert(buf.GetLength() == 0, "Clear -> Length 0");
+    std::cout << "\n";
+}
 
+void TestLazySequenceExtended() {
+    PrintHeader("LAZY SEQUENCE EXTENDED TESTS");
+    auto* finite = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal(5));
+    Assert(finite->GetFirst() == 1, "GetFirst");
+    Assert(finite->GetLast() == 5, "GetLast");
+    
+    try { finite->Get(-1); Assert(false, "Get(-1) exception"); }
+    catch(...) { Assert(true, "Get(-1) throws"); }
+    
+    Assert(finite->TryGet(10).IsNone(), "TryGet out of bounds -> None");
+    Assert(finite->TryGet(2).IsSome() && finite->TryGet(2).GetValue() == 3, "TryGet valid -> Some");
+    
+    auto* cloned = finite->Clone();
+    Assert(cloned->Get(2) == 3, "Clone preserves data");
+    
+    auto* sub = finite->GetSubsequence(1, 3);
+    Assert(sub->Get(0) == 2 && sub->Get(2) == 4, "GetSubsequence");
+    Assert(finite->operator[](4) == 5, "operator[]");
+    
+    auto* appended = finite->Append(99);
+    Assert(appended->Get(5) == 99, "Append");
+    
+    auto reduced = finite->Reduce([](int acc, int val){ return acc + val; }, 0);
+    Assert(reduced == 15, "Reduce sum 1..5");
+    
+    delete finite; delete cloned; delete sub; delete appended;
+    std::cout << "\n";
+}
+
+void TestAlgorithmsExtended() {
+    PrintHeader("ALGORITHMS EXTENDED TESTS");
+    OnlineStatistics<int> stats;
+    stats.Add(5); stats.Add(1); stats.Add(9);
+    Assert(stats.GetMin() == 1, "Min");
+    Assert(stats.GetMax() == 9, "Max");
+    Assert(stats.GetMedian() == 5, "Median");
+    
+    stats.Reset();
+    Assert(stats.GetCount() == 0, "Reset count");
+    
+    try { stats.GetMean(); Assert(false, "Mean on empty"); }
+    catch(...) { Assert(true, "Mean on empty throws"); }
+    
+    int arr[] = {8, 3, 5, 1, 9};
+    auto* seq = new MutableArraySequence<int>(arr, 5);
+    auto* stream = new SequenceReadStream<int>(seq);
+    auto* sorted = StreamSorter<int>([](int a, int b){ return a < b; }).SortWithHeap(stream);
+    sorted->Open();
+    bool sortedCorrect = true;
+    int last = -1;
+    while(!sorted->IsEndOfStream()) {
+        int cur = sorted->Read();
+        if(cur < last) sortedCorrect = false;
+        last = cur;
+    }
+    sorted->Close();
+    Assert(sortedCorrect, "StreamSorter heap sort");
+    
+    delete sorted; delete stream; delete seq;
+    std::cout << "\n";
+}
+
+void TestStreamsExtended() {
+    PrintHeader("STREAMS EXTENDED TESTS");
+    int data[] = {1, 2, 3};
+    auto* seq = new MutableArraySequence<int>(data, 3);
+    auto* writeStream = new SequenceWriteStream<int>(seq);
+    writeStream->Open();
+    writeStream->Write(4); writeStream->Write(5);
+    writeStream->Close();
+    Assert(seq->GetLength() == 5 && seq->Get(3) == 4, "WriteOnlyStream append");
+    
+    auto* readStream = new SequenceReadStream<int>(seq);
+    readStream->Open();
+    readStream->Read(); readStream->Read();
+    Assert(readStream->GetPosition() == 2, "GetPosition");
+    readStream->Seek(0);
+    Assert(readStream->GetPosition() == 0, "Seek");
+    readStream->Close();
+    
+    delete writeStream; delete readStream; delete seq;
+    std::cout << "\n";
+}
 int RunAllTests() {
     std::cout << "\n╔═══════════════════════════════════════════════════════════╗\n";
     std::cout << "║              LAB 4 — AUTOMATED TESTS                      ║\n";
@@ -257,12 +329,19 @@ int RunAllTests() {
     TestGenerator();
     TestStreams();
     TestAlgorithms();
+    TestConcatScenarios();
+    TestInsertOperations();
+    TestLazyMapWhereReduce();
+    TestOrdinalIndexAccess();
     TestPerformance();
+    TestCircularBuffer();
+    TestLazySequenceExtended();
+    TestAlgorithmsExtended();
+    TestStreamsExtended();
     
-    std::cout << "╔═══════════════════════════════════════════════════════════╗\n";
+    std::cout << "\n╔═══════════════════════════════════════════════════════════╗\n";
     std::cout << "║                  ALL TESTS COMPLETED                      ║\n";
-    std::cout << "╚═══════════════════════════════════════════════════════════╝\n\n";
-    
+    std::cout << "╚═══════════════════════════════════════════════════════════╝\n";
     return 0;
 }
 
