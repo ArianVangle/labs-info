@@ -4,7 +4,7 @@
 
 template<class T>
 RecursiveGenerator<T>::RecursiveGenerator(LazySequence<T>* seq, T (*rule)(Sequence<T>*), size_t maxSize)
-: owner(seq), generationRule(rule), position(0) {
+    : owner(seq), generationRule(rule), position(0) {
     cache = new CircularBuffer<T>(maxSize);
 }
 
@@ -16,12 +16,10 @@ RecursiveGenerator<T>::~RecursiveGenerator() {
 template<class T>
 T RecursiveGenerator<T>::GetNext() {
     if (!HasNext()) throw InvalidOperationException("No next element");
-    Sequence<T>* context = owner->GetMaterializedSequence();
-    T value = generationRule(context);
-    delete context;
-    cache->Append(value);
+    T value = generationRule(owner->materialized);
+    owner->materialized->Append(value);
     position++;
-    return cache->Get(cache->GetLength() - 1);
+    return value;
 }
 
 template<class T>
@@ -33,12 +31,16 @@ template<class T>
 void RecursiveGenerator<T>::Reset() {
     position = 0;
     cache->Clear();
+    delete owner->materialized;
+    owner->materialized = new MutableArraySequence<T>();
 }
 
 template<class T>
 T RecursiveGenerator<T>::Current() const {
-    if (cache->GetLength() == 0) throw InvalidOperationException("No current element");
-    return cache->Get(cache->GetLength() - 1);
+    if (owner->materialized->GetLength() == 0) {
+        throw InvalidOperationException("No current element");
+    }
+    return owner->materialized->Get(owner->materialized->GetLength() - 1);
 }
 
 template<class T>

@@ -18,6 +18,7 @@ private:
     bool isOwner;
     
     friend class RecursiveGenerator<T>;
+    const Sequence<T>* nextInChain = nullptr; 
 
 protected:
     virtual bool CanGenerate(size_t position) const;
@@ -33,6 +34,7 @@ public:
     T GetFirst() const override;
     T GetLast() const override;
     T Get(size_t index) const override;
+    T Get(const OrdinalIndex& idx) const;
     LazySequence<T>* GetSubsequence(int startIndex, int endIndex) const;
     
     int GetLength() const override;

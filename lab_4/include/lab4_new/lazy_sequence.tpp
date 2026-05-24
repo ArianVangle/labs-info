@@ -12,19 +12,19 @@ bool LazySequence<T>::CanGenerate(size_t position) const {
 
 template<class T>
 LazySequence<T>::LazySequence() 
-    : generator(nullptr), materialized(nullptr), cardinalLength(0), isOwner(true) {
+    : generator(nullptr), materialized(nullptr), cardinalLength(0), isOwner(true), nextInChain(nullptr) {
     materialized = new MutableArraySequence<T>();
 }
 
 template<class T>
 LazySequence<T>::LazySequence(T* items, size_t count) 
-    : generator(nullptr), materialized(nullptr), cardinalLength(count), isOwner(true) {
+    : generator(nullptr), materialized(nullptr), cardinalLength(count), isOwner(true), nextInChain(nullptr) {
     materialized = new MutableArraySequence<T>(items, count);
 }
 
 template<class T>
 LazySequence<T>::LazySequence(Sequence<T>* seq) 
-    : generator(nullptr), materialized(nullptr), cardinalLength(seq->GetLength()), isOwner(true) {
+    : generator(nullptr), materialized(nullptr), cardinalLength(seq->GetLength()), isOwner(true), nextInChain(nullptr) {
     materialized = new MutableArraySequence<T>();
     for (size_t i = 0; i < seq->GetLength(); i++) {
         materialized->Append(seq->Get(i));
@@ -33,14 +33,14 @@ LazySequence<T>::LazySequence(Sequence<T>* seq)
 
 template<class T>
 LazySequence<T>::LazySequence(T (*rule)(Sequence<T>*), Cardinal len)
-    : materialized(nullptr), cardinalLength(len), isOwner(true) {
+    : materialized(nullptr), cardinalLength(len), isOwner(true), nextInChain(nullptr) {
     materialized = new MutableArraySequence<T>();
     generator = new RecursiveGenerator<T>(this, rule);
 }
 
 template<class T>
 LazySequence<T>::LazySequence(const LazySequence<T>& other) 
-    : generator(nullptr), materialized(nullptr), cardinalLength(other.cardinalLength), isOwner(true) {
+    : generator(nullptr), materialized(nullptr), cardinalLength(other.cardinalLength), isOwner(true), nextInChain(nullptr) {
     materialized = other.materialized->Clone();
 }
 
@@ -73,6 +73,27 @@ T LazySequence<T>::Get(size_t index) const {
         throw IndexOutOfRangeException("Index out of range");
     MaterializeUpTo(index);
     return materialized->Get(index);
+}
+
+template<class T>
+T LazySequence<T>::Get(const OrdinalIndex& idx) const {
+    if (idx.block == 0) {
+        return Get(idx.offset);
+    }
+
+    if (nextInChain != nullptr) {
+        if (const auto* lazyNext = dynamic_cast<const LazySequence<T>*>(nextInChain)) {
+            if (idx.block == 1 && lazyNext->GetCardinalLength().IsInfinite()) {
+                return lazyNext->Get(idx.offset);
+            }
+            return lazyNext->Get({idx.block - 1, idx.offset});
+        }
+        if (idx.block == 1) {
+            return nextInChain->Get(idx.offset);
+        }
+    }
+
+    throw IndexOutOfRangeException("Block index out of range in concatenation chain");
 }
 
 template<class T>
@@ -136,37 +157,27 @@ Sequence<T>* LazySequence<T>::InsertAt(const T& item, int index) {
     return result;
 }
 
-template<class T>
-Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& other) {
-    auto* result = new LazySequence<T>();
-    result->materialized = new MutableArraySequence<T>();
-    
-    if (cardinalLength.IsInfinite()) {
-        result->cardinalLength = Cardinal::Infinity();
-    } else {
-        result->cardinalLength = cardinalLength + Cardinal(other.GetLength());
-    }
-    
-    result->generator = new ConcatGenerator<T>(this->generator, &other);
-    result->isOwner = true;
-    return result;
-}
 
 template<class T>
 Sequence<T>* LazySequence<T>::InsertSequenceAt(const Sequence<T>& other, int index) {
     if (index < 0 || (cardinalLength.IsFinite() && index > (int)cardinalLength.GetValue())) {
         throw IndexOutOfRangeException("Insert index out of range");
     }
-
     auto* result = new LazySequence<T>();
     result->materialized = new MutableArraySequence<T>();
     
-    if (cardinalLength.IsInfinite() || other.GetCardinalLength().IsInfinite()) {
+    bool isOtherInfinite = false;
+    if (const auto* lazyOther = dynamic_cast<const LazySequence<T>*>(&other)) {
+        isOtherInfinite = lazyOther->GetCardinalLength().IsInfinite();
+    } else if (other.GetLength() == -1) {
+        isOtherInfinite = true;
+    }
+
+    if (cardinalLength.IsInfinite() || isOtherInfinite) {
         result->cardinalLength = Cardinal::Infinity();
     } else {
         result->cardinalLength = cardinalLength + Cardinal(other.GetLength());
     }
-
     result->generator = new InsertAtGenerator<T>(this->generator, &other, index);
     result->isOwner = true;
     return result;
@@ -187,27 +198,9 @@ template<class T>
 Sequence<T>* LazySequence<T>::Where(std::function<bool(T)> func) const {
     auto* result = new LazySequence<T>();
     result->generator = new WhereGenerator<T>(this->generator, func);
-    result->cardinalLength = cardinalLength; 
+    result->cardinalLength = cardinalLength;
     result->isOwner = true;
     return result;
-}
-
-template<class T>
-T LazySequence<T>::Reduce(std::function<T(T, T)> func, T start) const {
-    T result = start;
-    auto* tempGen = new RecursiveGenerator<T>(const_cast<LazySequence<T>*>(this), 
-        [](Sequence<T>* p){ return p->GetLength()==0 ? T() : p->Get(p->GetLength()-1); });
-    
-    while (tempGen->HasNext()) {
-        result = func(result, tempGen->GetNext());
-    }
-    delete tempGen;
-    return result;
-}
-
-template<class T>
-Sequence<T>* LazySequence<T>::GetMaterializedSequence() const {
-    return materialized->Clone();
 }
 
 template<class T>
@@ -215,9 +208,50 @@ void LazySequence<T>::MaterializeUpTo(size_t index) const {
     if (generator == nullptr) return;
     while ((int)materialized->GetLength() <= (int)index && CanGenerate(materialized->GetLength())) {
         T value = generator->GetNext();
-        materialized->Append(value);
+        if (!generator->IsSelfMaterializing()) {
+            materialized->Append(value);
+        }
     }
 }
+
+template<class T>
+Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& list) {
+    auto* result = new LazySequence<T>();
+    result->materialized = new MutableArraySequence<T>();
+    result->nextInChain = &list;
+    result->isOwner = true;
+    
+    if (cardinalLength.IsInfinite()) {
+        result->cardinalLength = Cardinal::Infinity();
+    } else if (list.GetLength() == -1) {
+        result->cardinalLength = Cardinal::Infinity();
+    } else {
+        result->cardinalLength = cardinalLength + Cardinal(list.GetLength());
+    }
+    
+    result->generator = new ConcatGenerator<T>(this, &list);
+    return result;
+}
+
+
+
+template<class T>
+T LazySequence<T>::Reduce(std::function<T(T, T)> func, T start) const {
+    int len = GetLength();
+    if (len == -1) throw InvalidOperationException("Cannot reduce infinite sequence");
+    
+    T result = start;
+    for (int i = 0; i < len; i++) {
+        result = func(result, Get(i));
+    }
+    return result;
+}
+template<class T>
+Sequence<T>* LazySequence<T>::GetMaterializedSequence() const {
+    return materialized->Clone();
+}
+
+
 
 template<class T>
 double LazySequence<T>::GetMemoizationRatio() const {

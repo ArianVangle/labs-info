@@ -5,6 +5,7 @@
 #include "../lab3_base/iterators.h"
 #include "cardinal.hpp"
 #include "circular_buffer.hpp"
+#include <functional>
 
 template<class T> class LazySequence;
 
@@ -16,6 +17,7 @@ public:
     virtual bool HasNext() const = 0;
     virtual void Reset() = 0;
     virtual size_t GetPosition() const = 0;
+    virtual bool IsSelfMaterializing() const { return false; }
 };
 
 template<class T>
@@ -28,84 +30,65 @@ private:
 public:
     RecursiveGenerator(LazySequence<T>* seq, T (*rule)(Sequence<T>*), size_t maxSize = 100);
     ~RecursiveGenerator();
-    
     T GetNext() override;
     bool HasNext() const override;
     void Reset() override;
     size_t GetPosition() const override { return position; }
-
     T Current() const override;
     bool MoveNext() override;
+    bool IsSelfMaterializing() const override { return true; }
 };
 
 template<class T>
 class ConcatGenerator : public IGenerator<T> {
 private:
-    IGenerator<T>* gen1;
+    const Sequence<T>* seq1;
     const Sequence<T>* seq2;
-    IEnumerator<T>* iter2;
-    bool switched;
+    size_t idx;
 public:
-    ConcatGenerator(IGenerator<T>* g1, const Sequence<T>* s2)
-    : gen1(g1), seq2(s2), iter2(nullptr), switched(false) {}
-    
-    ~ConcatGenerator() {
-        delete iter2;
-    }
-    
+    ConcatGenerator(const Sequence<T>* s1, const Sequence<T>* s2)
+        : seq1(s1), seq2(s2), idx(0) {}
+    ~ConcatGenerator() {}
+
     T GetNext() override {
-        if (!switched) {
-            if (gen1->HasNext()) {
-                return gen1->GetNext();
-            } else {
-                switched = true;
-                iter2 = seq2->GetEnumerator();
-            }
+        int len1 = seq1->GetLength();
+        if (len1 == -1 || idx < (size_t)len1) {
+            return seq1->Get(idx++);
         }
-        if (switched && iter2) {
-            if (iter2->MoveNext()) {
-                return iter2->Current();
-            }
+        if (seq2->GetLength() == -1 || idx - len1 < (size_t)seq2->GetLength()) {
+            return seq2->Get(idx++ - len1);
         }
         throw InvalidOperationException("End of concatenated sequence");
     }
-    
+
     bool HasNext() const override {
-        if (!switched) {
-            return gen1->HasNext();
-        }
-        return true; 
+        int len1 = seq1->GetLength();
+        if (len1 == -1) return true;
+        if (idx < (size_t)len1) return true;
+        int len2 = seq2->GetLength();
+        if (len2 == -1) return true;
+        return idx - len1 < (size_t)len2;
     }
-    
-    void Reset() override {
-        switched = false;
-        delete iter2;
-        iter2 = nullptr;
-        gen1->Reset();
-    }
-    
-    size_t GetPosition() const override {
-        return gen1->GetPosition();
-    }
+
+    void Reset() override { idx = 0; }
+    size_t GetPosition() const override { return idx; }
 };
 
 template<class T>
 class InsertAtGenerator : public IGenerator<T> {
 private:
     IGenerator<T>* genSource;
-    const Sequence<T>* seqToInsert;
+    Sequence<T>* seqToInsert;
     IEnumerator<T>* iterInsert;
     int splitIndex;
     int currentPos;
     enum State { PREFIX, INSERTING, SUFFIX } state;
     bool insertExhausted;
-
 public:
-    InsertAtGenerator(IGenerator<T>* src, const Sequence<T>* ins, int idx)
-        : genSource(src), seqToInsert(ins), iterInsert(nullptr), 
+    InsertAtGenerator(IGenerator<T>* src, Sequence<T>* ins, int idx)
+        : genSource(src), seqToInsert(ins), iterInsert(nullptr),
           splitIndex(idx), currentPos(0), state(PREFIX), insertExhausted(false) {}
-
-    ~InsertAtGenerator() { delete iterInsert; }
+    ~InsertAtGenerator() { delete iterInsert; delete seqToInsert; }
 
     T GetNext() override {
         switch (state) {
@@ -117,7 +100,6 @@ public:
                 state = INSERTING;
                 iterInsert = seqToInsert->GetEnumerator();
                 [[fallthrough]];
-                
             case INSERTING:
                 if (iterInsert && iterInsert->MoveNext()) {
                     return iterInsert->Current();
@@ -125,7 +107,6 @@ public:
                 insertExhausted = true;
                 state = SUFFIX;
                 [[fallthrough]];
-                
             case SUFFIX:
                 if (genSource->HasNext()) {
                     currentPos++;
@@ -143,26 +124,21 @@ public:
     }
 
     void Reset() override {
-        state = PREFIX;
-        currentPos = 0;
-        insertExhausted = false;
-        delete iterInsert;
-        iterInsert = nullptr;
-        genSource->Reset();
+        state = PREFIX; currentPos = 0; insertExhausted = false;
+        delete iterInsert; iterInsert = nullptr; genSource->Reset();
     }
-
     size_t GetPosition() const override { return currentPos; }
 };
-
 
 template<class T, class R>
 class MapGenerator : public IGenerator<R> {
     IGenerator<T>* source;
     std::function<R(T)> func;
 public:
-    MapGenerator(IGenerator<T>* src, std::function<R(T)> f) : source(src), func(f) {}
-    ~MapGenerator() { delete source; }
-
+    MapGenerator(IGenerator<T>* src, std::function<R(T)> f) : source(src), func(f) {
+        if (source) source->Reset();
+    }
+    ~MapGenerator() {}
     R GetNext() override { return func(source->GetNext()); }
     bool HasNext() const override { return source->HasNext(); }
     void Reset() override { source->Reset(); }
@@ -173,30 +149,48 @@ template<class T>
 class WhereGenerator : public IGenerator<T> {
     IGenerator<T>* source;
     std::function<bool(T)> predicate;
-    T bufferedValue;
-    bool hasBuffered;
-public:
-    WhereGenerator(IGenerator<T>* src, std::function<bool(T)> pred) 
-        : source(src), predicate(pred), hasBuffered(false) {}
-    ~WhereGenerator() { delete source; }
     
+    struct CacheState {
+        T buffer;
+        bool hasBuffer;
+        CacheState() : buffer(T()), hasBuffer(false) {}
+    };
+    CacheState* cache;
+
+public:
+    WhereGenerator(IGenerator<T>* src, std::function<bool(T)> pred)
+        : source(src), predicate(pred), cache(new CacheState()) {
+            if (source) source->Reset();
+    }
+    
+    ~WhereGenerator() override { delete cache; }
+
     T GetNext() override {
-        if (hasBuffered) { hasBuffered = false; return bufferedValue; }
+        if (!HasNext()) throw InvalidOperationException("No matching element");
+        T result = cache->buffer;
+        cache->hasBuffer = false;
+        return result;
+    }
+
+    bool HasNext() const override {
+        if (cache->hasBuffer) return true;
         while (source->HasNext()) {
             T val = source->GetNext();
-            if (predicate(val)) return val;
+            if (predicate(val)) {
+                cache->buffer = val;
+                cache->hasBuffer = true;
+                return true;
+            }
         }
-        throw InvalidOperationException("No matching element");
+        return false;
     }
-    bool HasNext() const override {
-        if (hasBuffered) return true;
-        WhereGenerator<T>* self = const_cast<WhereGenerator<T>*>(this);
-        try { self->bufferedValue = self->GetNext(); self->hasBuffered = true; return true; }
-        catch (...) { return false; }
+
+    void Reset() override {
+        source->Reset();
+        cache->hasBuffer = false;
     }
-    void Reset() override { source->Reset(); hasBuffered = false; }
+
     size_t GetPosition() const override { return source->GetPosition(); }
 };
-
 
 #include "generator.tpp"
