@@ -146,16 +146,25 @@ void ArraySequence<T>::Set(size_t index, const T& value) {
 
 template <class T>
 Sequence<T>* ArraySequence<T>::Concat(const Sequence<T>& list) {
+    ArraySequence<T>* result = CreateEmpty();
+    
     int currentLen = items->GetSize();
     int addLen = list.GetLength();
-    items->Resize(currentLen + addLen);
+    
+    result->items->Resize(currentLen + addLen);
+    
+    for (int i = 0; i < currentLen; i++) {
+        result->items->Set(i, items->Get(i));
+    }
+    
     IEnumerator<T>* en = list.GetEnumerator();
-    int i = currentLen;
+    int idx = currentLen;
     while (en->MoveNext()) {
-        items->Set(i++, en->Current());
+        result->items->Set(idx++, en->Current());
     }
     delete en;
-    return this;
+    
+    return result;
 }
 
 template <class T>
