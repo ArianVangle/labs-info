@@ -117,12 +117,18 @@ void ListSequence<T>::Set(size_t index, const T& value) {
 
 template <class T>
 Sequence<T>* ListSequence<T>::Concat(const Sequence<T>& list) {
-    IEnumerator<T>* en = list.GetEnumerator();
-    while (en->MoveNext()) {
-        items->Append(en->Current());
-    }
-    delete en;
-    return this;
+    ListSequence<T>* result = CreateEmpty();
+    IEnumerator<T>* enThis = this->GetEnumerator();
+    while (enThis->MoveNext()) 
+        result->items->Append(enThis->Current());
+    delete enThis;
+
+    IEnumerator<T>* enList = list.GetEnumerator();
+    while (enList->MoveNext()) 
+        result->items->Append(enList->Current());
+    delete enList;
+    
+    return result;
 }
 
 template <class T>

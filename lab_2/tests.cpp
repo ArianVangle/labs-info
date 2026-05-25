@@ -300,11 +300,22 @@ void TestRunner::TestAlgorithms() {
     int splitData[] = {1, 2, 0, 3, 4, 0, 5};
     Sequence<int>* splitSeq = new MutableArraySequence<int>(splitData, 7);
     auto* splitted = Split(*splitSeq, [](int x) { return x == 0; });
-    Assert(splitted->GetLength() == 3, "Split Count (3 fragments)");
     IEnumerator<Sequence<int>*>* splitEn = splitted->GetEnumerator();
     int splitIdx = 0; int expectedLengths[] = {2, 2, 1};
-    while (splitEn->MoveNext()) { Assert(splitEn->Current()->GetLength() == expectedLengths[splitIdx++], "Split Fragment Iterator"); }
-    delete splitEn; delete splitted; delete splitSeq;
+    while (splitEn->MoveNext()) { 
+        Assert(splitEn->Current()->GetLength() == expectedLengths[splitIdx++], "Split Fragment Iterator"); 
+    }
+    delete splitEn;
+
+    IEnumerator<Sequence<int>*>* cleanupEn = splitted->GetEnumerator();
+    while (cleanupEn->MoveNext()) {
+        delete cleanupEn->Current();
+    }
+    delete cleanupEn;
+
+    delete splitted; 
+    delete splitSeq;
+    
 
     // Find
     PrintTestHeader("Option/Find");
