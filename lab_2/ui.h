@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <thread>
-#include <vector>
 #ifdef _WIN32
 #include <conio.h>
 #else
@@ -161,7 +160,7 @@ public:
 
     void ShowMenu() {
         struct MenuItem { int key; std::string text; std::string color; };
-        std::vector<MenuItem> items = {
+        MenuItem items[] = {
             {1, "1. Запустить все тесты", Color::BRIGHT_GREEN},
             {2, "2. Тестировать DynamicArray", Color::BRIGHT_BLUE},
             {3, "3. Тестировать LinkedList", Color::BRIGHT_BLUE},
@@ -174,22 +173,22 @@ public:
             {0, "0. Выход", Color::BRIGHT_RED}
         };
         size_t selected = 0;
+        int count = sizeof(items) / sizeof(items[0]);
 
         while (true) {
             ClearScreen();
             PrintHeader("ГЛАВНОЕ МЕНЮ");
             OpenBox(); PrintEmpty();
-            for (size_t i = 0; i < items.size(); i++) {
+            for (size_t i = 0; i < count; i++) {
                 std::string prefix = (i == selected) ? "▶ " : "  ";
                 std::string clr = (i == selected) ? Color::BRIGHT_WHITE : items[i].color;
                 PrintRowIndented(prefix + items[i].text, clr);
             }
             PrintEmpty(); CloseBox();
             std::cout << "\n  Используйте ↑↓ для навигации, Enter для выбора\n";
-
             int key = ReadKey();
-            if (key == 38) selected = (selected + items.size() - 1) % items.size();
-            else if (key == 40) selected = (selected + 1) % items.size();
+            if (key == 38) selected = (selected + count - 1) % count;
+            else if (key == 40) selected = (selected + 1) % count;
             else if (key == 13) {
                 int choice = items[selected].key;
                 ClearScreen();
