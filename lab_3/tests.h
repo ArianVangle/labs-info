@@ -9,5 +9,5 @@ class Lab3TestRunner : public TestRunner {
    public:
     Lab3TestRunner(ConsoleUI *ui) : TestRunner(ui) {}
 
-    void RunAll() override;
+    void RunAll();
 };

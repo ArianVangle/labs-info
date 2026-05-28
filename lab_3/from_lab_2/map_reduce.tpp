@@ -6,27 +6,23 @@ Sequence<Tuple2<T1, T2>>* Zip(const Sequence<T1>& seq1, const Sequence<T2>& seq2
     auto* result = new MutableArraySequence<Tuple2<T1, T2>>();
     IEnumerator<T1>* en1 = seq1.GetEnumerator();
     IEnumerator<T2>* en2 = seq2.GetEnumerator();
-
     while (en1->MoveNext() && en2->MoveNext()) {
         result->Append(Tuple2<T1, T2>(en1->Current(), en2->Current()));
     }
-
     delete en1;
     delete en2;
     return result;
 }
 
 template <class T1, class T2>
-Tuple2<Sequence<T1>*, Sequence<T2>*> Unzip(Sequence<Tuple2<T1, T2>>* seq) {
+Tuple2<Sequence<T1>*, Sequence<T2>*> Unzip(const Sequence<Tuple2<T1, T2>>& seq) {
     auto* result1 = new MutableArraySequence<T1>();
     auto* result2 = new MutableArraySequence<T2>();
-    IEnumerator<Tuple2<T1, T2>>* en = seq->GetEnumerator();
-
+    IEnumerator<Tuple2<T1, T2>>* en = seq.GetEnumerator();
     while (en->MoveNext()) {
         result1->Append(en->Current().item1);
         result2->Append(en->Current().item2);
     }
-
     delete en;
     return Tuple2<Sequence<T1>*, Sequence<T2>*>(result1, result2);
 }
@@ -35,8 +31,8 @@ template <class T, class Func>
 Sequence<Sequence<T>*>* Split(const Sequence<T>& seq, Func predicate) {
     auto* result = new MutableArraySequence<Sequence<T>*>();
     auto* currentChunk = new MutableArraySequence<T>();
-    IEnumerator<T>* en = seq.GetEnumerator();
 
+    IEnumerator<T>* en = seq.GetEnumerator();
     while (en->MoveNext()) {
         T val = en->Current();
         if (predicate(val)) {
@@ -46,7 +42,6 @@ Sequence<Sequence<T>*>* Split(const Sequence<T>& seq, Func predicate) {
             currentChunk->Append(val);
         }
     }
-
     result->Append(currentChunk);
     delete en;
     return result;
@@ -55,21 +50,34 @@ Sequence<Sequence<T>*>* Split(const Sequence<T>& seq, Func predicate) {
 template <class T>
 Sequence<T>* Slice(const Sequence<T>& seq, int index, int count, Sequence<T>* s) {
     int len = seq.GetLength();
-    if (index < 0) 
-        index = len + index;
-    if (index < 0 || index >= len) 
-        throw IndexOutOfRangeException("Slice: invalid index");
-    if (count < 0) 
-        throw IndexOutOfRangeException("Slice: invalid count");
-    auto* result = new MutableArraySequence<T>();
+    if (index < 0) index = len + index;
+    if (index < 0 || index >= len) throw IndexOutOfRangeException("Slice: invalid index");
+    if (count < 0) throw IndexOutOfRangeException("Slice: invalid count");
 
-    for (int i = 0; i < index; i++) 
-        result->Append(seq.Get(i));
-    if (s != nullptr)
-        for (int i = 0; i < s->GetLength(); i++) result->Append(s->Get(i));
-    int skipEnd = index + count;
-    for (int i = skipEnd; i < len; i++) 
-        result->Append(seq.Get(i));
+    auto* result = new MutableArraySequence<T>();
+    IEnumerator<T>* en = seq.GetEnumerator();
+    int curIdx = 0;
+    
+    while (curIdx < index && en->MoveNext()) {
+        result->Append(en->Current());
+        curIdx++;
+    }
+    
+    if (s != nullptr) {
+        IEnumerator<T>* enS = s->GetEnumerator();
+        while (enS->MoveNext()) result->Append(enS->Current());
+        delete enS;
+    }
+    
+    int skipped = 0;
+    while (skipped < count && en->MoveNext()) {
+        skipped++;
+        curIdx++;
+    }
+    
+    while (en->MoveNext()) result->Append(en->Current());
+    
+    delete en;
     return result;
 }
 
@@ -82,8 +90,7 @@ template <class T>
 Sequence<T>* From(const std::initializer_list<T>& list) {
     T* arr = new T[list.size()];
     int i = 0;
-    for (auto& item : list) 
-        arr[i++] = item;
+    for (auto& item : list) arr[i++] = item;
     Sequence<T>* seq = new MutableArraySequence<T>(arr, list.size());
     delete[] arr;
     return seq;
@@ -93,14 +100,11 @@ template <class T>
 Sequence<T>* Concat(const Sequence<T>& seq1, const Sequence<T>& seq2) {
     auto* result = new MutableArraySequence<T>();
     IEnumerator<T>* en1 = seq1.GetEnumerator();
-
-    while (en1->MoveNext()) 
-        result->Append(en1->Current());
+    while (en1->MoveNext()) result->Append(en1->Current());
     delete en1;
-
+    
     IEnumerator<T>* en2 = seq2.GetEnumerator();
-    while (en2->MoveNext()) 
-        result->Append(en2->Current());
+    while (en2->MoveNext()) result->Append(en2->Current());
     delete en2;
     return result;
 }
@@ -121,8 +125,7 @@ Option<T> Find(const Sequence<T>& seq, Func predicate) {
 
 template <class T>
 Option<T> First(const Sequence<T>& seq) {
-    if (seq.GetLength() == 0) 
-        return Option<T>::None();
+    if (seq.GetLength() == 0) return Option<T>::None();
     return Option<T>::Some(seq.GetFirst());
 }
 
@@ -130,10 +133,7 @@ template <class T, class Func>
 bool Any(const Sequence<T>& seq, Func predicate) {
     IEnumerator<T>* en = seq.GetEnumerator();
     while (en->MoveNext()) {
-        if (predicate(en->Current())) {
-            delete en;
-            return true;
-        }
+        if (predicate(en->Current())) { delete en; return true; }
     }
     delete en;
     return false;
@@ -143,10 +143,7 @@ template <class T, class Func>
 bool All(const Sequence<T>& seq, Func predicate) {
     IEnumerator<T>* en = seq.GetEnumerator();
     while (en->MoveNext()) {
-        if (!predicate(en->Current())) {
-            delete en;
-            return false;
-        }
+        if (!predicate(en->Current())) { delete en; return false; }
     }
     delete en;
     return true;

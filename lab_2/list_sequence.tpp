@@ -1,196 +1,157 @@
 #pragma once
 #include "list_sequence.h"
 
-template <class T>
-Sequence<T>* ListSequence<T>::AppendInternal(const T& item) {
+
+template <class T, class Derived>
+void ListSequence<T, Derived>::AppendInternal(const T& item) {
     items->Append(item);
-    return this;
 }
 
-template <class T>
-Sequence<T>* ListSequence<T>::PrependInternal(const T& item) {
+template <class T, class Derived>
+void ListSequence<T, Derived>::PrependInternal(const T& item) {
     items->Prepend(item);
-    return this;
 }
 
-template <class T>
-Sequence<T>* ListSequence<T>::InsertAtInternal(const T& item, int index) {
+template <class T, class Derived>
+void ListSequence<T, Derived>::InsertAtInternal(const T& item, int index) {
     items->InsertAt(item, index);
-    return this;
 }
 
-template <class T>
-void ListSequence<T>::SetInternal(size_t index, const T& value) {
+template <class T, class Derived>
+void ListSequence<T, Derived>::SetInternal(size_t index, const T& value) {
     items->Set(index, value);
 }
 
-template <class T>
-ListSequence<T>::ListSequence() {
+template <class T, class Derived>
+ListSequence<T, Derived>::ListSequence() {
     items = new LinkedList<T>();
 }
 
-template <class T>
-ListSequence<T>::ListSequence(T* itemsArr, int count) {
+template <class T, class Derived>
+ListSequence<T, Derived>::ListSequence(T* itemsArr, int count) {
     items = new LinkedList<T>(itemsArr, count);
 }
 
-template <class T>
-ListSequence<T>::ListSequence(const LinkedList<T>& list) {
+template <class T, class Derived>
+ListSequence<T, Derived>::ListSequence(const LinkedList<T>& list) {
     items = new LinkedList<T>(list);
 }
 
-template <class T>
-ListSequence<T>::ListSequence(const ListSequence<T>& other) {
+template <class T, class Derived>
+ListSequence<T, Derived>::ListSequence(const ListSequence& other) {
     items = new LinkedList<T>(*other.items);
 }
 
-template <class T>
-ListSequence<T>::~ListSequence() {
+template <class T, class Derived>
+ListSequence<T, Derived>::~ListSequence() {
     delete items;
 }
 
-template <class T>
-T ListSequence<T>::Get(size_t index) const {
+template <class T, class Derived>
+T ListSequence<T, Derived>::Get(size_t index) const {
     return items->Get(index);
 }
 
-template <class T>
-size_t ListSequence<T>::GetCount() const {
+template <class T, class Derived>
+size_t ListSequence<T, Derived>::GetCount() const {
     return items->GetLength();
 }
 
-template <class T>
-Sequence<T>* ListSequence<T>::Clone() const {
-    ListSequence<T>* clone = CreateEmpty();
-    IEnumerator<T>* en = this->GetEnumerator();
-    while (en->MoveNext()) {
-        clone->items->Append(en->Current());
-    }
-    delete en;
-    return clone;
+template <class T, class Derived>
+int ListSequence<T, Derived>::GetLength() const {
+    return items->GetLength();
 }
 
-template <class T>
-T ListSequence<T>::GetFirst() const {
+template <class T, class Derived>
+T ListSequence<T, Derived>::GetFirst() const {
     return items->GetFirst();
 }
 
-template <class T>
-T ListSequence<T>::GetLast() const {
+template <class T, class Derived>
+T ListSequence<T, Derived>::GetLast() const {
     return items->GetLast();
 }
 
-template <class T>
-Sequence<T>* ListSequence<T>::GetSubsequence(int startIndex, int endIndex) const {
+template <class T, class Derived>
+IEnumerator<T>* ListSequence<T, Derived>::GetEnumerator() const {
+    return new ListEnumerator<T, Derived>(this);
+}
+
+template <class T, class Derived>
+Sequence<T>* ListSequence<T, Derived>::Clone() const {
+    return new Derived(static_cast<const Derived&>(*this));
+}
+
+template <class T, class Derived>
+Sequence<T>* ListSequence<T, Derived>::GetSubsequence(int startIndex, int endIndex) const {
     LinkedList<T>* sub = items->GetSubList(startIndex, endIndex);
-    ListSequence<T>* res = CreateEmpty();
+    auto* res = new MutableListSequence<T>();
     delete res->items;
     res->items = new LinkedList<T>(*sub);
     delete sub;
     return res;
 }
 
-template <class T>
-int ListSequence<T>::GetLength() const {
-    return items->GetLength();
-}
-
-template <class T>
-Sequence<T>* ListSequence<T>::Append(const T& item) {
-    return ((ListSequence<T>*)Instance())->AppendInternal(item);
-}
-
-template <class T>
-Sequence<T>* ListSequence<T>::Prepend(const T& item) {
-    return ((ListSequence<T>*)Instance())->PrependInternal(item);
-}
-
-template <class T>
-Sequence<T>* ListSequence<T>::InsertAt(const T& item, int index) {
-    return ((ListSequence<T>*)Instance())->InsertAtInternal(item, index);
-}
-
-template <class T>
-void ListSequence<T>::Set(size_t index, const T& value) {
-    ((ListSequence<T>*)Instance())->SetInternal(index, value);
-}
-
-template <class T>
-Sequence<T>* ListSequence<T>::Concat(const Sequence<T>& list) {
-    ListSequence<T>* result = CreateEmpty();
+template <class T, class Derived>
+Sequence<T>* ListSequence<T, Derived>::Concat(const Sequence<T>& list) {
+    auto* res = new MutableListSequence<T>();
     IEnumerator<T>* enThis = this->GetEnumerator();
-    while (enThis->MoveNext()) 
-        result->items->Append(enThis->Current());
+    while (enThis->MoveNext()) res->Append(enThis->Current());
     delete enThis;
-
-    IEnumerator<T>* enList = list.GetEnumerator();
-    while (enList->MoveNext()) 
-        result->items->Append(enList->Current());
-    delete enList;
     
-    return result;
+    IEnumerator<T>* enList = list.GetEnumerator();
+    while (enList->MoveNext()) res->Append(enList->Current());
+    delete enList;
+    return res;
 }
 
-template <class T>
+template <class T, class Derived>
 template <class R>
-Sequence<R>* ListSequence<T>::Map(std::function<R(T)> func) const {
-    R* arr = new R[items->GetLength()];
-    for (int i = 0; i < items->GetLength(); i++) 
-        arr[i] = func(items->Get(i));
-    Sequence<R>* res = new MutableListSequence<R>(arr, items->GetLength());
-    delete[] arr;
+Sequence<R>* ListSequence<T, Derived>::Map(std::function<R(T)> func) const {
+    auto* res = new MutableArraySequence<R>();
+    IEnumerator<T>* en = this->GetEnumerator();
+    while (en->MoveNext()) res->Append(func(en->Current()));
+    delete en;
     return res;
 }
 
-template <class T>
-Sequence<T>* ListSequence<T>::Where(std::function<bool(T)> func) const {
-    LinkedList<T>* newList = new LinkedList<T>();
-    for (int i = 0; i < items->GetLength(); i++) {
-        T val = items->Get(i);
-        if (func(val)) newList->Append(val);
+template <class T, class Derived>
+Sequence<T>* ListSequence<T, Derived>::Where(std::function<bool(T)> func) const {
+    auto* res = new MutableListSequence<T>();
+    IEnumerator<T>* en = this->GetEnumerator();
+    while (en->MoveNext()) {
+        if (func(en->Current())) res->Append(en->Current());
     }
-    ListSequence<T>* res = CreateEmpty();
-    delete res->items;
-    res->items = newList;
+    delete en;
     return res;
 }
 
-template <class T>
-T ListSequence<T>::Reduce(std::function<T(T, T)> func, T start) const {
+template <class T, class Derived>
+T ListSequence<T, Derived>::Reduce(std::function<T(T, T)> func, T start) const {
     T result = start;
     IEnumerator<T>* en = this->GetEnumerator();
-    while (en->MoveNext()) 
-        result = func(result, en->Current());
+    while (en->MoveNext()) result = func(result, en->Current());
     delete en;
     return result;
 }
 
-template <class T>
-Option<T> ListSequence<T>::TryGet(int index) const {
-    try {
-        return Option<T>::Some(Get(index));
-    } catch (...) {
-        return Option<T>::None();
-    }
+template <class T, class Derived>
+Option<T> ListSequence<T, Derived>::TryGet(int index) const {
+    try { return Option<T>::Some(Get(index)); }
+    catch (...) { return Option<T>::None(); }
 }
 
-template <class T>
-IEnumerator<T>* ListSequence<T>::GetEnumerator() const {
-    return new ListEnumerator<T>(this);
-}
-
-template <class T>
-T ListSequence<T>::operator[](int index) const {
+template <class T, class Derived>
+T ListSequence<T, Derived>::operator[](int index) const {
     return Get(index);
 }
 
-template <class T>
-MutableListSequence<T>::MutableListSequence() : ListSequence<T>() {
-}
 
 template <class T>
-MutableListSequence<T>::MutableListSequence(T* items, int count) : ListSequence<T>(items, count) {
-}
+MutableListSequence<T>::MutableListSequence() : ListSequence<T, MutableListSequence<T>>() {}
+
+template <class T>
+MutableListSequence<T>::MutableListSequence(T* items, int count) : ListSequence<T, MutableListSequence<T>>(items, count) {}
 
 template <class T>
 Sequence<T>* MutableListSequence<T>::Clone() const {
@@ -198,22 +159,34 @@ Sequence<T>* MutableListSequence<T>::Clone() const {
 }
 
 template <class T>
-Sequence<T>* MutableListSequence<T>::Instance() {
+Sequence<T>* MutableListSequence<T>::Append(const T& item) {
+    this->AppendInternal(item);
     return this;
 }
 
 template <class T>
-ListSequence<T>* MutableListSequence<T>::CreateEmpty() const {
-    return new MutableListSequence<T>();
+Sequence<T>* MutableListSequence<T>::Prepend(const T& item) {
+    this->PrependInternal(item);
+    return this;
 }
 
 template <class T>
-ImmutableListSequence<T>::ImmutableListSequence() : ListSequence<T>() {
+Sequence<T>* MutableListSequence<T>::InsertAt(const T& item, int index) {
+    this->InsertAtInternal(item, index);
+    return this;
 }
 
 template <class T>
-ImmutableListSequence<T>::ImmutableListSequence(T* items, int count) : ListSequence<T>(items, count) {
+void MutableListSequence<T>::Set(size_t index, const T& value) {
+    this->SetInternal(index, value);
 }
+
+
+template <class T>
+ImmutableListSequence<T>::ImmutableListSequence() : ListSequence<T, ImmutableListSequence<T>>() {}
+
+template <class T>
+ImmutableListSequence<T>::ImmutableListSequence(T* items, int count) : ListSequence<T, ImmutableListSequence<T>>(items, count) {}
 
 template <class T>
 Sequence<T>* ImmutableListSequence<T>::Clone() const {
@@ -221,11 +194,27 @@ Sequence<T>* ImmutableListSequence<T>::Clone() const {
 }
 
 template <class T>
-Sequence<T>* ImmutableListSequence<T>::Instance() {
-    return this->Clone();
+Sequence<T>* ImmutableListSequence<T>::Append(const T& item) {
+    auto* clone = static_cast<ImmutableListSequence<T>*>(this->Clone());
+    clone->AppendInternal(item);
+    return clone;
 }
 
 template <class T>
-ListSequence<T>* ImmutableListSequence<T>::CreateEmpty() const {
-    return new ImmutableListSequence<T>();
+Sequence<T>* ImmutableListSequence<T>::Prepend(const T& item) {
+    auto* clone = static_cast<ImmutableListSequence<T>*>(this->Clone());
+    clone->PrependInternal(item);
+    return clone;
+}
+
+template <class T>
+Sequence<T>* ImmutableListSequence<T>::InsertAt(const T& item, int index) {
+    auto* clone = static_cast<ImmutableListSequence<T>*>(this->Clone());
+    clone->InsertAtInternal(item, index);
+    return clone;
+}
+
+template <class T>
+void ImmutableListSequence<T>::Set(size_t index, const T& value) {
+    throw InvalidOperationException("Cannot modify immutable sequence");
 }

@@ -18,6 +18,6 @@ Sequence<T>* Sequence<T>::operator+(Sequence<T>& other) {
 
 template <class T>
 template <class R>
-Sequence<R>* Sequence<T>::Map(std::function<R(T)> func) const {
+Sequence<R>* Sequence<T>::Map(std::function<R(T)>) const {
     return nullptr;
 }

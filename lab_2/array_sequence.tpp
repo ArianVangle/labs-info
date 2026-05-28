@@ -1,15 +1,15 @@
 #pragma once
 #include "array_sequence.h"
 
-template <class T>
-Sequence<T>* ArraySequence<T>::AppendInternal(const T& item) {
+
+template <class T, class Derived>
+void ArraySequence<T, Derived>::AppendInternal(const T& item) {
     items->Resize(items->GetSize() + 1);
     items->Set(items->GetSize() - 1, item);
-    return this;
 }
 
-template <class T>
-Sequence<T>* ArraySequence<T>::PrependInternal(const T& item) {
+template <class T, class Derived>
+void ArraySequence<T, Derived>::PrependInternal(const T& item) {
     DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
     newItems->Set(0, item);
     for (int i = 0; i < items->GetSize(); i++) {
@@ -17,195 +17,155 @@ Sequence<T>* ArraySequence<T>::PrependInternal(const T& item) {
     }
     delete items;
     items = newItems;
-    return this;
 }
 
-template <class T>
-Sequence<T>* ArraySequence<T>::InsertAtInternal(const T& item, int index) {
-    if (index < 0 || index > items->GetSize()) 
+template <class T, class Derived>
+void ArraySequence<T, Derived>::InsertAtInternal(const T& item, int index) {
+    if (index < 0 || index > items->GetSize())
         throw IndexOutOfRangeException("Index out of range");
+
     DynamicArray<T>* newItems = new DynamicArray<T>(items->GetSize() + 1);
-
-    for (int i = 0; i < index; i++) 
+    for (int i = 0; i < index; i++)
         newItems->Set(i, items->Get(i));
-    newItems->Set(index, item);
 
-    for (int i = index; i < items->GetSize(); i++) 
+    newItems->Set(index, item);
+    for (int i = index; i < items->GetSize(); i++)
         newItems->Set(i + 1, items->Get(i));
 
     delete items;
     items = newItems;
-    return this;
 }
 
-template <class T>
-void ArraySequence<T>::SetInternal(size_t index, const T& value) {
+template <class T, class Derived>
+void ArraySequence<T, Derived>::SetInternal(size_t index, const T& value) {
     items->Set(index, value);
 }
 
-template <class T>
-ArraySequence<T>::ArraySequence() {
+template <class T, class Derived>
+ArraySequence<T, Derived>::ArraySequence() {
     items = new DynamicArray<T>(0);
 }
 
-template <class T>
-ArraySequence<T>::ArraySequence(T* itemsArr, int count) {
+template <class T, class Derived>
+ArraySequence<T, Derived>::ArraySequence(T* itemsArr, int count) {
     items = new DynamicArray<T>(itemsArr, count);
 }
 
-template <class T>
-ArraySequence<T>::ArraySequence(const LinkedList<T>& list) {
+template <class T, class Derived>
+ArraySequence<T, Derived>::ArraySequence(const LinkedList<T>& list) {
     items = new DynamicArray<T>(list.GetLength());
     for (int i = 0; i < list.GetLength(); i++) {
         items->Set(i, list.Get(i));
     }
 }
 
-template <class T>
-ArraySequence<T>::ArraySequence(const ArraySequence<T>& other) {
+template <class T, class Derived>
+ArraySequence<T, Derived>::ArraySequence(const ArraySequence& other) {
     items = new DynamicArray<T>(*other.items);
 }
 
-template <class T>
-ArraySequence<T>::~ArraySequence() {
+template <class T, class Derived>
+ArraySequence<T, Derived>::~ArraySequence() {
     delete items;
 }
 
-template <class T>
-T ArraySequence<T>::Get(size_t index) const {
+template <class T, class Derived>
+T ArraySequence<T, Derived>::Get(size_t index) const {
     return items->Get(index);
 }
 
-template <class T>
-size_t ArraySequence<T>::GetCount() const {
+template <class T, class Derived>
+size_t ArraySequence<T, Derived>::GetCount() const {
     return items->GetSize();
 }
 
-template <class T>
-Sequence<T>* ArraySequence<T>::Clone() const {
-    ArraySequence<T>* clone = CreateEmpty();
-    for (int i = 0; i < items->GetSize(); i++) {
-        clone->items->Set(i, items->Get(i));
-    }
-    return clone;
+template <class T, class Derived>
+int ArraySequence<T, Derived>::GetLength() const {
+    return items->GetSize();
 }
 
-template <class T>
-T ArraySequence<T>::GetFirst() const {
-    if (items->GetSize() == 0) 
-        throw IndexOutOfRangeException("Sequence is empty");
+template <class T, class Derived>
+T ArraySequence<T, Derived>::GetFirst() const {
+    if (items->GetSize() == 0) throw IndexOutOfRangeException("Sequence is empty");
     return items->Get(0);
 }
 
-template <class T>
-T ArraySequence<T>::GetLast() const {
-    if (items->GetSize() == 0) 
-        throw IndexOutOfRangeException("Sequence is empty");
+template <class T, class Derived>
+T ArraySequence<T, Derived>::GetLast() const {
+    if (items->GetSize() == 0) throw IndexOutOfRangeException("Sequence is empty");
     return items->Get(items->GetSize() - 1);
 }
 
-template <class T>
-Sequence<T>* ArraySequence<T>::GetSubsequence(int startIndex, int endIndex) const {
+template <class T, class Derived>
+IEnumerator<T>* ArraySequence<T, Derived>::GetEnumerator() const {
+    return new ArrayEnumerator<T, Derived>(this);
+}
+
+template <class T, class Derived>
+Sequence<T>* ArraySequence<T, Derived>::Clone() const {
+    return new Derived(static_cast<const Derived&>(*this));
+}
+
+template <class T, class Derived>
+Sequence<T>* ArraySequence<T, Derived>::GetSubsequence(int startIndex, int endIndex) const {
     if (startIndex < 0 || endIndex >= items->GetSize() || startIndex > endIndex)
         throw IndexOutOfRangeException("Invalid indices");
-
-    int len = endIndex - startIndex + 1;
-    ArraySequence<T>* res = CreateEmpty();
-    res->items->Resize(len);
-
-    for (int i = 0; i < len; i++) {
-        res->items->Set(i, items->Get(startIndex + i));
-    }
-    return res;
-}
-
-template <class T>
-int ArraySequence<T>::GetLength() const {
-    return items->GetSize();
-}
-
-template <class T>
-Sequence<T>* ArraySequence<T>::Append(const T& item) {
-    return ((ArraySequence<T>*)Instance())->AppendInternal(item);
-}
-
-template <class T>
-Sequence<T>* ArraySequence<T>::Prepend(const T& item) {
-    return ((ArraySequence<T>*)Instance())->PrependInternal(item);
-}
-
-template <class T>
-Sequence<T>* ArraySequence<T>::InsertAt(const T& item, int index) {
-    return ((ArraySequence<T>*)Instance())->InsertAtInternal(item, index);
-}
-
-template <class T>
-void ArraySequence<T>::Set(size_t index, const T& value) {
-    ((ArraySequence<T>*)Instance())->SetInternal(index, value);
-}
-
-template <class T>
-Sequence<T>* ArraySequence<T>::Concat(const Sequence<T>& list) {
-    ArraySequence<T>* result = CreateEmpty();
     
-    int currentLen = items->GetSize();
-    int addLen = list.GetLength();
-    
-    result->items->Resize(currentLen + addLen);
-    
-    for (int i = 0; i < currentLen; i++) {
-        result->items->Set(i, items->Get(i));
-    }
-    
-    IEnumerator<T>* en = list.GetEnumerator();
-    int idx = currentLen;
+    auto* res = new MutableArraySequence<T>();
+    IEnumerator<T>* en = this->GetEnumerator();
+    int idx = 0;
     while (en->MoveNext()) {
-        result->items->Set(idx++, en->Current());
+        if (idx >= startIndex && idx <= endIndex) {
+            res->Append(en->Current());
+        }
+        idx++;
     }
     delete en;
-    
-    return result;
+    return res;
 }
 
-template <class T>
+template <class T, class Derived>
+Sequence<T>* ArraySequence<T, Derived>::Concat(const Sequence<T>& list) {
+    auto* res = new MutableArraySequence<T>();
+    
+    IEnumerator<T>* enThis = this->GetEnumerator();
+    while (enThis->MoveNext()) res->Append(enThis->Current());
+    delete enThis;
+
+    IEnumerator<T>* enList = list.GetEnumerator();
+    while (enList->MoveNext()) res->Append(enList->Current());
+    delete enList;
+
+    return res;
+}
+
+template <class T, class Derived>
 template <class R>
-Sequence<R>* ArraySequence<T>::Map(std::function<R(T)> func) const {
-    R* newArr = new R[items->GetSize()];
-    for (int i = 0; i < items->GetSize(); i++) {
-        newArr[i] = func(items->Get(i));
+Sequence<R>* ArraySequence<T, Derived>::Map(std::function<R(T)> func) const {
+    auto* res = new MutableArraySequence<R>();
+    IEnumerator<T>* en = this->GetEnumerator();
+    while (en->MoveNext()) {
+        res->Append(func(en->Current()));
     }
-    Sequence<R>* res = new MutableArraySequence<R>(newArr, items->GetSize());
-    delete[] newArr;
+    delete en;
     return res;
 }
 
-template <class T>
-Sequence<T>* ArraySequence<T>::Where(std::function<bool(T)> func) const {
-    int count = 0;
-    for (int i = 0; i < items->GetSize(); i++) {
-        if (func(items->Get(i))) count++;
+template <class T, class Derived>
+Sequence<T>* ArraySequence<T, Derived>::Where(std::function<bool(T)> func) const {
+    auto* res = new MutableArraySequence<T>();
+    IEnumerator<T>* en = this->GetEnumerator();
+    while (en->MoveNext()) {
+        if (func(en->Current())) {
+            res->Append(en->Current());
+        }
     }
-
-    T* newArr = new T[count];
-    int idx = 0;
-    
-    for (int i = 0; i < items->GetSize(); i++) {
-        if (func(items->Get(i))) newArr[idx++] = items->Get(i);
-    }
-
-    ArraySequence<T>* res = CreateEmpty();
-    res->items->Resize(count);
-
-    for (int i = 0; i < count; i++) {
-        res->items->Set(i, newArr[i]);
-    }
-    
-    delete[] newArr;
+    delete en;
     return res;
 }
 
-template <class T>
-T ArraySequence<T>::Reduce(std::function<T(T, T)> func, T start) const {
+template <class T, class Derived>
+T ArraySequence<T, Derived>::Reduce(std::function<T(T, T)> func, T start) const {
     T result = start;
     IEnumerator<T>* en = this->GetEnumerator();
     while (en->MoveNext()) {
@@ -215,8 +175,8 @@ T ArraySequence<T>::Reduce(std::function<T(T, T)> func, T start) const {
     return result;
 }
 
-template <class T>
-Option<T> ArraySequence<T>::TryGet(int index) const {
+template <class T, class Derived>
+Option<T> ArraySequence<T, Derived>::TryGet(int index) const {
     try {
         return Option<T>::Some(Get(index));
     } catch (...) {
@@ -224,24 +184,20 @@ Option<T> ArraySequence<T>::TryGet(int index) const {
     }
 }
 
-template <class T>
-IEnumerator<T>* ArraySequence<T>::GetEnumerator() const {
-    return new ArrayEnumerator<T>(this);
-}
-
-template <class T>
-T ArraySequence<T>::operator[](int index) const {
+template <class T, class Derived>
+T ArraySequence<T, Derived>::operator[](int index) const {
     return Get(index);
 }
 
-template <class T>
-MutableArraySequence<T>::MutableArraySequence() : ArraySequence<T>() {}
 
 template <class T>
-MutableArraySequence<T>::MutableArraySequence(T* items, int count) : ArraySequence<T>(items, count) {}
+MutableArraySequence<T>::MutableArraySequence() : ArraySequence<T, MutableArraySequence<T>>() {}
 
 template <class T>
-MutableArraySequence<T>::MutableArraySequence(const MutableArraySequence<T>& other) : ArraySequence<T>(other) {}
+MutableArraySequence<T>::MutableArraySequence(T* items, int count) : ArraySequence<T, MutableArraySequence<T>>(items, count) {}
+
+template <class T>
+MutableArraySequence<T>::MutableArraySequence(const MutableArraySequence<T>& other) : ArraySequence<T, MutableArraySequence<T>>(other) {}
 
 template <class T>
 Sequence<T>* MutableArraySequence<T>::Clone() const {
@@ -249,23 +205,37 @@ Sequence<T>* MutableArraySequence<T>::Clone() const {
 }
 
 template <class T>
-Sequence<T>* MutableArraySequence<T>::Instance() {
+Sequence<T>* MutableArraySequence<T>::Append(const T& item) {
+    this->AppendInternal(item);
     return this;
 }
 
 template <class T>
-ArraySequence<T>* MutableArraySequence<T>::CreateEmpty() const {
-    return new MutableArraySequence<T>();
+Sequence<T>* MutableArraySequence<T>::Prepend(const T& item) {
+    this->PrependInternal(item);
+    return this;
 }
 
 template <class T>
-ImmutableArraySequence<T>::ImmutableArraySequence() : ArraySequence<T>() {}
+Sequence<T>* MutableArraySequence<T>::InsertAt(const T& item, int index) {
+    this->InsertAtInternal(item, index);
+    return this;
+}
 
 template <class T>
-ImmutableArraySequence<T>::ImmutableArraySequence(T* items, int count) : ArraySequence<T>(items, count) {}
+void MutableArraySequence<T>::Set(size_t index, const T& value) {
+    this->SetInternal(index, value);
+}
+
 
 template <class T>
-ImmutableArraySequence<T>::ImmutableArraySequence(const ImmutableArraySequence<T>& other) : ArraySequence<T>(other) {}
+ImmutableArraySequence<T>::ImmutableArraySequence() : ArraySequence<T, ImmutableArraySequence<T>>() {}
+
+template <class T>
+ImmutableArraySequence<T>::ImmutableArraySequence(T* items, int count) : ArraySequence<T, ImmutableArraySequence<T>>(items, count) {}
+
+template <class T>
+ImmutableArraySequence<T>::ImmutableArraySequence(const ImmutableArraySequence<T>& other) : ArraySequence<T, ImmutableArraySequence<T>>(other) {}
 
 template <class T>
 Sequence<T>* ImmutableArraySequence<T>::Clone() const {
@@ -273,11 +243,27 @@ Sequence<T>* ImmutableArraySequence<T>::Clone() const {
 }
 
 template <class T>
-Sequence<T>* ImmutableArraySequence<T>::Instance() {
-    return this->Clone();
+Sequence<T>* ImmutableArraySequence<T>::Append(const T& item) {
+    auto* clone = static_cast<ImmutableArraySequence<T>*>(this->Clone());
+    clone->AppendInternal(item);
+    return clone;
 }
 
 template <class T>
-ArraySequence<T>* ImmutableArraySequence<T>::CreateEmpty() const {
-    return new ImmutableArraySequence<T>();
+Sequence<T>* ImmutableArraySequence<T>::Prepend(const T& item) {
+    auto* clone = static_cast<ImmutableArraySequence<T>*>(this->Clone());
+    clone->PrependInternal(item);
+    return clone;
+}
+
+template <class T>
+Sequence<T>* ImmutableArraySequence<T>::InsertAt(const T& item, int index) {
+    auto* clone = static_cast<ImmutableArraySequence<T>*>(this->Clone());
+    clone->InsertAtInternal(item, index);
+    return clone;
+}
+
+template <class T>
+void ImmutableArraySequence<T>::Set(size_t, const T&) {
+    throw InvalidOperationException("Cannot modify immutable sequence");
 }
