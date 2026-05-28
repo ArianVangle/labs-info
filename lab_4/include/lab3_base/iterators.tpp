@@ -1,46 +1,46 @@
 #pragma once
 #include "iterators.h"
 
-template <class T>
-ArrayEnumerator<T>::ArrayEnumerator(const ArraySequence<T>* s) : seq(s), index(-1) {}
+template <class T, class Derived>
+ArrayEnumerator<T, Derived>::ArrayEnumerator(const ArraySequence<T, Derived>* s) : seq(s), index(-1) {}
 
-template <class T>
-ArrayEnumerator<T>::~ArrayEnumerator() {}
+template <class T, class Derived>
+ArrayEnumerator<T, Derived>::~ArrayEnumerator() {}
 
-template <class T>
-T ArrayEnumerator<T>::Current() const {
+template <class T, class Derived>
+T ArrayEnumerator<T, Derived>::Current() const {
     return seq->Get(index);
 }
 
-template <class T>
-bool ArrayEnumerator<T>::MoveNext() {
+template <class T, class Derived>
+bool ArrayEnumerator<T, Derived>::MoveNext() {
     index++;
     return index < seq->GetLength();
 }
 
-template <class T>
-void ArrayEnumerator<T>::Reset() {
+template <class T, class Derived>
+void ArrayEnumerator<T, Derived>::Reset() {
     index = -1;
 }
 
-template <class T>
-ListEnumerator<T>::ListEnumerator(const ListSequence<T>* s) : seq(s), index(-1) {}
+template <class T, class Derived>
+ListEnumerator<T, Derived>::ListEnumerator(const ListSequence<T, Derived>* s) : seq(s), index(-1) {}
 
-template <class T>
-ListEnumerator<T>::~ListEnumerator() {}
+template <class T, class Derived>
+ListEnumerator<T, Derived>::~ListEnumerator() {}
 
-template <class T>
-T ListEnumerator<T>::Current() const {
+template <class T, class Derived>
+T ListEnumerator<T, Derived>::Current() const {
     return seq->Get(index);
 }
 
-template <class T>
-bool ListEnumerator<T>::MoveNext() {
+template <class T, class Derived>
+bool ListEnumerator<T, Derived>::MoveNext() {
     index++;
     return index < seq->GetLength();
 }
 
-template <class T>
-void ListEnumerator<T>::Reset() {
+template <class T, class Derived>
+void ListEnumerator<T, Derived>::Reset() {
     index = -1;
 }

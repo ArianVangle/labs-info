@@ -6,9 +6,15 @@
 #include "read_only_stream.hpp"
 
 template<class T>
-SequenceReadStream<T>::SequenceReadStream(Sequence<T>* seq) 
-    : source(seq), sourceLength(seq->GetLength()) {}
+SequenceReadStream<T>::SequenceReadStream(Sequence<T>* seq, bool takeOwnership) 
+    : source(seq), sourceLength(seq->GetLength()), isOwner(takeOwnership) {}
 
+template<class T>
+SequenceReadStream<T>::~SequenceReadStream() {
+    if (isOwner && source != nullptr) {
+        delete source;
+    }
+}
 template<class T>
 void SequenceReadStream<T>::Open() {
     this->isOpen = true;

@@ -9,9 +9,11 @@ class SequenceReadStream : public ReadOnlyStream<T> {
 private:
     Sequence<T>* source;
     size_t sourceLength;
+    bool isOwner;
     
 public:
-    SequenceReadStream(Sequence<T>* seq);
+    SequenceReadStream(Sequence<T>* seq, bool takeOwnership = false);
+    ~SequenceReadStream() override;
     
     void Open() override;
     void Close() override;

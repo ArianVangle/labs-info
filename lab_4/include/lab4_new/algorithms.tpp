@@ -188,5 +188,5 @@ ReadOnlyStream<T>* StreamSorter<T>::SortWithHeap(ReadOnlyStream<T>* input) {
     
     delete heap;
     input->Close();
-    return new SequenceReadStream<T>(output);
+    return new SequenceReadStream<T>(output, true);
 }
