@@ -122,20 +122,15 @@ size_t LazySequence<T>::GetMaterializedCount() const { return materialized->GetL
 
 template<class T>
 Sequence<T>* LazySequence<T>::Append(const T& item) {
-    auto* singleton = new MutableArraySequence<T>();
-    singleton->Append(item);
-    return this->Concat(*singleton);
+    if (cardinalLength.IsInfinite()) {
+        throw InvalidOperationException("Cannot append to infinite sequence");
+    }
+    return InsertAt(item, cardinalLength.GetValue());
 }
 
 template<class T>
 Sequence<T>* LazySequence<T>::Prepend(const T& item) {
-    auto* result = new LazySequence<T>();
-    result->materialized->Append(item);
-    for (size_t i = 0; i < (size_t)materialized->GetLength(); i++) {
-        result->materialized->Append(materialized->Get(i));
-    }
-    result->cardinalLength = cardinalLength.IsFinite() ? Cardinal(cardinalLength.GetValue() + 1) : Cardinal::Infinity();
-    return result;
+    return InsertAt(item, 0);
 }
 
 template<class T>
@@ -217,7 +212,6 @@ void LazySequence<T>::MaterializeUpTo(size_t index) const {
 template<class T>
 Sequence<T>* LazySequence<T>::Concat(const Sequence<T>& list) {
     auto* result = new LazySequence<T>();
-    result->materialized = new MutableArraySequence<T>();
     result->nextInChain = &list;
     result->isOwner = true;
     

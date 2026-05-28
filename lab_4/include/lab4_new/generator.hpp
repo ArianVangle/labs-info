@@ -82,18 +82,26 @@ private:
     IEnumerator<T>* iterInsert;
     int splitIndex;
     int currentPos;
+    int insertedCount;
     enum State { PREFIX, INSERTING, SUFFIX } state;
     bool insertExhausted;
+    
 public:
     InsertAtGenerator(IGenerator<T>* src, Sequence<T>* ins, int idx)
         : genSource(src), seqToInsert(ins), iterInsert(nullptr),
-          splitIndex(idx), currentPos(0), state(PREFIX), insertExhausted(false) {}
-    ~InsertAtGenerator() { delete iterInsert; delete seqToInsert; }
+          splitIndex(idx), currentPos(0), insertedCount(0), state(PREFIX), insertExhausted(false) {
+        if (genSource) genSource->Reset(); 
+    }
+    
+    ~InsertAtGenerator() { 
+        delete iterInsert; 
+        delete seqToInsert; 
+    }
 
     T GetNext() override {
         switch (state) {
             case PREFIX:
-                if (currentPos < splitIndex && genSource->HasNext()) {
+                if (currentPos < splitIndex && genSource && genSource->HasNext()) {
                     currentPos++;
                     return genSource->GetNext();
                 }
@@ -102,13 +110,14 @@ public:
                 [[fallthrough]];
             case INSERTING:
                 if (iterInsert && iterInsert->MoveNext()) {
+                    insertedCount++;
                     return iterInsert->Current();
                 }
                 insertExhausted = true;
                 state = SUFFIX;
                 [[fallthrough]];
             case SUFFIX:
-                if (genSource->HasNext()) {
+                if (genSource && genSource->HasNext()) {
                     currentPos++;
                     return genSource->GetNext();
                 }
@@ -118,16 +127,33 @@ public:
     }
 
     bool HasNext() const override {
-        if (state == PREFIX) return currentPos < splitIndex && genSource->HasNext();
-        if (state == INSERTING) return true;
-        return genSource->HasNext();
+        if (state == PREFIX) {
+            if (currentPos < splitIndex && genSource && genSource->HasNext()) return true;
+            int len = seqToInsert->GetLength();
+            if (len == -1 || len > 0) return true;
+            return genSource && genSource->HasNext();
+        }
+        if (state == INSERTING) {
+            int len = seqToInsert->GetLength();
+            if (len == -1 || insertedCount < len) return true;
+            return genSource && genSource->HasNext();
+        }
+        return genSource && genSource->HasNext();
     }
 
     void Reset() override {
-        state = PREFIX; currentPos = 0; insertExhausted = false;
-        delete iterInsert; iterInsert = nullptr; genSource->Reset();
+        state = PREFIX;
+        currentPos = 0; 
+        insertedCount = 0; 
+        insertExhausted = false;
+        delete iterInsert; 
+        iterInsert = nullptr; 
+        if (genSource) genSource->Reset();
     }
-    size_t GetPosition() const override { return currentPos; }
+    
+    size_t GetPosition() const override { 
+        return currentPos + insertedCount; 
+    }
 };
 
 template<class T, class R>
