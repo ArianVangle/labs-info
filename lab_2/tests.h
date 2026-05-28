@@ -1,16 +1,14 @@
 #pragma once
 #include <string>
-
 class ConsoleUI;
 
 class TestRunner {
-   private:
+private:
     int passed = 0;
     int failed = 0;
     ConsoleUI* ui;
-
+    
     static const int WIDTH = 70;
-
     const std::string COLOR_PASS = "\033[92m";
     const std::string COLOR_FAIL = "\033[91m";
     const std::string COLOR_INFO = "\033[96m";
@@ -24,15 +22,30 @@ class TestRunner {
     void PrintTestHeader(const std::string& header);
     void PrintTestResult(bool success, const std::string& testName);
     void PrintSummary();
+
     void TestDynamicArray();
     void TestLinkedList();
-    void TestSequences(); 
-    void TestMapReduce();
-    void TestIterators();
-    void TestAlgorithms(); 
-    void TestCollections();
 
-   public:
+    void TestMutableArraySequence();
+    void TestImmutableArraySequence();
+    void TestMutableListSequence();
+    void TestSequenceOperators();
+
+    void TestMapOperation();
+    void TestWhereOperation();
+    void TestReduceOperation();
+
+    void TestZipUnzip();
+    void TestSplitOperation();
+    void TestSliceOperation();
+    void TestFromAndConcat();
+    void TestFindAndOption();
+
+    void TestIterators();
+    void TestSubsequenceAndClone();
+    void TestExceptionsAndEdges();
+
+public:
     TestRunner(ConsoleUI* ui = nullptr);
     void Assert(bool condition, const std::string& testName);
     void RunAll();

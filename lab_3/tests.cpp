@@ -88,15 +88,31 @@ void Lab3TestRunner::TestHanoiAndRing() {
 	Assert(r1 != r2, "Ring Inequality");
 }
 void Lab3TestRunner::RunAll() {
-	PrintTestHeader("ЗАПУСК ВСЕХ МОДУЛЬНЫХ ТЕСТОВ");
-	TestDynamicArray();
-	TestLinkedList();
-	TestSequences();
-	TestMapReduce();
-	TestIterators();
-	TestAlgorithms();
-	TestCollections();
-	TestDeque();
-	TestHanoiAndRing();
-	PrintSummary();
+    PrintTestHeader("ЗАПУСК ВСЕХ МОДУЛЬНЫХ ТЕСТОВ");
+    
+    TestDynamicArray();
+    TestLinkedList();
+    
+    TestMutableArraySequence();
+    TestImmutableArraySequence();
+    TestMutableListSequence();
+    TestSequenceOperators();
+    
+    TestMapOperation();
+    TestWhereOperation();
+    TestReduceOperation();
+    
+    TestZipUnzip();
+    TestSplitOperation();
+    TestSliceOperation();
+    TestFromAndConcat();
+    TestFindAndOption();
+    TestIterators();
+    TestSubsequenceAndClone();
+    TestExceptionsAndEdges();
+    
+    TestDeque();
+    TestHanoiAndRing();
+    
+    PrintSummary();
 }

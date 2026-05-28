@@ -18,31 +18,32 @@ class IEnumerable {
     virtual IEnumerator<T>* GetEnumerator() const = 0;
 };
 
-template <class T>
-class ArraySequence;
-template <class T>
+
+template <class T, class Derived> class ArraySequence;
+
+template <class T, class Derived>
 class ArrayEnumerator : public IEnumerator<T> {
-    const ArraySequence<T>* seq;
+    const ArraySequence<T, Derived>* seq;
     int index;
 
    public:
-    ArrayEnumerator(const ArraySequence<T>* s);
+    ArrayEnumerator(const ArraySequence<T, Derived>* s);
     ~ArrayEnumerator();
     T Current() const override;
     bool MoveNext() override;
     void Reset() override;
 };
 
-template <class T>
-class ListSequence;
 
-template <class T>
+template <class T, class Derived> class ListSequence;
+
+template <class T, class Derived>
 class ListEnumerator : public IEnumerator<T> {
-    const ListSequence<T>* seq;
+    const ListSequence<T, Derived>* seq;
     int index;
 
    public:
-    ListEnumerator(const ListSequence<T>* s);
+    ListEnumerator(const ListSequence<T, Derived>* s);
     ~ListEnumerator();
     T Current() const override;
     bool MoveNext() override;

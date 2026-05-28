@@ -1,10 +1,7 @@
 #include "tests.h"
-
 #include <iostream>
-
 #include "array_sequence.h"
 #include "dynamic_array.h"
-#include "icollection.h"
 #include "iterators.h"
 #include "linked_list.h"
 #include "list_sequence.h"
@@ -12,128 +9,58 @@
 #include "option.h"
 #include "utils.h"
 
-void TestRunner::SetColor(const std::string& color) {
-    std::cout << color;
-}
-
-void TestRunner::ResetColor() {
-    std::cout << COLOR_RESET;
-}
-
-void TestRunner::PrintChars(char c, int count) {
-    for (int i = 0; i < count; i++) std::cout << c;
-}
-
-void TestRunner::PrintLine(char c) {
-    SetColor(COLOR_INFO);
-    PrintChars(c, WIDTH);
-    std::cout << std::endl;
-    ResetColor();
-}
+void TestRunner::SetColor(const std::string& color) { std::cout << color; }
+void TestRunner::ResetColor() { std::cout << COLOR_RESET; }
+void TestRunner::PrintChars(char c, int count) { for (int i = 0; i < count; ++i) std::cout << c; }
+void TestRunner::PrintLine(char c) { SetColor(COLOR_INFO); PrintChars(c, WIDTH); std::cout << std::endl; ResetColor(); }
 
 void TestRunner::PrintTestHeader(const std::string& header) {
     std::cout << std::endl;
     SetColor(COLOR_INFO);
     std::cout << "+" << std::string(WIDTH - 2, '-') << "+" << std::endl;
-
     int visibleLen = VisibleLength(header);
     int padding = (WIDTH - 2 - visibleLen) / 2;
-
-    std::cout << "|";
-    PrintChars(' ', padding);
-    std::cout << header;
-    PrintChars(' ', WIDTH - 2 - visibleLen - padding);
-    std::cout << "|" << std::endl;
-
+    std::cout << "|"; PrintChars(' ', padding); std::cout << header;
+    PrintChars(' ', WIDTH - 2 - visibleLen - padding); std::cout << "|" << std::endl;
     std::cout << "+" << std::string(WIDTH - 2, '-') << "+" << std::endl;
     ResetColor();
 }
 
 void TestRunner::PrintTestResult(bool success, const std::string& testName) {
-    if (success) {
-        SetColor(COLOR_PASS);
-        std::cout << "| ";
-        std::cout << "✓ [PASS] ";
-        std::cout << testName;
-
-        int textLen = 9 + VisibleLength(testName);
-        int padding = WIDTH - 2 - textLen - 1;
-
-        PrintChars(' ', padding);
-        std::cout << "|" << std::endl;
-        ResetColor();
-        passed++;
-    } else {
-        SetColor(COLOR_FAIL);
-        std::cout << "| ";
-        std::cout << "✗ [FAIL] ";
-        std::cout << testName;
-
-        int textLen = 9 + VisibleLength(testName);
-        int padding = WIDTH - 2 - textLen - 1;
-
-        PrintChars(' ', padding);
-        std::cout << "|" << std::endl;
-        ResetColor();
-        failed++;
-    }
+    if (success) { SetColor(COLOR_PASS); passed++; } 
+    else { SetColor(COLOR_FAIL); failed++; }
+    
+    std::cout << "| " << (success ? "✓ [PASS] " : "✗ [FAIL] ") << testName;
+    int textLen = 9 + VisibleLength(testName);
+    int padding = WIDTH - 3 - textLen;
+    if (padding < 1) padding = 1;
+    PrintChars(' ', padding); std::cout << "|" << std::endl;
+    ResetColor();
 }
 
 void TestRunner::PrintSummary() {
-    std::cout << std::endl;
-    SetColor(COLOR_INFO);
+    std::cout << std::endl; SetColor(COLOR_INFO);
     std::cout << "+" << std::string(WIDTH - 2, '-') << "+" << std::endl;
-
-    std::string title = "ИТОГОВЫЙ ОТЧЁТ";
-    int visibleTitle = VisibleLength(title);
-    int titlePad = (WIDTH - 2 - visibleTitle) / 2;
-
-    std::cout << "|";
-    PrintChars(' ', titlePad);
-    std::cout << title;
-    PrintChars(' ', WIDTH - 2 - visibleTitle - titlePad);
-    std::cout << "|" << std::endl;
-
+    std::cout << "| ИТОГОВЫЙ ОТЧЁТ                                                    |" << std::endl;
     std::cout << "+" << std::string(WIDTH - 2, '-') << "+" << std::endl;
-
+    
     SetColor(COLOR_PASS);
-    std::string passedText = "Пройдено тестов: " + std::to_string(passed);
-    int visiblePassed = VisibleLength(passedText);
-    int passedPad = WIDTH - 3 - visiblePassed;
-
-    std::cout << "| ";
-    std::cout << passedText;
-    PrintChars(' ', passedPad);
-    std::cout << "|" << std::endl;
-
-    SetColor(COLOR_FAIL);
-    std::string failedText = "Провалено тестов: " + std::to_string(failed);
-    int visibleFailed = VisibleLength(failedText);
-    int failedPad = WIDTH - 3 - visibleFailed;
-
-    std::cout << "| ";
-    std::cout << failedText;
-    PrintChars(' ', failedPad);
-    std::cout << "|" << std::endl;
-
-    SetColor(COLOR_INFO);
-    std::cout << "+" << std::string(WIDTH - 2, '-') << "+" << std::endl;
-
+    std::cout << "| Пройдено: " << passed;
+    int pad1 = WIDTH - 3 - VisibleLength("Пройдено: ") - std::to_string(passed).length();
+    PrintChars(' ', pad1); std::cout << "|" << std::endl;
+    
+    SetColor(failed > 0 ? COLOR_FAIL : COLOR_PASS);
+    std::cout << "| Провалено: " << failed;
+    int pad2 = WIDTH - 3 - VisibleLength("Провалено: ") - std::to_string(failed).length();
+    PrintChars(' ', pad2); std::cout << "|" << std::endl;
+    
     int total = passed + failed;
-    double percentage = total > 0 ? (double)passed / total * 100 : 0;
-
-    std::string percentText = "Успешность: " + std::to_string((int)percentage) + "%";
-    int visiblePercent = VisibleLength(percentText);
-    int percentPad = WIDTH - 3 - visiblePercent;
-
-    std::string color = percentage >= 80 ? COLOR_PASS : (percentage >= 50 ? COLOR_WARN : COLOR_FAIL);
-    SetColor(color);
-
-    std::cout << "| ";
-    std::cout << percentText;
-    PrintChars(' ', percentPad);
-    std::cout << "|" << std::endl;
-
+    double pct = total > 0 ? (double)passed / total * 100 : 0;
+    SetColor(pct >= 80 ? COLOR_PASS : (pct >= 50 ? COLOR_WARN : COLOR_FAIL));
+    std::cout << "| Успешность: " << (int)pct << "%";
+    int pad3 = WIDTH - 3 - VisibleLength("Успешность: ") - std::to_string((int)pct).length() - 1;
+    PrintChars(' ', pad3); std::cout << "|" << std::endl;
+    
     std::cout << "+" << std::string(WIDTH - 2, '-') << "+" << std::endl;
     ResetColor();
 }
@@ -143,256 +70,275 @@ TestRunner::TestRunner(ConsoleUI* ui) : passed(0), failed(0), ui(ui) {}
 void TestRunner::Assert(bool condition, const std::string& testName) {
     PrintTestResult(condition, testName);
 }
+
 void TestRunner::TestDynamicArray() {
     PrintTestHeader("DynamicArray");
-    int arrData[] = {1, 2, 3};
-    DynamicArray<int> da(arrData, 3);
-    Assert(da.Get(0) == 1, "DynamicArray Get(0)");
-    Assert(da.Get(1) == 2, "DynamicArray Get(1)");
-    Assert(da.Get(2) == 3, "DynamicArray Get(2)");
-    Assert(da.GetSize() == 3, "DynamicArray Size");
-    da.Set(0, 10);
-    Assert(da.Get(0) == 10, "DynamicArray Set");
-
-    try {
-        da.Get(5);
-        Assert(false, "DynamicArray Exception");
-    } catch (...) {
-        Assert(true, "DynamicArray Exception");
-    }
-    da.Resize(5);
-    Assert(da.GetSize() == 5, "DynamicArray Resize");
+    int arr[] = {10, 20, 30};
+    DynamicArray<int> da(arr, 3);
+    Assert(da.Get(0) == 10 && da.Get(2) == 30, "DynamicArray: Initial Get");
+    da.Set(1, 99); Assert(da.Get(1) == 99, "DynamicArray: Set");
+    da.Resize(5); Assert(da.GetSize() == 5, "DynamicArray: Resize");
+    try { da.Get(10); Assert(false, "DynamicArray: Exception Handled"); } 
+    catch (...) { Assert(true, "DynamicArray: Exception Handled"); }
 }
 
 void TestRunner::TestLinkedList() {
     PrintTestHeader("LinkedList");
     LinkedList<int> ll;
-    ll.Append(1); ll.Append(2); ll.Append(3);
-    Assert(ll.Get(0) == 1, "LinkedList Append/Get");
-    Assert(ll.GetFirst() == 1, "LinkedList GetFirst");
-    Assert(ll.GetLast() == 3, "LinkedList GetLast");
-    Assert(ll.GetLength() == 3, "LinkedList Length");
-    ll.Prepend(0);
-    Assert(ll.GetFirst() == 0, "LinkedList Prepend");
-    ll.InsertAt(5, 2);
-    Assert(ll.Get(2) == 5, "LinkedList InsertAt");
+    ll.Append(10); ll.Append(20);
+    Assert(ll.GetLength() == 2 && ll.GetLast() == 20, "LinkedList: Append/GetLast");
+    ll.Prepend(5); Assert(ll.GetFirst() == 5, "LinkedList: Prepend");
+    ll.InsertAt(15, 1); Assert(ll.Get(1) == 15, "LinkedList: InsertAt");
+    try { ll.Get(10); Assert(false, "LinkedList: Exception"); } catch (...) { Assert(true, "LinkedList: Exception"); }
 }
 
-void TestRunner::TestSequences() {
-    int seqData[] = {5, 6};
-
-    // Mutable
-    PrintTestHeader("Sequence (Mutable)");
-    Sequence<int>* seq = new MutableArraySequence<int>(seqData, 2);
-    Assert(seq->GetLength() == 2, "Sequence Length");
-    IEnumerator<int>* seqEn = seq->GetEnumerator();
-    int expected = 5;
-    while (seqEn->MoveNext()) { Assert(seqEn->Current() == expected++, "Sequence Iterator"); }
-    delete seqEn;
-    Sequence<int>* newSeq = seq->Append(7);
-    Assert(newSeq->GetLength() == 3, "Sequence Append Mutable");
-    Assert(seq->GetLength() == 3, "Sequence Mutable State Change");
+void TestRunner::TestMutableArraySequence() {
+    PrintTestHeader("MutableArraySequence");
+    int data[] = {1, 2, 3};
+    Sequence<int>* seq = new MutableArraySequence<int>(data, 3);
+    Assert(seq->GetLength() == 3, "MutableArray: Initial Length");
+    
+    Sequence<int>* appended = seq->Append(4);
+    Assert(appended == seq && seq->GetLength() == 4, "MutableArray: Append In-Place");
+    
+    seq->Prepend(0); Assert(seq->GetFirst() == 0, "MutableArray: Prepend In-Place");
+    seq->Set(2, 999); Assert(seq->Get(2) == 999, "MutableArray: Set In-Place");
     delete seq;
-
-    // Immutable
-    PrintTestHeader("Sequence (Immutable)");
-    Sequence<int>* iSeq = new ImmutableArraySequence<int>(seqData, 2);
-    Sequence<int>* iNewSeq = iSeq->Append(8);
-    Assert(iNewSeq->GetLength() == 3, "Sequence Append Immutable New");
-    Assert(iSeq->GetLength() == 2, "Sequence Immutable State Preserved");
-    Option<int> opt = iSeq->TryGet(0);
-    Assert(opt.IsSome(), "Option Some");
-    Assert(opt.GetValue() == 5, "Option GetValue");
-    Option<int> optNone = iSeq->TryGet(10);
-    Assert(optNone.IsNone(), "Option None");
-    delete iSeq; delete iNewSeq;
-
-    // Operator[]
-    PrintTestHeader("Operator Overloading");
-    Sequence<int>* opSeq = new MutableArraySequence<int>(seqData, 2);
-    Assert((*opSeq)[0] == 5, "Operator[] [0]");
-    Assert((*opSeq)[1] == 6, "Operator[] [1]");
-    delete opSeq;
-
-    // Set
-    PrintTestHeader("Sequence Set");
-    int setData[] = {1, 2, 3};
-    Sequence<int>* setSeq = new MutableArraySequence<int>(setData, 3);
-    setSeq->Set(1, 999); Assert(setSeq->Get(1) == 999, "Sequence Set(1, 999)");
-    setSeq->Set(0, 100); Assert(setSeq->Get(0) == 100, "Sequence Set(0, 100)");
-    delete setSeq;
-
-    // ListSequence
-    PrintTestHeader("ListSequence");
-    Sequence<int>* listSeq = new MutableListSequence<int>(seqData, 2);
-    Assert(listSeq->GetLength() == 2, "ListSequence Length");
-    IEnumerator<int>* listEn = listSeq->GetEnumerator();
-    int listExpected = 5;
-    while (listEn->MoveNext()) { Assert(listEn->Current() == listExpected++, "ListSequence Iterator"); }
-    delete listEn;
-    Sequence<int>* listAppended = listSeq->Append(7);
-    Assert(listAppended->GetLength() == 3, "ListSequence Append");
-    delete listSeq;
 }
 
-void TestRunner::TestMapReduce() {
-    PrintTestHeader("Map-Reduce Operations");
-    int seqData[] = {5, 6};
-    MutableArraySequence<int>* mapSeq = new MutableArraySequence<int>(seqData, 2);
-    Sequence<int>* mapped = mapSeq->Map<int>([](int x) { return x * 2; });
-    IEnumerator<int>* mapEn = mapped->GetEnumerator();
-    int mapExpected = 10;
-    while (mapEn->MoveNext()) { Assert(mapEn->Current() == mapExpected, "Map Iterator"); mapExpected += 2; }
-    delete mapEn; delete mapSeq; delete mapped;
+void TestRunner::TestImmutableArraySequence() {
+    PrintTestHeader("ImmutableArraySequence");
+    int data[] = {1, 2, 3};
+    Sequence<int>* seq = new ImmutableArraySequence<int>(data, 3);
+    int originalLen = seq->GetLength();
+    
+    Sequence<int>* newSeq = seq->Append(4);
+    Assert(seq->GetLength() == originalLen, "ImmutableArray: Original Unchanged");
+    Assert(newSeq != seq && newSeq->GetLength() == originalLen + 1, "ImmutableArray: New Instance Created");
+    
+    Sequence<int>* prepended = newSeq->Prepend(0);
+    Assert(prepended != newSeq && prepended->GetFirst() == 0, "ImmutableArray: Prepend Creates New");
+    
+    try { seq->Set(0, 99); Assert(false, "ImmutableArray: Set Throws"); } 
+    catch (...) { Assert(true, "ImmutableArray: Set Throws Exception"); }
+    
+    delete seq; delete newSeq; delete prepended;
+}
 
-    int whereData[] = {1, 2, 3, 4, 5};
-    Sequence<int>* whereSeq = new MutableArraySequence<int>(whereData, 5);
-    Sequence<int>* filtered = whereSeq->Where([](int x) { return x > 2; });
-    Assert(filtered->GetLength() == 3, "Where Filter (x>2)");
-    IEnumerator<int>* whereEn = filtered->GetEnumerator();
-    int whereExpected = 3;
-    while (whereEn->MoveNext()) { Assert(whereEn->Current() == whereExpected++, "Where Iterator"); }
-    delete whereEn; delete filtered;
+void TestRunner::TestMutableListSequence() {
+    PrintTestHeader("MutableListSequence");
+    int data[] = {10, 20};
+    Sequence<int>* list = new MutableListSequence<int>(data, 2);
+    Assert(list->GetLength() == 2, "MutableList: Length");
+    
+    Sequence<int>* prepended = list->Prepend(5);
+    Assert(prepended == list && list->GetFirst() == 5, "MutableList: Prepend In-Place");
+    
+    list->InsertAt(15, 1); Assert(list->Get(1) == 15, "MutableList: InsertAt In-Place");
+    delete list;
+}
 
-    int sum = whereSeq->Reduce([](int acc, int x) { return acc + x; }, 0);
-    Assert(sum == 15, "Reduce Sum (1+2+3+4+5=15)");
-    int product = whereSeq->Reduce([](int acc, int x) { return acc * x; }, 1);
-    Assert(product == 120, "Reduce Product (1*2*3*4*5=120)");
-    delete whereSeq;
+void TestRunner::TestSequenceOperators() {
+    PrintTestHeader("Sequence Operators");
+    int d1[] = {1, 2, 3}; Sequence<int>* s1 = new MutableArraySequence<int>(d1, 3);
+    Assert((*s1)[1] == 2, "Operator[]: Index Access");
+    
+    int d2[] = {1, 2, 3}; Sequence<int>* s2 = new MutableArraySequence<int>(d2, 3);
+    Assert(*s1 == *s2, "Operator==: Equality Check");
+    
+    int d3[] = {4, 5}; Sequence<int>* s3 = new MutableArraySequence<int>(d3, 2);
+    Sequence<int>* combined = *s1 + *s3;
+    Assert(combined->GetLength() == 5 && combined->Get(3) == 4, "Operator+: Concatenation");
+    
+    delete s1; delete s2; delete s3; delete combined;
+}
+
+void TestRunner::TestMapOperation() {
+    PrintTestHeader("Map Operation");
+    int data[] = {1, 2, 3};
+    auto* seq = new MutableArraySequence<int>(data, 3);
+    Sequence<int>* mapped = seq->Map<int>([](int x) { return x * 10; });
+    
+    Assert(mapped->Get(0) == 10 && mapped->Get(2) == 30, "Map: Transformation");
+    Assert(mapped->GetLength() == seq->GetLength(), "Map: Length Preserved");
+    delete seq; delete mapped;
+}
+
+void TestRunner::TestWhereOperation() {
+    PrintTestHeader("Where Operation");
+    int data[] = {1, 2, 3, 4, 5};
+    auto* seq = new MutableArraySequence<int>(data, 5);
+    Sequence<int>* filtered = seq->Where([](int x) { return x % 2 != 0; });
+    
+    Assert(filtered->GetLength() == 3, "Where: Filter Count");
+    Assert(filtered->Get(0) == 1 && filtered->Get(2) == 5, "Where: Correct Values");
+    delete seq; delete filtered;
+}
+
+void TestRunner::TestReduceOperation() {
+    PrintTestHeader("Reduce Operation");
+    int data[] = {1, 2, 3, 4};
+    auto* seq = new MutableArraySequence<int>(data, 4);
+    int sum = seq->Reduce([](int acc, int x) { return acc + x; }, 0);
+    int product = seq->Reduce([](int acc, int x) { return acc * x; }, 1);
+    
+    Assert(sum == 10, "Reduce: Sum");
+    Assert(product == 24, "Reduce: Product");
+    delete seq;
+}
+
+void TestRunner::TestZipUnzip() {
+    PrintTestHeader("Zip / Unzip");
+    int a[] = {1, 2}; char b[] = {'a', 'b'};
+    auto* s1 = From(a, 2);
+    auto* s2 = From<char>(b, 2);
+    Sequence<Tuple2<int, char>>* zipped = Zip(*s1, *s2);
+    
+    Assert(zipped->Get(0).item1 == 1 && zipped->Get(1).item2 == 'b', "Zip: Pairing");
+    
+    auto [unz1, unz2] = Unzip(*zipped);
+    Assert(unz1->GetLength() == 2 && unz2->Get(0) == 'a', "Unzip: Decomposition");
+    delete s1; delete s2; delete zipped; delete unz1; delete unz2;
+}
+
+void TestRunner::TestSplitOperation() {
+    PrintTestHeader("Split Operation");
+    int data[] = {1, 0, 2, 3, 0, 4};
+    auto* seq = From(data, 6);
+    auto* parts = Split(*seq, [](int x) { return x == 0; });
+    
+    Assert(parts->GetLength() == 3, "Split: Part Count");
+    Assert(parts->Get(0)->GetLength() == 1, "Split: First Part Length");
+    Assert(parts->Get(2)->GetLength() == 1, "Split: Last Part Length");
+    
+    for (int i = 0; i < parts->GetLength(); ++i) delete parts->Get(i);
+    delete parts; delete seq;
+}
+
+void TestRunner::TestSliceOperation() {
+    PrintTestHeader("Slice Operation");
+    int data[] = {1, 2, 3, 4, 5};
+    auto* seq = From(data, 5);
+    int insertData[] = {9, 10};
+    auto* ins = From(insertData, 2);
+    
+    Sequence<int>* sliced = Slice(*seq, 1, 2, ins);
+    int expected[] = {1, 9, 10, 4, 5};
+    bool match = true;
+    for (int i = 0; i < 5; ++i) if (sliced->Get(i) != expected[i]) match = false;
+    Assert(match, "Slice: Correct Replacement");
+    
+    try { Slice(*seq, 10, 1); Assert(false, "Slice: Exception on Bad Index"); }
+    catch (...) { Assert(true, "Slice: Exception Handled"); }
+    
+    delete seq; delete ins; delete sliced;
+}
+
+void TestRunner::TestFromAndConcat() {
+    PrintTestHeader("From / Concat");
+    int a[] = {1, 2}; int b[] = {3, 4};
+    auto* s1 = From(a, 2); auto* s2 = From(b, 2);
+    Sequence<int>* c = Concat(*s1, *s2);
+    Assert(c->Get(3) == 4 && c->GetLength() == 4, "Concat: Merge");
+    Assert(c->Get(0) == 1, "Concat: Order Preserved");
+    delete s1; delete s2; delete c;
+}
+
+void TestRunner::TestFindAndOption() {
+    PrintTestHeader("Find & Option<T>");
+    int data[] = {10, 20, 30};
+    auto* seq = From(data, 3);
+    
+    Option<int> found = Find(*seq, [](int x) { return x > 15; });
+    Assert(found.IsSome() && found.GetValue() == 20, "Find: Existing Value");
+    
+    Option<int> missing = Find(*seq, [](int x) { return x > 100; });
+    Assert(missing.IsNone(), "Find: None Returned");
+    
+    Option<int> tryOk = seq->TryGet(1); Assert(tryOk.IsSome(), "TryGet: Valid Index");
+    Option<int> tryBad = seq->TryGet(5); Assert(tryBad.IsNone(), "TryGet: Invalid Index");
+    delete seq;
 }
 
 void TestRunner::TestIterators() {
-    PrintTestHeader("Iterators");
-    int seqData[] = {5, 6};
-    Sequence<int>* iterSeq = new MutableArraySequence<int>(seqData, 2);
-    IEnumerator<int>* en = iterSeq->GetEnumerator();
-    Assert(en->MoveNext(), "Iterator MoveNext");
-    Assert(en->Current() == 5, "Iterator Current");
-    en->Reset();
-    Assert(en->MoveNext(), "Iterator Reset + MoveNext");
-    delete iterSeq; delete en;
-}
-
-void TestRunner::TestAlgorithms() {
-    int zip1[] = {1, 2, 3}; int zip2[] = {10, 20, 30};
-    int whereData[] = {1, 2, 3, 4, 5};
-
-    // Zip/Unzip
-    PrintTestHeader("Zip/Unzip");
-    Sequence<int>* zipSeq1 = new MutableArraySequence<int>(zip1, 3);
-    Sequence<int>* zipSeq2 = new MutableArraySequence<int>(zip2, 3);
-    auto* zipped = Zip(*zipSeq1, *zipSeq2);
-    Assert(zipped->GetLength() == 3, "Zip Length");
-    IEnumerator<Tuple2<int, int>>* zipEn = zipped->GetEnumerator();
-    int zipExpected = 1;
-    while (zipEn->MoveNext()) {
-        Assert(zipEn->Current().item1 == zipExpected, "Zip Iterator item1");
-        Assert(zipEn->Current().item2 == zipExpected * 10, "Zip Iterator item2");
-        zipExpected++;
-    }
-    delete zipEn;
-    auto unzipped = Unzip(zipped);
-    delete unzipped.item1; delete unzipped.item2; delete zipped; delete zipSeq1; delete zipSeq2;
-
-    // Split
-    PrintTestHeader("Split");
-    int splitData[] = {1, 2, 0, 3, 4, 0, 5};
-    Sequence<int>* splitSeq = new MutableArraySequence<int>(splitData, 7);
-    auto* splitted = Split(*splitSeq, [](int x) { return x == 0; });
-    IEnumerator<Sequence<int>*>* splitEn = splitted->GetEnumerator();
-    int splitIdx = 0; int expectedLengths[] = {2, 2, 1};
-    while (splitEn->MoveNext()) { 
-        Assert(splitEn->Current()->GetLength() == expectedLengths[splitIdx++], "Split Fragment Iterator"); 
-    }
-    delete splitEn;
-
-    IEnumerator<Sequence<int>*>* cleanupEn = splitted->GetEnumerator();
-    while (cleanupEn->MoveNext()) {
-        delete cleanupEn->Current();
-    }
-    delete cleanupEn;
-
-    delete splitted; 
-    delete splitSeq;
+    PrintTestHeader("Iterators (IEnumerable/IEnumerator)");
+    int data[] = {5, 10, 15};
+    auto* seq = new MutableArraySequence<int>(data, 3);
+    IEnumerator<int>* en = seq->GetEnumerator();
     
-
-    // Find
-    PrintTestHeader("Option/Find");
-    Sequence<int>* findSeq = new MutableArraySequence<int>(whereData, 5);
-    Option<int> found = Find(*findSeq, [](int x) { return x > 3; });
-    Assert(found.IsSome(), "Find Some"); Assert(found.GetValue() == 4, "Find Value");
-    Option<int> notFound = Find(*findSeq, [](int x) { return x > 100; });
-    Assert(notFound.IsNone(), "Find None");
-    delete findSeq;
-
-    // From
-    PrintTestHeader("From");
-    int fromData[] = {1, 2, 3, 4, 5};
-    Sequence<int>* fromSeq = From(fromData, 5);
-    Assert(fromSeq->GetLength() == 5, "From Length");
-    IEnumerator<int>* fromEn = fromSeq->GetEnumerator();
-    int fromExpected = 1;
-    while (fromEn->MoveNext()) { Assert(fromEn->Current() == fromExpected++, "From Iterator"); }
-    delete fromEn; delete fromSeq;
-
-    // Concat
-    PrintTestHeader("Concat");
-    int concat1[] = {1, 2, 3}; int concat2[] = {4, 5, 6};
-    Sequence<int>* concatSeq1 = From(concat1, 3); Sequence<int>* concatSeq2 = From(concat2, 3);
-    Sequence<int>* concatenated = Concat(*concatSeq1, *concatSeq2);
-    Assert(concatenated->GetLength() == 6, "Concat Length");
-    IEnumerator<int>* concatEn = concatenated->GetEnumerator();
-    int concatExpected = 1;
-    while (concatEn->MoveNext()) { Assert(concatEn->Current() == concatExpected++, "Concat Iterator"); }
-    delete concatEn; delete concatSeq1; delete concatSeq2; delete concatenated;
-
-    // Slice
-    PrintTestHeader("Slice");
-    int sliceData[] = {1, 2, 3, 4, 5};
-    Sequence<int>* sliceSeq = new MutableArraySequence<int>(sliceData, 5);
-    int sliceInsert[] = {9, 10};
-    Sequence<int>* sliceInsertSeq = new MutableArraySequence<int>(sliceInsert, 2);
-    Sequence<int>* sliced = Slice(*sliceSeq, 1, 2, sliceInsertSeq);
-    Assert(sliced->GetLength() == 5, "Slice Length");
-    IEnumerator<int>* sliceEn = sliced->GetEnumerator();
-    int sliceExpected[] = {1, 9, 10, 4, 5}; int sliceIdx = 0;
-    while (sliceEn->MoveNext()) { Assert(sliceEn->Current() == sliceExpected[sliceIdx++], "Slice Iterator"); }
-    delete sliceEn; delete sliced; delete sliceSeq; delete sliceInsertSeq;
+    bool allOk = true; int expected = 5;
+    while (en->MoveNext()) { if (en->Current() != expected) allOk = false; expected += 5; }
+    Assert(allOk, "IEnumerator: Full Traversal");
+    
+    en->Reset(); Assert(en->MoveNext(), "IEnumerator: Reset Works");
+    delete seq; delete en;
 }
 
-void TestRunner::TestCollections() {
-    PrintTestHeader("ICollection");
-    int seqData[] = {5, 6}; int whereData[] = {1, 2, 3, 4, 5};
-    Sequence<int>* collSeq = new MutableArraySequence<int>(seqData, 2);
-    Assert(collSeq->Get(0) == 5, "ICollection Get");
-    Assert(collSeq->GetCount() == 2, "ICollection GetCount");
-    IEnumerator<int>* collEn = collSeq->GetEnumerator();
-    int collExpected = 5;
-    while (collEn->MoveNext()) { Assert(collEn->Current() == collExpected++, "ICollection Iterator"); }
-    delete collEn;
-    Sequence<int>* cloned = collSeq->Clone();
-    Assert(cloned->GetCount() == 2, "ICollection Clone");
-    delete collSeq; delete cloned;
-
-    PrintTestHeader("Subsequence");
-    Sequence<int>* subSeq = new MutableArraySequence<int>(whereData, 5);
-    Sequence<int>* sub = subSeq->GetSubsequence(1, 3);
-    Assert(sub->GetLength() == 3, "Subsequence Length");
-    IEnumerator<int>* subEn = sub->GetEnumerator();
-    int subExpected = 2;
-    while (subEn->MoveNext()) { Assert(subEn->Current() == subExpected++, "Subsequence Iterator"); }
-    delete subEn; delete subSeq; delete sub;
+void TestRunner::TestSubsequenceAndClone() {
+    PrintTestHeader("Subsequence & Clone");
+    int data[] = {1, 2, 3, 4, 5};
+    auto* seq = From(data, 5);
+    
+    Sequence<int>* sub = seq->GetSubsequence(1, 3);
+    Assert(sub->GetLength() == 3 && sub->Get(0) == 2, "Subsequence: Extraction");
+    
+    Sequence<int>* cloned = seq->Clone();
+    Assert(cloned->GetCount() == 5, "Clone: Deep Copy Length");
+    cloned->Append(99);
+    Assert(seq->GetLength() == 5, "Clone: Independence Check");
+    
+    delete seq; delete sub; delete cloned;
 }
 
+void TestRunner::TestExceptionsAndEdges() {
+    PrintTestHeader("Exceptions & Edge Cases");
+    int data[] = {42};
+    auto* seq = From(data, 1);
+    
+    Assert(seq->GetFirst() == 42 && seq->GetLast() == 42, "Edge: Single Element GetFirst/Last");
+    
+    try { seq->GetSubsequence(0, 1); Assert(false, "Edge: Subsequence OutOfBounds"); }
+    catch (...) { Assert(true, "Edge: Subsequence Exception"); }
+    
+    try { seq->InsertAt(10, 5); Assert(false, "Edge: InsertAt OutOfBounds"); }
+    catch (...) { Assert(true, "Edge: InsertAt Exception"); }
+    
+    int* emptyArr = new int[0];
+    auto* emptySeq = From(emptyArr, 0);
+    delete[] emptyArr;
+    
+    Assert(emptySeq->GetLength() == 0, "Edge: Empty Sequence Length");
+    try { emptySeq->GetFirst(); Assert(false, "Edge: Empty GetFirst"); }
+    catch (...) { Assert(true, "Edge: Empty Exception"); }
+    
+    delete seq; 
+    delete emptySeq;
+}
 
 void TestRunner::RunAll() {
     PrintTestHeader("ЗАПУСК ВСЕХ МОДУЛЬНЫХ ТЕСТОВ");
+    
     TestDynamicArray();
     TestLinkedList();
-    TestSequences();
-    TestMapReduce();
+    
+    TestMutableArraySequence();
+    TestImmutableArraySequence();
+    TestMutableListSequence();
+    TestSequenceOperators();
+    
+    TestMapOperation();
+    TestWhereOperation();
+    TestReduceOperation();
+    
+    TestZipUnzip();
+    TestSplitOperation();
+    TestSliceOperation();
+    TestFromAndConcat();
+    TestFindAndOption();
+    
     TestIterators();
-    TestAlgorithms();
-    TestCollections();
+    TestSubsequenceAndClone();
+    TestExceptionsAndEdges();
+    
     PrintSummary();
 }
