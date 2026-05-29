@@ -83,7 +83,8 @@ class HanoiTower {
 	}
 	const Sequence<std::string> *GetMoveHistory() const { return moves; }
 	bool IsComplete() const {
-		return towers[0]->GetLength() == 0 && towers[1]->GetLength() == 0 &&
-			   towers[2]->GetLength() == diskCount;
+    return (towers[0]->GetLength() == diskCount) ||
+           (towers[1]->GetLength() == diskCount) ||
+           (towers[2]->GetLength() == diskCount);
 	}
 };
