@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -9,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+
 #ifndef _WIN32
 #include <termios.h>
 #include <unistd.h>
@@ -41,7 +43,7 @@ inline const std::string BRIGHT_BLUE = "\033[94m";
 inline const std::string BRIGHT_MAGENTA = "\033[95m";
 inline const std::string BRIGHT_CYAN = "\033[96m";
 inline const std::string BRIGHT_WHITE = "\033[97m";
-}
+} // namespace Color
 
 static int ReadKey() {
 #ifdef _WIN32
@@ -95,24 +97,66 @@ class ConsoleUI {
 		for (int i = 0; i < count; i++)
 			std::cout << c;
 	}
-	void PrintRow(const std::string &text, const std::string &color) {
-		SetColor(color);
-		std::cout << "| ";
-		std::cout << text;
-		int padding = WIDTH - 3 - VisibleLength(text);
-		PrintChars(' ', padding);
-		std::cout << "|" << std::endl;
-		ResetColor();
-	}
+
 	void PrintRowIndented(const std::string &text, const std::string &color) {
 		SetColor(color);
 		std::cout << "|   ";
-		std::cout << text;
-		int padding = WIDTH - 5 - VisibleLength(text);
+
+		int maxContentWidth = WIDTH - 6;
+		std::string displayText = text;
+		int vLen = VisibleLength(text);
+
+		if (vLen > maxContentWidth) {
+			displayText = text.substr(0, maxContentWidth - 3) + "...";
+			vLen = VisibleLength(displayText);
+		}
+
+		std::cout << displayText;
+		int padding = std::max(0, WIDTH - 5 - vLen);
 		PrintChars(' ', padding);
 		std::cout << "|" << std::endl;
 		ResetColor();
 	}
+	void PrintConcatVisualization(LazySequence<int> *s) {
+		PrintRowIndented("--- СТРУКТУРА CONCAT ---", Color::BRIGHT_YELLOW);
+		try {
+			std::string b0 = "Block 0: ";
+			int shown0 = 0;
+			for (int i = 0; i < 10; i++) {
+				try {
+					b0 += std::to_string(s->Get(OrdinalIndex(0, i))) + ", ";
+					shown0++;
+				} catch (...) {
+					break;
+				}
+			}
+			if (shown0 == 10) {
+				b0 += "...";
+			}
+			PrintRowIndented(b0, Color::BRIGHT_CYAN);
+
+			PrintRowIndented("       ↓", Color::BRIGHT_BLACK);
+
+			std::string b1 = "Block 1: ";
+			int shown1 = 0;
+			for (int i = 0; i < 10; i++) {
+				try {
+					b1 += std::to_string(s->Get(OrdinalIndex(1, i))) + ", ";
+					shown1++;
+				} catch (...) {
+					break;
+				}
+			}
+			if (shown1 == 10) {
+				b1 += "...";
+			}
+			PrintRowIndented(b1, Color::BRIGHT_GREEN);
+		} catch (...) {
+			PrintRowIndented("Ошибка визуализации структуры",
+							 Color::BRIGHT_RED);
+		}
+	}
+
 	void PrintEmpty() {
 		SetColor(Color::BRIGHT_BLACK);
 		std::cout << "|";
@@ -128,39 +172,50 @@ class ConsoleUI {
 		ResetColor();
 	}
 	void CloseBox() { OpenBox(); }
-	void PrintLine(char c) {
-		SetColor(Color::BRIGHT_BLACK);
-		PrintChars(c, WIDTH);
-		std::cout << std::endl;
-		ResetColor();
-	}
+
 	void PrintHeader(const std::string &text) {
 		std::cout << std::endl;
-		PrintLine('=');
-		int visibleLen = VisibleLength(text);
-		int padding = (WIDTH - 2 - visibleLen) / 2;
+		SetColor(Color::BRIGHT_BLACK);
+		PrintChars('=', WIDTH);
+		std::cout << std::endl;
+		ResetColor();
+
+		int vLen = VisibleLength(text);
+		int padding = std::max(0, (WIDTH - 2 - vLen) / 2);
 		SetColor(Color::BRIGHT_CYAN);
 		std::cout << "|";
 		PrintChars(' ', padding);
 		std::cout << text;
-		PrintChars(' ', WIDTH - 2 - visibleLen - padding);
+		PrintChars(' ', std::max(0, WIDTH - 2 - vLen - padding));
 		std::cout << "|" << std::endl;
-		PrintLine('=');
+
+		SetColor(Color::BRIGHT_BLACK);
+		PrintChars('=', WIDTH);
+		std::cout << std::endl;
 		ResetColor();
 	}
+
 	void PrintSection(const std::string &text) {
 		std::cout << std::endl;
 		SetColor(Color::BRIGHT_YELLOW);
-		PrintLine('-');
+		PrintChars('-', WIDTH);
+		std::cout << std::endl;
+		ResetColor();
+
 		std::cout << "| ";
+		int vLen = VisibleLength(text);
+		int padding = std::max(0, WIDTH - 3 - vLen);
+		SetColor(Color::BRIGHT_YELLOW);
 		std::cout << text;
-		int visibleLen = VisibleLength(text);
-		int padding = WIDTH - 3 - visibleLen;
 		PrintChars(' ', padding);
 		std::cout << "|" << std::endl;
-		PrintLine('-');
+
+		SetColor(Color::BRIGHT_YELLOW);
+		PrintChars('-', WIDTH);
+		std::cout << std::endl;
 		ResetColor();
 	}
+
 	void Sleep(int ms) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 	}
@@ -187,14 +242,12 @@ class ConsoleUI {
 			for (int i = 0; i < count; ++i) {
 				std::string prefix = (i == selected) ? "▶ " : "  ";
 				std::string text = prefix + options->Get(i);
-				if (i == selected)
-					PrintRowIndented(text, Color::BRIGHT_WHITE);
-				else
-					PrintRowIndented(text, Color::BRIGHT_CYAN);
+				PrintRowIndented(text, (i == selected) ? Color::BRIGHT_WHITE
+													   : Color::BRIGHT_CYAN);
 			}
 			PrintEmpty();
 			CloseBox();
-			std::cout << "\n  ↑↓ навигация, Enter - выбор\n";
+			std::cout << "\n  ↑↓ навигация, Enter - выбор" << std::endl;
 			std::cout.flush();
 
 			int key = ReadKey();
@@ -207,19 +260,25 @@ class ConsoleUI {
 		}
 	}
 
-	std::string GetLazyState(LazySequence<int> *s, int maxShow = 10) const {
+	std::string GetLazyState(LazySequence<int> *s) const {
 		if (!s)
 			return "[null]";
 		std::string r = "[";
 		int len = s->GetLength();
-		int show = (len == -1 || len > maxShow) ? maxShow : len;
+		const int limit = 7;
+
+		int show = (len == -1 || len > limit) ? limit : len;
+
 		for (int i = 0; i < show; ++i) {
 			if (i > 0)
 				r += ", ";
 			r += std::to_string(s->Get(i));
 		}
-		if (len == -1 || len > maxShow)
+
+		if (len == -1 || len > limit) {
 			r += ", ...";
+		}
+
 		r += "] (len=" + std::to_string(len) +
 			 ", mat=" + std::to_string(s->GetMaterializedCount()) + ")";
 		return r;
@@ -263,7 +322,7 @@ class ConsoleUI {
 			}
 			PrintEmpty();
 			CloseBox();
-			std::cout << "\n  ↑↓ навигация, Enter - выбор\n";
+			std::cout << "\n  ↑↓ навигация, Enter - выбор" << std::endl;
 
 			int key = ReadKey();
 			if (key == 38)
@@ -406,15 +465,16 @@ class ConsoleUI {
 			ops->Append("2. Map (x^2)");
 			ops->Append("3. Where (чётные)");
 			ops->Append("4. Reduce (сумма)");
-			ops->Append("5. Concat");
+			ops->Append("5. Concat (с визуализацией)");
 			ops->Append("6. InsertAt");
 			ops->Append("7. Subsequence");
 			ops->Append("0. В меню");
 
 			int opIdx =
 				SelectFromMenu("ОПЕРАЦИИ НАД ЛЕНИВОЙ ПОСЛЕДОВАТЕЛЬНОСТЬЮ", ops);
+			int menuSize = ops->GetLength();
 			delete ops;
-			if (opIdx == 7) {
+			if (opIdx == menuSize - 1) {
 				delete seq;
 				return;
 			}
@@ -438,13 +498,16 @@ class ConsoleUI {
 				} else if (opIdx == 1) {
 					auto *mapped = seq->Map<int>([](int x) { return x * x; });
 					try {
-						PrintRowIndented("Map(x->x²) первые 5: ",
-										 Color::BRIGHT_MAGENTA);
+						std::string nums = "";
 						for (int i = 0; i < 5 && (i < mapped->GetLength() ||
 												  mapped->GetLength() == -1);
-							 ++i)
-							std::cout << mapped->Get(i) << " ";
-						std::cout << "\n";
+							 ++i) {
+							if (i > 0)
+								nums += " ";
+							nums += std::to_string(mapped->Get(i));
+						}
+						PrintRowIndented("Map(x→x²) первые 5: " + nums,
+										 Color::BRIGHT_MAGENTA);
 					} catch (const std::exception &e) {
 						PrintRowIndented("Ошибка доступа: " +
 											 std::string(e.what()),
@@ -455,11 +518,14 @@ class ConsoleUI {
 					auto *filtered =
 						seq->Where([](int x) { return x % 2 == 0; });
 					try {
-						PrintRowIndented("Where(чётные) первые 3: ",
+						std::string nums = "";
+						for (int i = 0; i < 3; ++i) {
+							if (i > 0)
+								nums += " ";
+							nums += std::to_string(filtered->Get(i));
+						}
+						PrintRowIndented("Where(чётные) первые 3: " + nums,
 										 Color::BRIGHT_MAGENTA);
-						for (int i = 0; i < 3; ++i)
-							std::cout << filtered->Get(i) << " ";
-						std::cout << "\n";
 					} catch (const std::exception &e) {
 						PrintRowIndented("Ошибка доступа: " +
 											 std::string(e.what()),
@@ -483,7 +549,9 @@ class ConsoleUI {
 										 std::to_string(limit) +
 										 ") = " + std::to_string(sum),
 									 Color::BRIGHT_GREEN);
-				} else if (opIdx == 4) {
+				}
+
+				else if (opIdx == 4) {
 					int addLen = 5;
 					std::cout << "  Длина добавляемой: ";
 					std::cin >> addLen;
@@ -498,6 +566,11 @@ class ConsoleUI {
 								GetLazyState(dynamic_cast<LazySequence<int> *>(
 									concated)),
 							Color::BRIGHT_CYAN);
+						PrintEmpty();
+						PrintRowIndented("Визуализация блоков:",
+										 Color::BRIGHT_YELLOW);
+						PrintConcatVisualization(
+							dynamic_cast<LazySequence<int> *>(concated));
 					} catch (const std::exception &e) {
 						PrintRowIndented("Ошибка доступа: " +
 											 std::string(e.what()),
@@ -602,9 +675,8 @@ class ConsoleUI {
 						}
 					return 0;
 				};
-				std::string (*lineDeser)(const std::string &) =
-					[](const std::string &s) { return s; };
-				auto *fileStream = new FileStream(csvFile, lineDeser);
+				auto *fileStream = new FileStream(
+					csvFile, [](const std::string &s) { return s; });
 				auto *csvStream =
 					new CsvReadStream<int>(fileStream, parser, ',');
 				csvStream->Open();
