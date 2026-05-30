@@ -31,6 +31,7 @@ public:
     ~FileWriteStream();
     void Open() override;
     void Close() override;
+    bool IsEndOfStream() const override;
     size_t Write(T item) override;
     bool IsCanSeek() const override;
     bool IsCanGoBack() const override;

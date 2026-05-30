@@ -3,6 +3,7 @@
 #include "stream.hpp"
 #include "lazy_sequence.hpp"
 #include <fstream>
+#include <sstream>
 
 template<class T>
 class SequenceReadStream : public ReadOnlyStream<T> {
@@ -61,4 +62,21 @@ public:
     size_t Seek(size_t index) override;
 };
 
+template<class T>
+class StringReadStream : public ReadOnlyStream<T> {
+private:
+    std::istringstream source;
+    T (*deserializer)(const std::string&);
+
+public:
+    StringReadStream(const std::string& data, T (*deser)(const std::string&));
+    
+    void Open() override;
+    void Close() override;
+    bool IsEndOfStream() const override;
+    T Read() override;
+    
+    bool IsCanSeek() const override { return true; }
+    size_t Seek(size_t index) override;
+};
 #include "read_only_stream.tpp"
