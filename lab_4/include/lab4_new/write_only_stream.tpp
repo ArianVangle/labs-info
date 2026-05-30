@@ -66,6 +66,8 @@ size_t FileWriteStream<T>::Write(T item) {
     this->position++;
     return this->position;
 }
+template<class T>
+bool FileWriteStream<T>::IsEndOfStream() const { return false; }
 
 template<class T>
 bool FileWriteStream<T>::IsCanSeek() const { return false; }

@@ -189,3 +189,13 @@ ReadOnlyStream<T>* StreamSorter<T>::SortWithHeap(ReadOnlyStream<T>* input) {
     input->Close();
     return new SequenceReadStream<T>(output, true);
 }
+
+template<class T>
+size_t CopyStream(ReadOnlyStream<T>* src, WriteOnlyStream<T>* dst) {
+    size_t count = 0;
+    while (!src->IsEndOfStream()) {
+        dst->Write(src->Read());
+        count++;
+    }
+    return count;
+}

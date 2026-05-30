@@ -44,4 +44,7 @@ public:
     ReadOnlyStream<T>* SortWithHeap(ReadOnlyStream<T>* input);
 };
 
+template<class T>
+size_t CopyStream(ReadOnlyStream<T>* src, WriteOnlyStream<T>* dst);
+
 #include "algorithms.tpp"

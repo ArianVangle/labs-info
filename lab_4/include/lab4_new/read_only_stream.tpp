@@ -145,3 +145,56 @@ inline size_t FileStream::Seek(size_t index) {
     this->position = index;
     return this->position;
 }
+
+template<class T>
+StringReadStream<T>::StringReadStream(const std::string& data, T (*deser)(const std::string&))
+    : source(data), deserializer(deser) {}
+
+template<class T>
+void StringReadStream<T>::Open() {
+    this->isOpen = true;
+    this->position = 0;
+}
+
+template<class T>
+void StringReadStream<T>::Close() {
+    this->isOpen = false;
+}
+
+template<class T>
+bool StringReadStream<T>::IsEndOfStream() const {
+    return source.eof() || source.fail();
+}
+
+template<class T>
+T StringReadStream<T>::Read() {
+    if (source.eof() || source.fail()) {
+        throw InvalidOperationException("End of stream");
+    }
+    
+    std::string token;
+    source >> token;
+    
+    if (source.fail() || token.empty()) {
+        throw InvalidOperationException("End of stream");
+    }
+    
+    this->position++;
+    return deserializer(token);
+}
+
+template<class T>
+size_t StringReadStream<T>::Seek(size_t index) {
+    source.clear();
+    source.seekg(0, std::ios::beg);
+    
+    std::string dummy;
+    for (size_t i = 0; i < index; ++i) {
+        if (!(source >> dummy)) {
+            this->position = i;
+            return this->position;
+        }
+    }
+    this->position = index;
+    return this->position;
+}
