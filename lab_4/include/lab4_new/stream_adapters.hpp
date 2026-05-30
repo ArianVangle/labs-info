@@ -29,17 +29,18 @@ public:
 template<class T>
 class JsonReadStream : public ReadOnlyStream<T> {
 private:
-    Sequence<T>* items;
+    std::ifstream file;
+    std::string filename;
+    Sequence<T>* cachedItems;
     size_t index;
-    
 public:
-    JsonReadStream(Sequence<T>* seq);
+    JsonReadStream(const std::string& fname);
+    ~JsonReadStream();
     
     void Open() override;
     void Close() override;
     bool IsEndOfStream() const override;
     T Read() override;
-    
     bool IsCanSeek() const override { return true; }
     bool IsCanGoBack() const override { return true; }
     size_t Seek(size_t newIndex) override;
