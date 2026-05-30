@@ -118,7 +118,7 @@ inline void FileStream::Close() {
 }
 
 inline bool FileStream::IsEndOfStream() const {
-    return file.eof();
+    return file.eof() || const_cast<std::ifstream&>(file).peek() == std::ifstream::traits_type::eof();
 }
 
 inline std::string FileStream::Read() {

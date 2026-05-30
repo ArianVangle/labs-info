@@ -514,6 +514,85 @@ void TestStreamPipeline() {
 	delete fileSeq;
 	std::remove(testFile.c_str());
 }
+
+void TestJsonStream() {
+    PrintHeader("JSON STREAM TESTS");
+    std::string jsonFile = "test.json";
+    {
+        std::ofstream out(jsonFile);
+        out << "[10, 20, 30, 40, 50]";
+        out.close();
+    }
+
+    auto* jsonStream = new JsonReadStream<int>(jsonFile);
+    jsonStream->Open();
+
+    Assert(!jsonStream->IsEndOfStream(), "JsonStream: Not at end initially");
+    Assert(jsonStream->Read() == 10, "JsonStream: Read[0] == 10");
+    Assert(jsonStream->Read() == 20, "JsonStream: Read[1] == 20");
+    
+    Assert(jsonStream->GetPosition() == 2, "JsonStream: Position == 2");
+
+    jsonStream->Seek(4);
+    
+    Assert(jsonStream->GetPosition() == 4, "JsonStream: Seek sets position to 4");
+    Assert(jsonStream->Read() == 50, "JsonStream: Read after Seek == 50");
+
+    Assert(jsonStream->IsEndOfStream(), "JsonStream: IsEndOfStream after reading 50");
+
+    try {
+        jsonStream->Read();
+        Assert(false, "JsonStream: Read past end should throw");
+    } catch (...) {
+        Assert(true, "JsonStream: Exception on EOF caught correctly");
+    }
+
+    jsonStream->Close();
+    delete jsonStream;
+    std::remove(jsonFile.c_str());
+    std::cout << "\n";
+}
+void TestCsvStream() {
+    PrintHeader("CSV READ STREAM TESTS");
+    std::string csvFile = "test.csv";
+
+    {
+        std::ofstream out(csvFile);
+        out << "10,apple,3.14\n";
+        out << "20,banana,2.71\n";
+        out << "30,cherry,1.41\n";
+        out.close();
+    }
+
+    auto* fileStream = new FileStream(csvFile, [](const std::string& s) { return s; });
+    auto parser = [](Sequence<std::string>* fields) -> int {
+        return fields->GetLength() > 0 ? std::stoi(fields->Get(0)) : 0;
+    };
+    auto* csvStream = new CsvReadStream<int>(fileStream, parser, ',');
+
+    csvStream->Open();
+    Assert(!csvStream->IsEndOfStream(), "CsvStream: Not at end initially");
+
+    Assert(csvStream->Read() == 10, "CsvStream: Read[0] == 10");
+    Assert(csvStream->Read() == 20, "CsvStream: Read[1] == 20");
+    Assert(csvStream->GetPosition() == 2, "CsvStream: Position == 2 after 2 reads");
+
+    Assert(csvStream->Read() == 30, "CsvStream: Read[2] == 30");
+    Assert(csvStream->IsEndOfStream(), "CsvStream: IsEndOfStream after full read");
+
+    try {
+        csvStream->Read();
+        Assert(false, "CsvStream: Read past end should throw");
+    } catch (...) {
+        Assert(true, "CsvStream: Exception on EOF caught");
+    }
+
+    csvStream->Close();
+    delete csvStream;
+    delete fileStream;
+    std::remove(csvFile.c_str());
+    std::cout << "\n";
+}
 int RunAllTests() {
 	std::cout
 		<< "\n╔═══════════════════════════════════════════════════════════╗\n";
@@ -538,6 +617,8 @@ int RunAllTests() {
 	TestAlgorithmsExtended();
 	TestStreamsExtended();
 	TestStreamPipeline();
+    TestJsonStream();
+    TestCsvStream();
 
 	std::cout
 		<< "\n╔═══════════════════════════════════════════════════════════╗\n";
