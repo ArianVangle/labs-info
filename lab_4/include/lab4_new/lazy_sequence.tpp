@@ -82,18 +82,19 @@ T LazySequence<T>::Get(const OrdinalIndex& idx) const {
     }
 
     if (nextInChain != nullptr) {
-        if (const auto* lazyNext = dynamic_cast<const LazySequence<T>*>(nextInChain)) {
-            if (idx.block == 1 && lazyNext->GetCardinalLength().IsInfinite()) {
-                return lazyNext->Get(idx.offset);
+        const LazySequence<T>* nextLazy = dynamic_cast<const LazySequence<T>*>(nextInChain);
+        
+        if (nextLazy) {
+            return nextLazy->Get({idx.block - 1, idx.offset});
+        } else {
+            if (idx.block == 1) {
+                return nextInChain->Get(idx.offset);
             }
-            return lazyNext->Get({idx.block - 1, idx.offset});
-        }
-        if (idx.block == 1) {
-            return nextInChain->Get(idx.offset);
+            throw IndexOutOfRangeException("Block index out of range in concatenation chain");
         }
     }
-
-    throw IndexOutOfRangeException("Block index out of range in concatenation chain");
+    
+    throw IndexOutOfRangeException("Block index out of range");
 }
 
 template<class T>
