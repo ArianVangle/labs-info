@@ -221,34 +221,32 @@ void TestLazyMapWhereReduce() {
 }
 
 void TestOrdinalIndexAccess() {
-	PrintHeader("ORDINAL INDEX ACCESS TESTS");
+    PrintHeader("ORDINAL INDEX ACCESS TESTS (3 BLOCKS)");
 
-	auto *seqA = new LazySequence<int>(
-		[](Sequence<int> *p) { return p->GetLength() + 1; },
-		Cardinal::Infinity());
-	auto *seqB = new LazySequence<int>(
-		[](Sequence<int> *p) { return 1000 + p->GetLength(); },
-		Cardinal::Infinity());
-	auto *concat = seqA->Concat(*seqB);
+    auto* A = new LazySequence<int>([](Sequence<int>* p){ return p->GetLength() + 1; }, Cardinal::Infinity());
+    auto* B = new LazySequence<int>([](Sequence<int>* p){ return 100 + p->GetLength(); }, Cardinal::Infinity());
+    auto* C = new LazySequence<int>([](Sequence<int>* p){ return 1000 + p->GetLength(); }, Cardinal::Infinity());
 
-	Assert(concat->Get(5) == 6, "Get(5) from first infinity");
+    auto* B_C = B->Concat(*C);
+    auto* A_B_C = A->Concat(*B_C);
 
-	auto *lazyConcat = dynamic_cast<LazySequence<int> *>(concat);
-	if (lazyConcat) {
-		Assert(lazyConcat->Get(OrdinalIndex(0, 5)) == 6,
-			   "Ordinal: Block 0, offset 5");
-		Assert(lazyConcat->Get(OrdinalIndex(1, 0)) == 1000,
-			   "Ordinal: Block 1, offset 0");
-		Assert(lazyConcat->Get(OrdinalIndex(1, 15)) == 1015,
-			   "Ordinal: Block 1, offset 15");
-	} else {
-		Assert(false, "Ordinal: Cast failed");
-	}
+    auto* lazyChain = dynamic_cast<LazySequence<int>*>(A_B_C);
+    Assert(lazyChain != nullptr, "Cast to LazySequence successful");
 
-	delete seqA;
-	delete seqB;
-	delete concat;
-	std::cout << "\n";
+    if (lazyChain) {
+        Assert(lazyChain->Get(OrdinalIndex(0, 0)) == 1, "Block 0: A[0] == 1");
+        Assert(lazyChain->Get(OrdinalIndex(0, 10)) == 11, "Block 0: A[10] == 11");
+
+        Assert(lazyChain->Get(OrdinalIndex(1, 0)) == 100, "Block 1: B[0] == 100");
+        Assert(lazyChain->Get(OrdinalIndex(1, 5)) == 105, "Block 1: B[5] == 105");
+
+        Assert(lazyChain->Get(OrdinalIndex(2, 0)) == 1000, "Block 2: C[0] == 1000");
+        Assert(lazyChain->Get(OrdinalIndex(2, 20)) == 1020, "Block 2: C[20] == 1020");
+    }
+
+    delete A; delete B; delete C; 
+    delete B_C; delete A_B_C;
+    std::cout << "\n";
 }
 
 void TestPerformance() {
