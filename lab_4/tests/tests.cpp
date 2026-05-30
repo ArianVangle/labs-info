@@ -285,13 +285,20 @@ void TestAlgorithmsExtended() {
     auto* sorted = StreamSorter<int>([](int a, int b){ return a < b; }).SortWithHeap(stream);
     sorted->Open();
     bool sortedCorrect = true;
-    int last = -1;
-    while(!sorted->IsEndOfStream()) {
+    int last = 0;
+    bool isFirst = true;
+
+    while (!sorted->IsEndOfStream()) {
         int cur = sorted->Read();
-        if(cur < last) sortedCorrect = false;
+        if (!isFirst && cur < last) {
+            sortedCorrect = false;
+            break;
+        }
         last = cur;
+        isFirst = false;
     }
     sorted->Close();
+
     Assert(sortedCorrect, "StreamSorter heap sort");
     
     delete sorted; delete stream; delete seq;
