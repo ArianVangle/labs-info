@@ -104,86 +104,85 @@ ReadOnlyStream<T>* StreamSorter<T>::SortWithHeap(ReadOnlyStream<T>* input) {
     input->Open();
     
     while (!input->IsEndOfStream() && (int)heap->GetLength() < (int)bufferSize) {
-        T value = input->Read();
-        heap->Append(value);
-        
-        for (size_t i = heap->GetLength() - 1; i > 0; i--) {
-            size_t parent = (i - 1) / 2;
-            if (comparator(heap->Get(i), heap->Get(parent))) {
-                T temp = heap->Get(i);
-                heap->Set(i, heap->Get(parent));
-                heap->Set(parent, temp);
+        heap->Append(input->Read());
+    }
+    
+    size_t n = heap->GetLength();
+    if (n > 1) {
+        int startIdx = (n / 2) - 1;
+        for (int i = startIdx; i >= 0; --i) {
+            size_t current = i;
+            while (true) {
+                size_t left = 2 * current + 1;
+                size_t right = 2 * current + 2;
+                size_t smallest = current;
+                
+                if (left < n && comparator(heap->Get(left), heap->Get(smallest))) smallest = left;
+                if (right < n && comparator(heap->Get(right), heap->Get(smallest))) smallest = right;
+                
+                if (smallest != current) {
+                    T temp = heap->Get(current);
+                    heap->Set(current, heap->Get(smallest));
+                    heap->Set(smallest, temp);
+                    current = smallest;
+                } else {
+                    break;
+                }
             }
         }
     }
     
     while (!input->IsEndOfStream()) {
-        T smallest = heap->Get(0);
-        output->Append(smallest);
+        output->Append(heap->Get(0));
+        heap->Set(0, input->Read());
         
-        T newValue = input->Read();
-        heap->Set(0, newValue);
-        
-        size_t i = 0;
-        while (2 * i + 1 < (size_t)heap->GetLength()) {
-            size_t left = 2 * i + 1;
-            size_t right = 2 * i + 2;
-            size_t smallest = left;
+        size_t current = 0;
+        while (true) {
+            size_t left = 2 * current + 1;
+            size_t right = 2 * current + 2;
+            size_t smallest = current;
             
-            if (right < (size_t)heap->GetLength() && comparator(heap->Get(right), heap->Get(left))) {
-                smallest = right;
-            }
+            if (left < n && comparator(heap->Get(left), heap->Get(smallest))) smallest = left;
+            if (right < n && comparator(heap->Get(right), heap->Get(smallest))) smallest = right;
             
-            if (comparator(heap->Get(smallest), heap->Get(i))) {
-                T temp = heap->Get(i);
-                heap->Set(i, heap->Get(smallest));
+            if (smallest != current) {
+                T temp = heap->Get(current);
+                heap->Set(current, heap->Get(smallest));
                 heap->Set(smallest, temp);
-                i = smallest;
+                current = smallest;
             } else {
                 break;
             }
         }
     }
     
-    while (heap->GetLength() > 0) {
-        T smallest = heap->Get(0);
-        output->Append(smallest);
+    size_t heapSize = n;
+    while (heapSize > 0) {
+        output->Append(heap->Get(0));
         
-        if (heap->GetLength() == 1) {
-            delete heap;
-            heap = new MutableArraySequence<T>();
-            break;
-        }
+        heap->Set(0, heap->Get(heapSize - 1));
+        heapSize--;
         
-        T lastValue = heap->Get(heap->GetLength() - 1);
-        heap->Set(0, lastValue);
-        
-        size_t i = 0;
-        while (2 * i + 1 < (size_t)heap->GetLength() - 1) {
-            size_t left = 2 * i + 1;
-            size_t right = 2 * i + 2;
-            size_t smallest = left;
-            
-            if (right < (size_t)heap->GetLength() - 1 && comparator(heap->Get(right), heap->Get(left))) {
-                smallest = right;
-            }
-            
-            if (comparator(heap->Get(smallest), heap->Get(i))) {
-                T temp = heap->Get(i);
-                heap->Set(i, heap->Get(smallest));
-                heap->Set(smallest, temp);
-                i = smallest;
-            } else {
-                break;
+        if (heapSize > 0) {
+            size_t current = 0;
+            while (true) {
+                size_t left = 2 * current + 1;
+                size_t right = 2 * current + 2;
+                size_t smallest = current;
+                
+                if (left < heapSize && comparator(heap->Get(left), heap->Get(smallest))) smallest = left;
+                if (right < heapSize && comparator(heap->Get(right), heap->Get(smallest))) smallest = right;
+                
+                if (smallest != current) {
+                    T temp = heap->Get(current);
+                    heap->Set(current, heap->Get(smallest));
+                    heap->Set(smallest, temp);
+                    current = smallest;
+                } else {
+                    break;
+                }
             }
         }
-        
-        Sequence<T>* newHeap = new MutableArraySequence<T>();
-        for (size_t j = 0; j < (size_t)heap->GetLength() - 1; j++) {
-            newHeap->Append(heap->Get(j));
-        }
-        delete heap;
-        heap = newHeap;
     }
     
     delete heap;
